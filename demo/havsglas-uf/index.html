@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Havsglas UF</title>
+<meta name="description" content="Demosida av Nordvy UF i UF-paketet: ett påhittat UF-företag som säljer smycken av havsglas, med produkter och beställningsförfrågan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: en enda sida, som UF-paketet. Ljus havsluft, djupt havsblått för text, glasgrönt för knappar. Produktbilderna är ritade glasbitar, eftersom riktiga bilder kommer från UF-företaget. */
+:root{
+  --sky:#E9F3F2; --card:#FFFFFF; --sea:#0E3B43; --mut:#4D6B70; --line:#CFE2E0;
+  --glass:#5FB3A9; --glass-d:#3E8F86; --glass-l:#D5ECE9; --coral:#E8806A; --err:#A3341F;
+  --disp:"Bricolage Grotesque",system-ui,sans-serif; --sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(72px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--sky);color:var(--sea);font:400 16px/1.65 var(--sans);overflow-x:clip}
+h1,h2,h3{font-family:var(--disp);font-weight:700;line-height:1.02;margin:0;text-wrap:balance;letter-spacing:-.02em}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--glass-d);outline-offset:3px;border-radius:8px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1100px;margin-inline:auto}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--glass-d)}
+.mut{color:var(--mut)}
+.demo{background:var(--sea);color:#D5ECE9;font-size:13px;text-align:center;padding-block:7px}
+.demo b{color:#fff;font-weight:600}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--sky)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(233,243,242,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hbar{display:flex;align-items:center;gap:18px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font:800 22px var(--disp);color:var(--sea);text-decoration:none;letter-spacing:-.02em}
+.brand i{width:22px;height:22px;border-radius:42% 58% 50% 50% / 55% 45% 55% 45%;background:linear-gradient(135deg,#8FD3C9,#3E8F86);display:block}
+.uf{font:600 11px var(--sans);letter-spacing:.08em;padding:3px 8px;border-radius:999px;border:1px solid var(--glass);color:var(--glass-d)}
+nav ul{display:flex;gap:20px;list-style:none;margin:0;padding:0}
+nav a{color:var(--mut);text-decoration:none;font-weight:500;font-size:15px}
+nav a:hover{color:var(--sea)}
+.sp{flex:1}
+@media(max-width:720px){nav{display:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;padding:13px 22px;font-weight:600;border:1px solid transparent;text-decoration:none;transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,background .25s}
+.btn:hover:not(:disabled){transform:translateY(-2px) rotate(-.5deg)}
+.btn-p{background:var(--sea);color:#fff}
+.btn-p:hover:not(:disabled){box-shadow:0 10px 26px rgba(14,59,67,.25)}
+.btn-g{background:var(--card);border-color:var(--line);color:var(--sea)}
+.btn-sm{padding:9px 16px;font-size:14px;border-radius:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* Hero */
+.hero{position:relative;overflow:hidden;padding-block:clamp(44px,8vw,96px)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.hero h1{font-size:clamp(46px,8.5vw,96px);max-width:12ch}
+.hero h1 em{font-style:normal;background:linear-gradient(120deg,#3E8F86,#5FB3A9 60%,#8FD3C9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(17px,2vw,19px);color:var(--mut);max-width:40ch;margin:22px 0 28px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+section{padding-block:clamp(56px,8vw,96px)}
+.head{display:grid;gap:12px;max-width:60ch;margin-bottom:32px}
+.head h2{font-size:clamp(34px,5.5vw,56px)}
+/* Om oss */
+.about{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,64px);align-items:start}
+@media(max-width:820px){.about{grid-template-columns:1fr}}
+.about>*{min-width:0}
+.about p+p{margin-top:14px}
+.team{display:grid;gap:10px}
+.role{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.role i{width:40px;height:40px;flex:none;border-radius:42% 58% 50% 50% / 55% 45% 55% 45%}
+.role b{display:block;font-family:var(--disp);font-size:18px}
+.role span{color:var(--mut);font-size:14px}
+.steps{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.steps span{background:var(--glass-l);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:500}
+/* Produkter */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:16px}
+.prod{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;display:grid;grid-template-rows:auto 1fr auto;gap:12px;transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s}
+.prod:hover{transform:translateY(-4px) rotate(.3deg);box-shadow:0 18px 40px rgba(14,59,67,.1)}
+.prod canvas{width:100%;aspect-ratio:1;display:block;border-radius:14px}
+.prod h3{font-size:20px}
+.prod p{font-size:14px;color:var(--mut);margin-top:4px}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.price{font:700 20px var(--disp);font-variant-numeric:tabular-nums}
+.left{font-size:12px;font-weight:600;color:var(--coral)}
+/* Modal */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(14,59,67,.4);display:grid;place-items:center;padding:16px;opacity:0;visibility:hidden;transition:opacity .25s,visibility 0s linear .25s}
+.scrim.on{opacity:1;visibility:visible;transition:opacity .25s,visibility 0s}
+.modal{background:var(--card);border-radius:24px;width:min(460px,100%);max-height:calc(100% - 32px);overflow:auto;padding:22px;display:grid;gap:14px;transform:translateY(16px);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.scrim.on .modal{transform:none}
+.mh{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.mh h3{font-size:26px}
+.x{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:none;font-size:18px;flex:none}
+.field{display:grid;gap:6px}
+.field label,.field legend{font-size:13px;font-weight:600;color:var(--mut)}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--sky);width:100%}
+.field input:focus{outline:none;border-color:var(--glass-d)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--sky)}
+.qty button{width:42px;height:42px;border:0;background:none;font-size:18px}
+.qty output{min-width:44px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.opts{border:0;padding:0;margin:0;display:grid;gap:8px}
+.opts label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:15px;color:var(--sea);cursor:pointer}
+.opts label:has(input:checked){border-color:var(--glass-d);background:var(--glass-l)}
+.opts input{accent-color:var(--glass-d);width:18px;height:18px;margin:0}
+.tot{display:flex;justify-content:space-between;font:700 22px var(--disp);font-variant-numeric:tabular-nums;border-top:1px solid var(--line);padding-top:12px}
+.err{color:var(--err);font-size:13px}
+.err:empty{display:none}
+.note{font-size:13px;color:var(--mut);background:var(--sky);border-radius:12px;padding:10px 12px}
+.done{display:grid;gap:10px;justify-items:center;text-align:center;padding:10px 0}
+.tick{width:58px;height:58px;border-radius:42% 58% 50% 50% / 55% 45% 55% 45%;background:var(--glass);color:#fff;display:grid;place-items:center;font-size:26px}
+/* Hitta oss */
+.meet{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.meet article{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;display:grid;gap:8px;align-content:start}
+.meet h3{font-size:22px}
+footer{background:var(--sea);color:#B9D3D0;padding-block:44px;font-size:14px}
+.fgrid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+footer strong{color:#fff;display:block;margin-bottom:6px;font-family:var(--disp);font-size:17px}
+.credit{margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,calc(100% + 40px));opacity:0;visibility:hidden;z-index:50;background:var(--sea);color:#fff;border-radius:14px;padding:11px 18px;font-weight:600;font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s,visibility 0s linear .35s;max-width:calc(100% - 32px);text-align:center}
+.toast.on{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s,visibility 0s}
+.rv{transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+.js .rv.pre{opacity:0;transform:translateY(20px)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .rv.pre{opacity:1;transform:none}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<div class="demo gut">Demo av <b>UF-paketet</b> från Nordvy UF · adress i paketet: havsglas.nordvyuf.se · Företaget är påhittat och inga beställningar skickas</div>
+<header><div class="wrap hbar gut">
+  <a class="brand" href="#top"><i aria-hidden="true"></i>Havsglas</a><span class="uf">UF</span>
+  <nav aria-label="Huvudmeny"><ul><li><a href="#produkter">Produkter</a></li><li><a href="#om">Om oss</a></li><li><a href="#hitta">Hitta oss</a></li></ul></nav>
+  <span class="sp"></span>
+  <a class="btn btn-p btn-sm" href="#produkter">Beställ</a>
+</div></header>
+
+<main id="top">
+  <section class="hero gut"><canvas id="sea" aria-hidden="true"></canvas><div class="wrap">
+    <p class="eyebrow">UF-företag från Malmö</p>
+    <h1 style="margin-top:14px">Smycken av glas som <em>havet</em> har slipat.</h1>
+    <p class="lead">Vi plockar havsglas på Skånes stränder, sorterar det efter färg och gör smycken för hand. Varje bit är unik, och ingen är den andra lik.</p>
+    <div class="cta"><a class="btn btn-p" href="#produkter">Se produkterna</a><a class="btn btn-g" href="#om">Om oss</a></div>
+  </div></section>
+
+  <section id="produkter" class="gut"><div class="wrap">
+    <div class="head rv"><p class="eyebrow">Produkter</p><h2>Plockat, slipat, ditt</h2><p class="mut">Tryck på Beställ så hör vi av oss inom ett par dagar. Du betalar när vi ses, med Swish eller kontant.</p></div>
+    <div class="grid" id="grid"></div>
+  </div></section>
+
+  <section id="om" class="gut" style="background:var(--card);border-block:1px solid var(--line)"><div class="wrap about">
+    <div class="rv">
+      <p class="eyebrow">Om oss</p>
+      <h2 style="font-size:clamp(32px,5vw,50px);margin:12px 0 16px">Tre elever, en strand och väldigt mycket glas</h2>
+      <p>Havsglas UF startade när vi upptäckte hur mycket slipat glas som spolas upp efter höststormarna. Det som en gång var flaskor har legat i havet i decennier.</p>
+      <p class="mut">Vi driver företaget inom Ung Företagsamhet på Exempelgymnasiet i Malmö. Allt vi tjänar går tillbaka in i företaget fram till att UF-året är slut.</p>
+      <div class="steps"><span>Plockat i Skåne</span><span>Handgjort</span><span>Återbrukat glas</span></div>
+    </div>
+    <div class="team rv">
+      <div class="role"><i style="background:linear-gradient(135deg,#8FD3C9,#3E8F86)"></i><div><b>VD</b><span>Leder arbetet och håller i kontakten med UF</span></div></div>
+      <div class="role"><i style="background:linear-gradient(135deg,#F2B8A8,#E8806A)"></i><div><b>Ekonomiansvarig</b><span>Budget, kassa och redovisning</span></div></div>
+      <div class="role"><i style="background:linear-gradient(135deg,#BFD7EA,#6E97B8)"></i><div><b>Marknadsföring</b><span>Instagram, mässor och den här sidan</span></div></div>
+    </div>
+  </div></section>
+
+  <section id="hitta" class="gut"><div class="wrap">
+    <div class="head rv"><p class="eyebrow">Hitta oss</p><h2>Här kan du träffa oss</h2></div>
+    <div class="meet">
+      <article class="rv"><h3>I skolan</h3><p class="mut">Vi säljer i aulan på luncherna varje torsdag. Hämta din beställning där.</p></article>
+      <article class="rv"><h3>På UF-mässan</h3><p class="mut">Vi ställer ut på den regionala UF-mässan i vår. Datumet läggs upp här när det är klart.</p></article>
+      <article class="rv"><h3>På Instagram</h3><p class="mut">Nya smycken visas där först. Länken till ert Instagramkonto läggs in här.</p></article>
+    </div>
+  </div></section>
+</main>
+
+<footer class="gut"><div class="wrap">
+  <div class="fgrid">
+    <div><strong>Havsglas UF</strong>Ett UF-företag inom Ung Företagsamhet. Påhittat för demon.</div>
+    <div><strong>Kontakt</strong>havsglas@exempel.se</div>
+    <div><strong>Integritet</strong>Vi använder ditt namn och din e-post bara för att svara på din beställning, och raderar dem när UF-året är slut.</div>
+  </div>
+  <div class="credit"><span>© Havsglas UF</span><span>Demo av UF-paketet, byggd av Nordvy UF</span></div>
+</div></footer>
+
+<div class="scrim" id="scrim" aria-hidden="true"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt" id="modal"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+document.documentElement.classList.add("js");
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const kr = n => new Intl.NumberFormat("sv-SE").format(n) + " kr";
+const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Produkter (påhittade, upp till 10 i UF-paketet) ---------- */
+const P = [
+  {id:"hb", n:"Halsband Våg",        d:"En större glasbit i silverfärgad infattning.", p:249, hue:168, k:3, left:4},
+  {id:"oh", n:"Örhängen Droppe",     d:"Två matchade bitar, krokar i kirurgiskt stål.", p:179, hue:150, k:2},
+  {id:"ab", n:"Armband Strand",      d:"Fem små bitar på elastiskt band.",              p:159, hue:190, k:5},
+  {id:"ns", n:"Nyckelring",          d:"En bit glas och en mässingsring.",               p:89,  hue:200, k:1},
+  {id:"br", n:"Brosch Stormen",      d:"Mörkare glas från höststormarna.",               p:199, hue:205, k:3, left:2},
+  {id:"lj", n:"Ljushållare",         d:"Glasbitar runt ett värmeljus. Ljuset ingår.",   p:229, hue:140, k:6},
+  {id:"pr", n:"Presentask, 3 bitar", d:"Lösa bitar i ask med kort om var de hittades.",  p:129, hue:175, k:3},
+  {id:"rg", n:"Ring Kust",           d:"Justerbar ring med en liten glasbit.",           p:169, hue:160, k:1}
+];
+/* Ritar slipade glasbitar: mjuka former, genomskinliga och lite frostade. */
+function pebble(c, x, y, r, hue, seed){
+  const pts = 9, a0 = seed*1.3;
+  c.beginPath();
+  for(let i=0;i<=pts;i++){ const a = a0 + i/pts*Math.PI*2, rr = r*(.82 + .18*Math.sin(seed*3+i*2.1)); const px = x+Math.cos(a)*rr, py = y+Math.sin(a)*rr*.82; i?c.lineTo(px,py):c.moveTo(px,py); }
+  c.closePath();
+  const g = c.createRadialGradient(x-r*.35,y-r*.35,r*.1,x,y,r);
+  g.addColorStop(0,"hsla("+hue+",60%,88%,.95)"); g.addColorStop(.6,"hsla("+hue+",45%,65%,.75)"); g.addColorStop(1,"hsla("+hue+",50%,45%,.8)");
+  c.fillStyle = g; c.fill();
+  c.strokeStyle = "hsla("+hue+",50%,35%,.25)"; c.lineWidth = 1; c.stroke();
+  c.fillStyle = "rgba(255,255,255,.55)"; c.beginPath(); c.ellipse(x-r*.3,y-r*.3,r*.22,r*.1,-.6,0,7); c.fill();
+}
+function drawProd(cv, p){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2,devicePixelRatio||1), w = r.width||220, h = r.height||220;
+  cv.width = w*dpr; cv.height = h*dpr; const c = cv.getContext("2d"); c.scale(dpr,dpr);
+  const bg = c.createLinearGradient(0,0,0,h); bg.addColorStop(0,"#F4EFE6"); bg.addColorStop(1,"#E6DCCB"); c.fillStyle = bg; c.fillRect(0,0,w,h);
+  c.fillStyle = "rgba(14,59,67,.04)"; for(let i=0;i<120;i++){ c.fillRect((i*73)%w,(i*41)%h,2,2); }
+  const n = p.k, R = n===1 ? w*.22 : n<=3 ? w*.15 : w*.1;
+  for(let i=0;i<n;i++){
+    const a = i/n*Math.PI*2 + p.hue, d = n===1 ? 0 : w*(n<=3?.14:.2);
+    c.save(); c.fillStyle = "rgba(14,59,67,.12)"; c.beginPath(); c.ellipse(w/2+Math.cos(a)*d+4, h/2+Math.sin(a)*d+R*.8, R*.9, R*.25, 0,0,7); c.fill(); c.restore();
+    pebble(c, w/2+Math.cos(a)*d, h/2+Math.sin(a)*d, R, p.hue + i*9, i+p.hue/10);
+  }
+}
+function renderGrid(){
+  $("#grid").innerHTML = P.map(p=>'<article class="prod"><canvas data-id="'+p.id+'" aria-hidden="true"></canvas><div><h3>'+esc(p.n)+'</h3><p>'+esc(p.d)+'</p></div>'+
+    '<div class="prow"><span><span class="price">'+kr(p.p)+'</span>'+(p.left?'<br><span class="left">'+p.left+' kvar</span>':'')+'</span><button class="btn btn-p btn-sm" data-id="'+p.id+'">Beställ</button></div></article>').join("");
+  document.querySelectorAll("#grid canvas").forEach(cv=>drawProd(cv, P.find(p=>p.id===cv.dataset.id)));
+  document.querySelectorAll("#grid button").forEach(b=>b.onclick=()=>openOrder(b.dataset.id, b));
+}
+
+/* ---------- Beställningsförfrågan (demo: inget skickas) ---------- */
+let cur = null, qty = 1, opener = null;
+function openOrder(id, btn){
+  cur = P.find(p=>p.id===id); qty = 1; opener = btn; renderModal(false);
+  $("#scrim").classList.add("on"); $("#scrim").setAttribute("aria-hidden","false");
+  setTimeout(()=>$("#mx").focus(), 60);
+}
+function closeOrder(){ $("#scrim").classList.remove("on"); $("#scrim").setAttribute("aria-hidden","true"); opener && opener.focus(); }
+function renderModal(done){
+  const max = cur.left || 10;
+  if(done){
+    $("#modal").innerHTML = '<div class="mh"><span></span><button class="x" id="mx" aria-label="Stäng">×</button></div>'+
+      '<div class="done"><span class="tick" aria-hidden="true">✓</span><h3 id="mt" style="font-size:26px">Tack för din beställning</h3><p>'+qty+' × '+esc(cur.n)+', '+kr(qty*cur.p)+'</p>'+
+      '<p class="mut">Vi hör av oss inom ett par dagar om när och var vi ses. Du betalar när du hämtar.</p>'+
+      '<p class="note">Demo: på en riktig sida hade UF-företaget fått beställningen på mejl. Här har ingenting skickats.</p>'+
+      '<button class="btn btn-p" id="mok">Klar</button></div>';
+    $("#mx").onclick = closeOrder; $("#mok").onclick = closeOrder; return;
+  }
+  $("#modal").innerHTML = '<div class="mh"><div><p class="eyebrow">Beställ</p><h3 id="mt">'+esc(cur.n)+'</h3></div><button class="x" id="mx" aria-label="Stäng">×</button></div>'+
+    '<div class="field"><span style="font-size:13px;font-weight:600;color:var(--mut)">Antal</span><div class="qty"><button id="qm" aria-label="Färre">−</button><output id="qo">'+qty+'</output><button id="qp" aria-label="Fler">+</button></div></div>'+
+    '<div class="field"><label for="oName">Namn</label><input id="oName" autocomplete="name"><span class="err" id="eName"></span></div>'+
+    '<div class="field"><label for="oMail">E-post</label><input id="oMail" type="email" autocomplete="email"><span class="err" id="eMail"></span></div>'+
+    '<fieldset class="opts field"><legend>Hur vill du få den?</legend>'+
+      '<label><input type="radio" name="get" value="skola" checked> Hämta i skolan på torsdag</label>'+
+      '<label><input type="radio" name="get" value="malmo"> Ses någonstans i Malmö</label></fieldset>'+
+    '<div class="tot"><span>Att betala vid hämtning</span><span id="mt2">'+kr(qty*cur.p)+'</span></div>'+
+    '<p class="note">Demo: inget skickas. Fyll i vad som helst för att se bekräftelsen.</p>'+
+    '<button class="btn btn-p" id="send">Skicka beställning</button>';
+  const upd = ()=>{ $("#qo").textContent = qty; $("#mt2").textContent = kr(qty*cur.p); $("#qm").disabled = qty<=1; $("#qp").disabled = qty>=max; };
+  $("#qm").onclick = ()=>{ if(qty>1){ qty--; upd(); } };
+  $("#qp").onclick = ()=>{ if(qty<max){ qty++; upd(); } };
+  upd();
+  $("#mx").onclick = closeOrder;
+  $("#send").onclick = ()=>{
+    const n=$("#oName"), m=$("#oMail"); let ok = true;
+    $("#eName").textContent = n.value.trim() ? "" : (ok=false,"Skriv ditt namn.");
+    $("#eMail").textContent = /^\S+@\S+\.\S+$/.test(m.value.trim()) ? "" : (ok=false,"Skriv en e-postadress så vi kan svara.");
+    if(!ok){ (n.value.trim()?m:n).focus(); return; }
+    renderModal(true); setTimeout(()=>$("#mok").focus(), 30);
+  };
+}
+$("#scrim").addEventListener("click", e=>{ if(e.target.id==="scrim") closeOrder(); });
+addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#scrim").classList.contains("on")) closeOrder(); });
+
+/* ---------- Hero: glasbitar som guppar i bakgrunden ---------- */
+function sea(){
+  const cv = $("#sea"), c = cv.getContext("2d"); let w, h, raf;
+  const bits = Array.from({length:14},(_,i)=>({x:(i*0.137+.05)%1, y:(i*0.29+.1)%1, r:10+((i*17)%26), hue:140+((i*23)%70), s:i}));
+  const size = ()=>{ const r = cv.getBoundingClientRect(), dpr = Math.min(2,devicePixelRatio||1); w = r.width; h = r.height; cv.width = w*dpr; cv.height = h*dpr; c.setTransform(dpr,0,0,dpr,0,0); };
+  const draw = now => {
+    const t = now/1000; c.clearRect(0,0,w,h); c.globalAlpha = w >= 860 ? .6 : .3;
+    for(const b of bits){
+      const wide = w >= 860;
+      const x = wide ? w*(.64 + b.x*.34) : w*(.72 + b.x*.26);   /* håll glaset till höger om texten */
+      const y = h*b.y + Math.sin(t*.7 + b.s)*8;
+      pebble(c, x, y, b.r*(wide?1:.55), b.hue, b.s);
+    }
+    c.globalAlpha = 1;
+    if(!rm) raf = requestAnimationFrame(draw);
+  };
+  size(); draw(performance.now());
+  let lastW = innerWidth; addEventListener("resize", ()=>{ if(innerWidth!==lastW){ lastW = innerWidth; size(); if(rm) draw(performance.now()); } });
+  document.addEventListener("visibilitychange", ()=>{ if(document.hidden) cancelAnimationFrame(raf); else if(!rm) raf = requestAnimationFrame(draw); });
+}
+function reveal(){
+  if(rm || !("IntersectionObserver" in window)) return;
+  const els = [...document.querySelectorAll(".rv")].filter(el => el.getBoundingClientRect().top > innerHeight);
+  els.forEach(el => el.classList.add("pre"));
+  const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.remove("pre"); io.unobserve(e.target); } }), {threshold:.12});
+  els.forEach(el => io.observe(el));
+}
+renderGrid(); sea(); reveal();
+let lastW2 = innerWidth; addEventListener("resize", ()=>{ if(innerWidth===lastW2) return; lastW2 = innerWidth; document.querySelectorAll("#grid canvas").forEach(cv=>drawProd(cv, P.find(p=>p.id===cv.dataset.id))); });
+</script>
+</body>
+</html>

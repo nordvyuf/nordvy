@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Fogen Snickeri</title>
+<meta name="description" content="Demosida av Nordvy UF: en påhittad snickerifirma i Skåne med offertförfrågan, fotouppladdning och ROT-kalkylator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: ritningspapper. Rutnät i bakgrunden, måttlinjer i millimeter, smal kraftig rubrik. Ritningsblått för linjer, signalorange bara på det man ska trycka på. */
+:root{
+  --paper:#F3F2EE; --card:#FFFFFF; --ink:#1B2430; --mut:#5B6573; --line:#D9D6CE; --grid:rgba(45,91,138,.07);
+  --blue:#2D5B8A; --blue-l:#E4ECF4; --orange:#E2632B; --orange-d:#C04F1C; --ok:#2F7A4F; --err:#A3341F;
+  --head:"Archivo","Arial Narrow",system-ui,sans-serif; --sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(72px + env(safe-area-inset-top,0px))}
+body{margin:0;color:var(--ink);font:400 16px/1.6 var(--sans);overflow-x:clip;
+  background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+h1,h2,h3{font-family:var(--head);font-stretch:78%;font-weight:800;line-height:.98;margin:0;text-wrap:balance;letter-spacing:-.01em;text-transform:uppercase}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:4px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1140px;margin-inline:auto}
+.tag{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--blue);text-transform:uppercase}
+.mut{color:var(--mut)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.demo{background:var(--orange);color:#fff;font-size:13px;font-weight:600;text-align:center;padding-block:7px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--ink)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--ink);color:#fff}
+.hbar{display:flex;align-items:center;gap:22px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:800 22px var(--head);font-stretch:78%;text-transform:uppercase;letter-spacing:.02em}
+.brand svg{width:26px;height:26px}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav a{color:#B8C2CF;text-decoration:none;font-size:15px;font-weight:500}
+nav a:hover{color:#fff}
+.sp{flex:1}
+.phone{font-family:var(--mono);font-size:14px;color:#B8C2CF}
+@media(max-width:820px){nav,.phone{display:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;padding:13px 22px;font-weight:700;border:2px solid transparent;text-decoration:none;letter-spacing:.01em;transition:transform .2s,background .2s,box-shadow .2s}
+.btn:hover:not(:disabled){transform:translateY(-2px)}
+.btn-o{background:var(--orange);color:#fff}
+.btn-o:hover:not(:disabled){background:var(--orange-d);box-shadow:0 8px 0 -2px rgba(27,36,48,.9)}
+.btn-l{border-color:var(--ink);background:transparent;color:var(--ink)}
+.btn-l:hover:not(:disabled){background:var(--ink);color:#fff}
+.btn-sm{padding:9px 16px;font-size:14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Hero */
+.hero{padding-block:clamp(40px,7vw,80px) clamp(48px,8vw,90px)}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+@media(max-width:880px){.hgrid{grid-template-columns:1fr}}
+.hgrid>*,.calc>*,.offer>*,.two>*{min-width:0}
+.hero h1{font-size:clamp(46px,8.5vw,104px)}
+.hero h1 span{color:var(--orange)}
+.lead{font-size:clamp(17px,2vw,19px);color:var(--mut);max-width:40ch;margin:22px 0 28px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.facts span{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--card);border-radius:4px;padding:6px 10px}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:8px;aspect-ratio:5/4;width:100%;position:relative;overflow:hidden;box-shadow:12px 12px 0 -2px var(--blue-l)}
+.plan canvas{width:100%;height:100%;display:block}
+.plan .stamp{position:absolute;right:12px;bottom:10px;font-family:var(--mono);font-size:11px;color:var(--blue);border:1px solid var(--blue);padding:4px 8px;background:rgba(255,255,255,.8)}
+
+section{padding-block:clamp(60px,9vw,104px)}
+.head{display:grid;gap:12px;max-width:64ch;margin-bottom:34px}
+.head h2{font-size:clamp(36px,6vw,64px)}
+.band{background:var(--card);border-block:1px solid var(--line)}
+
+/* Tjänster */
+.svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:0;border:1px solid var(--line);background:var(--card)}
+.svc article{padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;gap:10px;align-content:start;position:relative}
+.svc canvas{width:100%;aspect-ratio:16/9;display:block;background:var(--blue-l);border-radius:4px}
+.svc h3{font-size:26px}
+.svc p{color:var(--mut);font-size:15px}
+.svc .fr{font-family:var(--mono);font-size:13px;color:var(--blue)}
+
+/* Process */
+.proc{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:18px;counter-reset:s}
+.proc li{border-top:3px solid var(--ink);padding-top:14px;counter-increment:s;display:grid;gap:6px}
+.proc li::before{content:"0" counter(s);font-family:var(--mono);color:var(--orange);font-weight:600}
+.proc b{font:800 22px var(--head);font-stretch:78%;text-transform:uppercase}
+.proc p{color:var(--mut);font-size:15px}
+
+/* ROT */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:880px){.calc{grid-template-columns:1fr}}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:clamp(18px,3vw,28px)}
+.field{display:grid;gap:6px;margin-bottom:16px}
+.field label,.field legend{font-size:13px;font-weight:700;color:var(--mut);letter-spacing:.02em}
+.field input,.field textarea,.field select{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper);width:100%}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue)}
+.money{position:relative}
+.money input{padding-right:42px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.money::after{content:"kr";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-family:var(--mono);font-size:14px}
+.seg{justify-self:start;display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--paper)}
+.seg button{border:0;background:none;padding:10px 16px;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.result{display:grid;gap:10px;font-variant-numeric:tabular-nums}
+.result div{display:flex;justify-content:space-between;gap:14px;font-family:var(--mono);font-size:15px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.result .big{border:0;padding-top:14px;font-family:var(--head);font-stretch:78%;font-weight:800;font-size:clamp(30px,5vw,44px);text-transform:uppercase}
+.result .big span:last-child{color:var(--orange)}
+.cap{font-size:13px;color:var(--mut);margin-top:8px}
+.bar{height:14px;background:var(--paper);border:1px solid var(--line);border-radius:3px;display:flex;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;transition:flex-grow .4s ease}
+
+/* Offert */
+.offer{display:grid;grid-template-columns:.8fr 1.2fr;gap:28px;align-items:start}
+@media(max-width:880px){.offer{grid-template-columns:1fr}}
+.prog{display:flex;gap:6px;margin-bottom:18px}
+.prog i{flex:1;height:4px;background:var(--line);border-radius:2px}
+.prog i.on{background:var(--orange)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:10px 14px;font-weight:600}
+.chip[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}
+.range{display:flex;align-items:center;gap:14px}
+.range input{flex:1;accent-color:var(--orange)}
+.range output{font-family:var(--mono);min-width:76px;text-align:right}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:18px;text-align:center;color:var(--mut);background:var(--paper);display:grid;gap:8px;justify-items:center}
+.drop.over{border-color:var(--blue);background:var(--blue-l)}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.nav2{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.err{color:var(--err);font-size:13px}
+.err:empty{display:none}
+.note{font-size:13px;color:var(--mut);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.done{display:grid;gap:12px;justify-items:start}
+.tick{width:56px;height:56px;border-radius:6px;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:26px}
+.ref{font-family:var(--mono);font-size:22px;letter-spacing:.06em}
+.side ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:10px}
+.side li{display:flex;gap:10px;align-items:baseline}
+.side li::before{content:"";width:10px;height:2px;background:var(--orange);flex:none;transform:translateY(-4px)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.ph{border:2px dashed var(--blue);border-radius:8px;padding:clamp(20px,4vw,32px);background:var(--blue-l);display:grid;gap:10px}
+.ph h3{font-size:28px}
+footer{background:var(--ink);color:#B8C2CF;padding-block:48px;font-size:14px}
+.fgrid{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+footer strong{color:#fff;display:block;margin-bottom:6px}
+.credit{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;font-family:var(--mono);font-size:12px}
+.rv{transition:opacity .7s ease,transform .7s ease}
+.js .rv.pre{opacity:0;transform:translateY(18px)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .rv.pre{opacity:1;transform:none}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<div class="demo gut">Demosida byggd av Nordvy UF · Firman är påhittad och inga förfrågningar skickas</div>
+<header><div class="wrap hbar gut">
+  <a class="brand" href="#top"><svg viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="3" fill="#E2632B"/><path d="M7 19V7h12M7 13h8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="square"/></svg>Fogen Snickeri</a>
+  <nav aria-label="Huvudmeny"><ul><li><a href="#tjanster">Tjänster</a></li><li><a href="#rot">ROT</a></li><li><a href="#offert">Offert</a></li><li><a href="#om">Om oss</a></li></ul></nav>
+  <span class="sp"></span>
+  <span class="phone">040-000 00 00</span>
+  <a class="btn btn-o btn-sm" href="#offert">Begär offert</a>
+</div></header>
+
+<main id="top">
+  <section class="hero gut"><div class="wrap hgrid">
+    <div>
+      <p class="tag">Snickeri · Malmö och sydvästra Skåne</p>
+      <h1 style="margin-top:14px">Byggt för att <span>hålla</span> i 40 år.</h1>
+      <p class="lead">Kök, altaner, fönster och renoveringar. Du får en fast offert efter ett gratis hembesök, och vi drar av ROT direkt på fakturan.</p>
+      <div class="cta"><a class="btn btn-o" href="#offert">Begär offert</a><a class="btn btn-l" href="#rot">Räkna på ROT</a></div>
+      <div class="facts"><span>F-skatt</span><span>Ansvarsförsäkring</span><span>Fast pris</span><span>Svar inom 2 dagar</span></div>
+    </div>
+    <div class="plan" aria-hidden="true"><canvas id="plan"></canvas><span class="stamp">RITNING 01 · SKALA 1:50</span></div>
+  </div></section>
+
+  <section id="tjanster" class="band gut"><div class="wrap">
+    <div class="head rv"><p class="tag">Tjänster</p><h2>Det vi bygger</h2></div>
+    <div class="svc" id="svc"></div>
+  </div></section>
+
+  <section class="gut"><div class="wrap">
+    <div class="head rv"><p class="tag">Så går det till</p><h2>Från ritning till nyckel</h2></div>
+    <ol class="proc rv">
+      <li><b>Hembesök</b><p>Vi mäter, lyssnar och tittar på underlaget. Gratis och utan förpliktelser.</p></li>
+      <li><b>Fast offert</b><p>Inom en vecka får du ett fast pris med arbete och material var för sig.</p></li>
+      <li><b>Bygget</b><p>Du får en kontaktperson och ett kort meddelande varje dag vi är på plats.</p></li>
+      <li><b>Slutgenomgång</b><p>Vi går igenom jobbet tillsammans. Två års garanti på vårt arbete.</p></li>
+    </ol>
+  </div></section>
+
+  <section id="rot" class="band gut"><div class="wrap">
+    <div class="head rv"><p class="tag">ROT-avdrag 2026</p><h2>Vad kostar det dig?</h2><p class="mut">ROT-avdraget är 30 procent av arbetskostnaden, högst 50 000 kr per person och år. Materialet ger inget avdrag. Vi drar av det direkt på fakturan.</p></div>
+    <div class="calc">
+      <div class="box rv">
+        <div class="field"><label for="lab">Arbetskostnad inkl. moms</label><div class="money"><input id="lab" inputmode="numeric" value="80 000"></div></div>
+        <div class="field"><label for="mat">Material inkl. moms</label><div class="money"><input id="mat" inputmode="numeric" value="45 000"></div></div>
+        <div class="field"><span style="font-size:13px;font-weight:700;color:var(--mut)">Hur många äger bostaden och kan ta avdraget?</span>
+          <div class="seg" role="group" aria-label="Antal ägare"><button id="o1" aria-pressed="true">1 person</button><button id="o2" aria-pressed="false">2 personer</button></div></div>
+        <p class="cap">Avdraget kräver att ni har betalat tillräckligt med skatt och inte redan använt ert ROT-utrymme i år. Kontrollera på skatteverket.se.</p>
+      </div>
+      <div class="box rv" aria-live="polite">
+        <div class="result" id="res"></div>
+        <div class="bar" aria-hidden="true"><i id="bMat" style="background:#9AA8B8"></i><i id="bPay" style="background:var(--blue)"></i><i id="bRot" style="background:var(--orange)"></i></div>
+        <p class="cap"><span style="color:#7d8b9b">■</span> material &nbsp; <span style="color:var(--blue)">■</span> arbete du betalar &nbsp; <span style="color:var(--orange)">■</span> ROT-avdrag</p>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="offert" class="gut"><div class="wrap">
+    <div class="head rv"><p class="tag">Offert</p><h2>Berätta om jobbet</h2></div>
+    <div class="offer">
+      <div class="side rv">
+        <p>Fyra korta steg. Bifoga gärna foton från mobilen, då kan vi ofta ge ett ungefärligt pris redan innan hembesöket.</p>
+        <ul><li>Svar inom två arbetsdagar</li><li>Hembesöket är gratis</li><li>Offerten är fast, inte löpande</li></ul>
+      </div>
+      <div class="box" id="form"></div>
+    </div>
+  </div></section>
+
+  <section id="om" class="band gut"><div class="wrap two">
+    <div class="rv"><p class="tag">Om oss</p><h2 style="font-size:clamp(34px,5vw,54px);margin:12px 0 16px">Två snickare, ett lager och en skåpbil</h2>
+      <p class="mut">Vi är en liten firma och tar därför få jobb samtidigt. Det betyder att den som gör hembesöket också är den som bygger.</p></div>
+    <div class="ph rv"><p class="tag">Bilder på tidigare jobb</p><h3>Här visas era riktiga projekt</h3>
+      <p class="mut">På en riktig sida visar vi före- och efterbilder från era jobb, med tillstånd från kunderna. Nordvy hittar aldrig på referenser eller omdömen, därför är rutan tom i demon.</p></div>
+  </div></section>
+</main>
+
+<footer class="gut"><div class="wrap">
+  <div class="fgrid">
+    <div><strong>Fogen Snickeri</strong>Exempelvägen 9, Malmö<br>Organisationsnummer visas här</div>
+    <div><strong>Kontakt</strong>offert@fogen.example<br>040-000 00 00 (påhittat)</div>
+    <div><strong>Integritet</strong>Uppgifter och foton du skickar används bara för din offert och raderas efter 6 månader om du inte anlitar oss.</div>
+  </div>
+  <div class="credit"><span>© Fogen Snickeri · påhittad firma</span><span>Demo byggd av Nordvy UF</span></div>
+</div></footer>
+
+<script>
+"use strict";
+document.documentElement.classList.add("js");
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nf = new Intl.NumberFormat("sv-SE");
+const kr = n => nf.format(Math.round(n)) + " kr";
+const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Tjänster med små ritningar ---------- */
+const SV = [
+  {n:"Kök", d:"Montering av köksluckor och stommar, bänkskivor och anpassade lösningar.", fr:"från 4 dagar", k:"kok"},
+  {n:"Altan och trall", d:"Nya altaner, trapp och räcken. Vi gräver och gjuter plintar själva.", fr:"från 1 vecka", k:"altan"},
+  {n:"Fönster och dörrar", d:"Byte av fönster och ytterdörrar, med fönsterbänkar och foder.", fr:"från 1 dag", k:"fonster"},
+  {n:"Renovering", d:"Innerväggar, golv, garderober och snickerier som ska passa exakt.", fr:"efter hembesök", k:"reno"}
+];
+function sketch(cv, kind){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2,devicePixelRatio||1), w = r.width||260, h = r.height||146;
+  cv.width = w*dpr; cv.height = h*dpr; const c = cv.getContext("2d"); c.scale(dpr,dpr);
+  c.strokeStyle = "#2D5B8A"; c.lineWidth = 1.5; c.fillStyle = "#2D5B8A"; c.font = "10px JetBrains Mono, monospace";
+  const L = (a,b,x,y)=>{ c.beginPath(); c.moveTo(a,b); c.lineTo(x,y); c.stroke(); };
+  const dim = (x1,y,x2,label)=>{ c.save(); c.lineWidth=1; L(x1,y,x2,y); L(x1,y-4,x1,y+4); L(x2,y-4,x2,y+4); c.textAlign="center"; c.fillText(label,(x1+x2)/2,y-5); c.restore(); };
+  const m = w*.12;
+  if(kind==="kok"){ c.strokeRect(m,h*.3,w-2*m,h*.45); for(let i=1;i<4;i++) L(m+i*(w-2*m)/4,h*.3,m+i*(w-2*m)/4,h*.75); L(m,h*.42,w-m,h*.42); dim(m,h*.18,w-m,"3 600"); }
+  else if(kind==="altan"){ for(let i=0;i<9;i++) L(m,h*.3+i*h*.06,w-m,h*.3+i*h*.06); c.strokeRect(m,h*.3,w-2*m,h*.48); dim(m,h*.18,w-m,"5 400"); }
+  else if(kind==="fonster"){ const x=w*.32,y=h*.24,ww=w*.36,hh=h*.56; c.strokeRect(x,y,ww,hh); L(x+ww/2,y,x+ww/2,y+hh); L(x,y+hh*.4,x+ww,y+hh*.4); dim(x,h*.14,x+ww,"1 200"); }
+  else { c.strokeRect(m,h*.25,w-2*m,h*.55); L(w*.45,h*.25,w*.45,h*.8); c.beginPath(); c.arc(w*.45,h*.8,h*.2,-Math.PI/2,0); c.stroke(); dim(m,h*.14,w-m,"4 200"); }
+}
+function renderSvc(){
+  $("#svc").innerHTML = SV.map(s=>'<article><canvas data-k="'+s.k+'" aria-hidden="true"></canvas><h3>'+esc(s.n)+'</h3><p>'+esc(s.d)+'</p><span class="fr">'+esc(s.fr)+'</span></article>').join("");
+  document.querySelectorAll("#svc canvas").forEach(cv=>sketch(cv, cv.dataset.k));
+}
+
+/* ---------- ROT-kalkylator (regler 2026: 30 %, max 50 000 kr per person och år) ---------- */
+const ROT_RATE = 0.30, ROT_MAX = 50000;
+let owners = 1;
+const num = el => { const v = Number(String(el.value).replace(/[^\d]/g,"")); return isFinite(v) ? v : 0; };
+function calc(){
+  const lab = num($("#lab")), mat = num($("#mat"));
+  const raw = lab * ROT_RATE, cap = ROT_MAX * owners, rot = Math.min(raw, cap);
+  const pay = lab - rot + mat;
+  $("#res").innerHTML =
+    '<div><span>Arbete</span><span>'+kr(lab)+'</span></div>'+
+    '<div><span>Material</span><span>'+kr(mat)+'</span></div>'+
+    '<div><span>ROT-avdrag (30 %)</span><span>−'+kr(rot)+'</span></div>'+
+    (raw>cap ? '<div style="color:var(--err)"><span>Taket nått</span><span>max '+kr(cap)+'</span></div>' : '')+
+    '<div class="big"><span>Du betalar</span><span>'+kr(pay)+'</span></div>';
+  const tot = Math.max(1, lab + mat);
+  $("#bMat").style.flexGrow = mat/tot; $("#bPay").style.flexGrow = (lab-rot)/tot; $("#bRot").style.flexGrow = rot/tot;
+}
+function fmtInput(el){ const v = num(el); el.value = v ? nf.format(v) : ""; }
+["#lab","#mat"].forEach(id=>{ const el = $(id); el.addEventListener("input", calc); el.addEventListener("blur", ()=>{ fmtInput(el); calc(); }); });
+$("#o1").onclick = ()=>{ owners = 1; $("#o1").setAttribute("aria-pressed","true"); $("#o2").setAttribute("aria-pressed","false"); calc(); };
+$("#o2").onclick = ()=>{ owners = 2; $("#o2").setAttribute("aria-pressed","true"); $("#o1").setAttribute("aria-pressed","false"); calc(); };
+
+/* ---------- Offertförfrågan i fyra steg (demo: inget skickas eller laddas upp) ---------- */
+const JOBS = ["Kök","Altan / trall","Fönster / dörr","Renovering","Annat"];
+const WHEN = ["Så snart som möjligt","Inom 3 månader","Senare i år","Vet inte än"];
+const F = { step:0, job:null, size:20, when:null, text:"", files:[], name:"", phone:"", mail:"", done:false };
+function nav(back, ok, label){ return '<div class="nav2">'+(back?'<button class="btn btn-l btn-sm" id="fb">Tillbaka</button>':'<span></span>')+'<button class="btn btn-o" id="fn"'+(ok?'':' disabled')+'>'+label+'</button></div>'; }
+function renderForm(){
+  const el = $("#form");
+  if(F.done){
+    const ref = "OFF-" + new Date().getFullYear() + "-" + String(100 + Math.floor(Math.random()*900));
+    el.innerHTML = '<div class="done"><span class="tick" aria-hidden="true">✓</span><h3 style="font-size:32px">Tack, vi hör av oss</h3><p>Ditt ärende: <span class="ref">'+ref+'</span></p>'+
+      '<p class="mut">'+esc(F.job)+' · cirka '+F.size+' m² · '+esc(F.when)+(F.files.length?' · '+F.files.length+' foto':'')+'</p>'+
+      '<p class="note">Demo: på en riktig sida hade firman fått förfrågan och fotona på mejl, och du en bekräftelse. Här har ingenting skickats eller laddats upp. Fotona har bara visats i din egen webbläsare.</p>'+
+      '<button class="btn btn-l btn-sm" id="fa">Gör en ny förfrågan</button></div>';
+    $("#fa").onclick = ()=>{ F.files.forEach(f=>URL.revokeObjectURL(f.url)); Object.assign(F,{step:0,job:null,size:20,when:null,text:"",files:[],name:"",phone:"",mail:"",done:false}); renderForm(); };
+    return;
+  }
+  const prog = '<div class="prog" aria-label="Steg '+(F.step+1)+' av 4">'+[0,1,2,3].map(i=>'<i class="'+(i<=F.step?"on":"")+'"></i>').join("")+'</div>';
+  if(F.step===0){
+    el.innerHTML = prog+'<h3 style="font-size:28px;margin-bottom:14px">Vad gäller det?</h3><div class="chips">'+JOBS.map(j=>'<button class="chip" aria-pressed="'+(F.job===j)+'">'+j+'</button>').join("")+'</div>'+nav(false, !!F.job, "Nästa");
+    el.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ F.job = b.textContent; renderForm(); });
+  } else if(F.step===1){
+    el.innerHTML = prog+'<h3 style="font-size:28px;margin-bottom:14px">Hur stort och när?</h3>'+
+      '<div class="field"><label for="sz">Ungefärlig yta</label><div class="range"><input type="range" id="sz" min="2" max="150" step="1" value="'+F.size+'"><output id="szo">'+F.size+' m²</output></div></div>'+
+      '<div class="field"><span style="font-size:13px;font-weight:700;color:var(--mut)">När vill du att vi börjar?</span><div class="chips">'+WHEN.map(w=>'<button class="chip" aria-pressed="'+(F.when===w)+'">'+w+'</button>').join("")+'</div></div>'+
+      nav(true, !!F.when, "Nästa");
+    $("#sz").oninput = e=>{ F.size = +e.target.value; $("#szo").textContent = F.size+" m²"; };
+    el.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ F.when = b.textContent; renderForm(); });
+  } else if(F.step===2){
+    el.innerHTML = prog+'<h3 style="font-size:28px;margin-bottom:14px">Beskriv och visa</h3>'+
+      '<div class="field"><label for="tx">Vad vill du ha gjort?</label><textarea id="tx" rows="4" placeholder="T.ex. ny altan på baksidan, ca 4 × 5 meter, med trapp ner till gräsmattan.">'+esc(F.text)+'</textarea></div>'+
+      '<div class="drop" id="drop"><span>Dra hit foton eller</span><button class="btn btn-l btn-sm" id="pick" type="button">Välj foton</button><input type="file" id="file" accept="image/*" multiple hidden><span style="font-size:12px">Max 8 foton. I demon stannar de i din webbläsare.</span></div>'+
+      '<div class="thumbs">'+F.files.map(f=>'<img src="'+f.url+'" alt="'+esc(f.name)+'">').join("")+'</div>'+
+      nav(true, true, "Nästa");
+    $("#tx").oninput = e=>{ F.text = e.target.value; };
+    const add = list => { for(const f of [...list].filter(f=>f.type.startsWith("image/")).slice(0, 8-F.files.length)) F.files.push({name:f.name, url:URL.createObjectURL(f)}); renderForm(); };
+    $("#pick").onclick = ()=>$("#file").click();
+    $("#file").onchange = e=>add(e.target.files);
+    const d = $("#drop");
+    d.addEventListener("dragover", e=>{ e.preventDefault(); d.classList.add("over"); });
+    d.addEventListener("dragleave", ()=>d.classList.remove("over"));
+    d.addEventListener("drop", e=>{ e.preventDefault(); d.classList.remove("over"); add(e.dataTransfer.files); });
+  } else {
+    el.innerHTML = prog+'<h3 style="font-size:28px;margin-bottom:14px">Vart skickar vi svaret?</h3>'+
+      '<div class="field"><label for="nm">Namn</label><input id="nm" autocomplete="name" value="'+esc(F.name)+'"><span class="err" id="enm"></span></div>'+
+      '<div class="field"><label for="ph">Telefon</label><input id="ph" type="tel" autocomplete="tel" value="'+esc(F.phone)+'"><span class="err" id="eph"></span></div>'+
+      '<div class="field"><label for="ml">E-post</label><input id="ml" type="email" autocomplete="email" value="'+esc(F.mail)+'"><span class="err" id="eml"></span></div>'+
+      '<p class="note">Demo: inget skickas. Fyll i vad som helst för att se bekräftelsen.</p>'+nav(true, true, "Skicka förfrågan");
+  }
+  $("#fb") && ($("#fb").onclick = ()=>{ F.step--; renderForm(); });
+  $("#fn") && ($("#fn").onclick = ()=>{
+    if(F.step===3){
+      const n=$("#nm"), p=$("#ph"), m=$("#ml"); let ok = true;
+      F.name=n.value; F.phone=p.value; F.mail=m.value;
+      $("#enm").textContent = n.value.trim() ? "" : (ok=false,"Skriv ditt namn.");
+      $("#eph").textContent = /^[\d\s+()-]{7,}$/.test(p.value.trim()) ? "" : (ok=false,"Skriv ett telefonnummer så vi kan boka hembesöket.");
+      $("#eml").textContent = /^\S+@\S+\.\S+$/.test(m.value.trim()) ? "" : (ok=false,"Skriv en e-postadress, t.ex. namn@exempel.se.");
+      if(!ok){ [n,p,m].find(x=>x.closest(".field").querySelector(".err").textContent).focus(); return; }
+      F.done = true; renderForm(); return;
+    }
+    F.step++; renderForm();
+  });
+}
+
+/* ---------- Hero: en planritning som ritas upp ---------- */
+function plan(){
+  const cv = $("#plan"), r = cv.getBoundingClientRect(), dpr = Math.min(2,devicePixelRatio||1);
+  const w = r.width||400, h = r.height||320; cv.width = w*dpr; cv.height = h*dpr;
+  const c = cv.getContext("2d"); c.scale(dpr,dpr);
+  const X = v=>w*v, Y = v=>h*v;
+  const segs = [ // [x1,y1,x2,y2] i andelar
+    [.12,.2,.88,.2],[.88,.2,.88,.78],[.88,.78,.12,.78],[.12,.78,.12,.2],
+    [.5,.2,.5,.52],[.5,.62,.5,.78],[.12,.5,.36,.5],[.44,.5,.5,.5],[.66,.2,.66,.46],[.66,.46,.88,.46]
+  ];
+  const dims = [[.12,.1,.88,"9 600"],[.12,.88,.5,"4 800"],[.5,.88,.88,"4 800"]];
+  const draw = p => {
+    c.clearRect(0,0,w,h);
+    c.strokeStyle = "rgba(45,91,138,.08)"; c.lineWidth = 1;
+    for(let x=0;x<w;x+=16){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,h); c.stroke(); }
+    for(let y=0;y<h;y+=16){ c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke(); }
+    c.strokeStyle = "#1B2430"; c.lineWidth = 4; c.lineCap = "square";
+    const n = segs.length, done = p*n;
+    segs.forEach((s,i)=>{ const f = Math.max(0, Math.min(1, done - i)); if(!f) return;
+      c.beginPath(); c.moveTo(X(s[0]),Y(s[1])); c.lineTo(X(s[0]+(s[2]-s[0])*f), Y(s[1]+(s[3]-s[1])*f)); c.stroke(); });
+    if(p>.7){
+      c.globalAlpha = Math.min(1,(p-.7)/.3);
+      c.strokeStyle = "#2D5B8A"; c.fillStyle = "#2D5B8A"; c.lineWidth = 1; c.font = "11px JetBrains Mono, monospace"; c.textAlign = "center";
+      for(const [x1,y,x2,l] of dims){ c.beginPath(); c.moveTo(X(x1),Y(y)); c.lineTo(X(x2),Y(y)); c.stroke();
+        [x1,x2].forEach(x=>{ c.beginPath(); c.moveTo(X(x)-4,Y(y)+4); c.lineTo(X(x)+4,Y(y)-4); c.stroke(); }); c.fillText(l,(X(x1)+X(x2))/2,Y(y)-6); }
+      c.fillStyle = "#E2632B"; c.font = "600 11px JetBrains Mono, monospace";
+      c.fillText("KÖK", X(.31), Y(.36)); c.fillText("VARDAGSRUM", X(.31), Y(.66)); c.fillText("SOVRUM", X(.77), Y(.34)); c.fillText("ALTAN", X(.69), Y(.66));
+      c.globalAlpha = 1;
+      c.beginPath(); c.strokeStyle = "#1B2430"; c.lineWidth = 1.5; c.arc(X(.5),Y(.62),Y(.1),-Math.PI/2,0); c.stroke();
+    }
+  };
+  if(rm){ draw(1); return; }
+  const t0 = performance.now(), dur = 2400;
+  const step = now => { const p = Math.min(1,(now-t0)/dur); draw(p); if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+function reveal(){
+  if(rm || !("IntersectionObserver" in window)) return;
+  const els = [...document.querySelectorAll(".rv")].filter(el => el.getBoundingClientRect().top > innerHeight);
+  els.forEach(el => el.classList.add("pre"));
+  const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.remove("pre"); io.unobserve(e.target); } }), {threshold:.12});
+  els.forEach(el => io.observe(el));
+}
+renderSvc(); calc(); renderForm(); plan(); reveal();
+let lastW = innerWidth; addEventListener("resize", ()=>{ if(innerWidth===lastW) return; lastW = innerWidth; renderSvc(); plan(); });
+</script>
+</body>
+</html>

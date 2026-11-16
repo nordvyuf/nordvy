@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Bageri Solkorn</title>
+<meta name="description" content="Demosida av Nordvy UF: ett påhittat surdegsbageri i Malmö med förbeställning, betalning och bordsbokning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: smal redaktionell spalt för text, breda band för sortiment och bokning. Mörkt rågbröd i hero och fot, ljust mjöl däremellan, saffran som enda accent. */
+:root{
+  --rye:#2A1E17; --rye2:#3A2B21; --flour:#F6F5F1; --paper:#FFFFFF; --saffron:#E3A72F; --saffron-d:#B9801A;
+  --ink:#2A1E17; --mut:#6E6157; --line:#E4DFD6; --ok:#2F7A4F; --busy:#B5ADA4;
+  --on-dark:#F6EFE6; --on-dark-mut:#C9BBAE;
+  --disp:"Young Serif",Georgia,"Times New Roman",serif; --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(72px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--flour);color:var(--ink);font:400 16px/1.65 var(--sans);overflow-x:clip}
+h1,h2,h3{font-family:var(--disp);font-weight:400;line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--saffron-d);outline-offset:3px;border-radius:6px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin-inline:auto}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--saffron-d)}
+.mut{color:var(--mut)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Demoband */
+.demo{background:var(--saffron);color:var(--rye);font-size:13px;font-weight:600;text-align:center;padding-block:7px}
+/* Header */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--rye)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(42,30,23,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--on-dark)}
+.hbar{display:flex;align-items:center;gap:18px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font:400 22px var(--disp);color:var(--on-dark);text-decoration:none}
+.brand svg{width:26px;height:26px}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav a{color:var(--on-dark-mut);text-decoration:none;font-size:15px;transition:color .2s}
+nav a:hover{color:var(--on-dark)}
+.sp{flex:1}
+.cartbtn{display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(246,239,230,.25);color:var(--on-dark);border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px;transition:border-color .2s,background .2s}
+.cartbtn:hover{border-color:var(--saffron)}
+.cartbtn b{background:var(--saffron);color:var(--rye);border-radius:999px;min-width:22px;height:22px;display:inline-grid;place-items:center;font-size:12px;padding:0 6px;font-variant-numeric:tabular-nums}
+.cartbtn.bump b{animation:bump .4s ease}
+@keyframes bump{40%{transform:scale(1.35)}}
+@media(max-width:760px){nav{display:none}}
+
+/* Knappar */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:13px 22px;font-weight:600;border:1px solid transparent;text-decoration:none;position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,background .25s}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s ease}
+.btn:hover::after{transform:translateX(120%)}
+.btn:hover{transform:translateY(-2px)}
+.btn-s{background:var(--saffron);color:var(--rye)}
+.btn-s:hover{box-shadow:0 10px 28px rgba(227,167,47,.35)}
+.btn-o{border-color:rgba(246,239,230,.35);color:var(--on-dark);background:transparent}
+.btn-d{background:var(--rye);color:var(--on-dark)}
+.btn-d:hover{box-shadow:0 10px 28px rgba(42,30,23,.25)}
+.btn-g{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Hero */
+.hero{background:var(--rye);color:var(--on-dark);padding-block:clamp(48px,8vw,96px) clamp(56px,9vw,110px);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(rgba(246,239,230,.07) 1px,transparent 1.5px);background-size:22px 22px}
+.hgrid{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+@media(max-width:860px){.hgrid{grid-template-columns:1fr}}
+.hero h1{font-size:clamp(42px,8vw,86px)}
+.hero h1 span{color:var(--saffron);display:block}
+.hero .lead{color:var(--on-dark-mut);font-size:clamp(17px,2vw,19px);max-width:36ch;margin:22px 0 30px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.season{display:inline-flex;align-items:center;gap:8px;margin-top:28px;font-size:14px;color:var(--on-dark-mut)}
+.season i{width:8px;height:8px;border-radius:50%;background:var(--saffron);box-shadow:0 0 0 4px rgba(227,167,47,.2)}
+.bun{width:min(100%,380px);aspect-ratio:1;justify-self:center;max-width:100%}
+@media(max-width:860px){.bun{width:min(70vw,260px);order:-1}}
+.bun canvas{width:100%;height:100%;display:block}
+
+/* Sektioner */
+section{padding-block:clamp(64px,9vw,112px)}
+.head{display:grid;gap:12px;max-width:60ch;margin-bottom:36px}
+.head h2{font-size:clamp(32px,5vw,52px)}
+.band{background:var(--paper);border-block:1px solid var(--line)}
+
+/* Sortiment */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.fchip{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 15px;font-size:14px;font-weight:500;transition:background .2s,border-color .2s}
+.fchip[aria-pressed=true]{background:var(--rye);color:var(--on-dark);border-color:var(--rye)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}
+.prod{display:grid;grid-template-rows:auto 1fr auto;gap:12px;background:var(--flour);border:1px solid var(--line);border-radius:18px;padding:18px;transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s}
+.prod:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(42,30,23,.09)}
+.prod .art{aspect-ratio:4/3;border-radius:12px;display:grid;place-items:center;overflow:hidden}
+.prod .art canvas{width:100%;height:100%;display:block}
+.prod h3{font-size:22px}
+.prod .d{color:var(--mut);font-size:14px;margin-top:4px}
+.prod .tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--saffron-d);margin-bottom:4px}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.price{font:400 22px var(--disp);font-variant-numeric:tabular-nums}
+.add{border:1px solid var(--rye);background:transparent;border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;transition:background .2s,color .2s}
+.add:hover,.add.on{background:var(--rye);color:var(--on-dark)}
+
+/* Bokning */
+.book{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+@media(max-width:860px){.book{grid-template-columns:1fr}}
+/* Gridbarn får krympa: annars trycker dagraden (tio knappar) ut hela sidan på mobil. */
+.hgrid>*,.book>*,.story>*,.find>*,.panel>*{min-width:0}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:clamp(18px,3vw,28px);display:grid;gap:22px}
+.lbl{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.day{flex:none;width:64px;border:1px solid var(--line);background:var(--flour);border-radius:14px;padding:8px 0;display:grid;justify-items:center;gap:0;transition:border-color .2s,background .2s}
+.day small{font-size:12px;color:var(--mut);text-transform:capitalize}
+.day strong{font:400 22px var(--disp)}
+.day[aria-pressed=true]{background:var(--rye);border-color:var(--rye);color:var(--on-dark)}
+.day[aria-pressed=true] small{color:var(--on-dark-mut)}
+.day:disabled{opacity:.4;cursor:not-allowed}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--flour)}
+.step button{width:42px;height:42px;border:0;background:none;font-size:20px}
+.step output{min-width:86px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.slot{border:1px solid var(--line);background:var(--flour);border-radius:10px;padding:9px 0;font-weight:500;font-variant-numeric:tabular-nums;transition:background .2s,border-color .2s}
+.slot[aria-pressed=true]{background:var(--saffron);border-color:var(--saffron);color:var(--rye);font-weight:600}
+.slot:disabled{color:var(--busy);text-decoration:line-through;cursor:not-allowed;background:transparent}
+.sum{border-top:1px dashed var(--line);padding-top:18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.side h3{font-size:28px;margin-bottom:12px}
+.side p+p{margin-top:12px}
+.facts{display:grid;gap:10px;margin-top:22px;padding:0;list-style:none}
+.facts li{display:flex;gap:10px;align-items:baseline}
+.facts li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--saffron);flex:none;transform:translateY(-2px)}
+
+/* Om oss */
+.story{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(28px,5vw,64px);align-items:center}
+@media(max-width:860px){.story{grid-template-columns:1fr}}
+.quote{font:400 clamp(26px,3.6vw,38px)/1.2 var(--disp)}
+.quote em{color:var(--saffron-d);font-style:normal}
+.story p+p{margin-top:14px}
+.clock{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin-top:26px;font-variant-numeric:tabular-nums}
+.clock dt{font:400 20px var(--disp)}
+.clock dd{margin:0;color:var(--mut);align-self:center}
+
+/* Omdömen */
+.rev{border:1px dashed var(--saffron-d);border-radius:20px;padding:clamp(22px,4vw,36px);display:grid;gap:12px;max-width:760px;background:rgba(227,167,47,.06)}
+.rev h3{font-size:26px}
+
+/* Hitta hit */
+.find{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+@media(max-width:760px){.find{grid-template-columns:1fr}}
+.hours{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.hours td{padding:10px 0;border-bottom:1px solid var(--line)}
+.hours td:last-child{text-align:right}
+.hours tr.today td{font-weight:600}
+.open{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;padding:6px 12px;border-radius:999px;background:var(--paper);border:1px solid var(--line)}
+.open i{width:8px;height:8px;border-radius:50%;background:var(--busy)}
+.open.is i{background:var(--ok);box-shadow:0 0 0 4px rgba(47,122,79,.18)}
+.addr{font:400 24px/1.3 var(--disp)}
+
+/* Fot */
+footer{background:var(--rye);color:var(--on-dark-mut);padding-block:48px;font-size:14px}
+.fgrid{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+footer strong{color:var(--on-dark);font-weight:600;display:block;margin-bottom:6px}
+footer a{color:var(--on-dark)}
+.credit{margin-top:36px;padding-top:20px;border-top:1px solid rgba(246,239,230,.12);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+
+/* Varukorg */
+.scrim{position:fixed;inset:0;background:rgba(42,30,23,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:41;background:var(--paper);display:grid;grid-template-rows:auto 1fr auto;
+  transform:translateX(100%);visibility:hidden;transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s linear .4s;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px);box-shadow:-20px 0 60px rgba(42,30,23,.18)}
+.drawer.on{transform:none;visibility:visible;transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.dh h2{font-size:26px}
+.x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:none;font-size:20px}
+.db{overflow-y:auto;padding:18px 20px;display:grid;gap:16px;align-content:start}
+.df{padding:16px 20px;border-top:1px solid var(--line);display:grid;gap:12px}
+.line{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.line .n{font-weight:600}
+.line .p{font-variant-numeric:tabular-nums;text-align:right}
+.qty{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px}
+.qty button{width:32px;height:32px;border:0;background:none;font-size:16px}
+.qty span{min-width:20px;text-align:center;font-variant-numeric:tabular-nums}
+.tot{display:flex;justify-content:space-between;font:400 22px var(--disp);font-variant-numeric:tabular-nums}
+.field{display:grid;gap:6px}
+.field label,.field legend{font-size:13px;font-weight:600;color:var(--mut)}
+.field input:not([type=radio]),.field select{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--flour);width:100%}
+.field input:not([type=radio]):focus,.field select:focus{border-color:var(--saffron-d);outline:none}
+.pay{border:0;padding:0;margin:0;display:grid;gap:8px}
+.pay label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:15px;font-weight:500;color:var(--ink);cursor:pointer}
+.pay input{width:18px;height:18px;margin:0;flex:none;accent-color:var(--saffron-d)}
+.pay label:has(input:checked){border-color:var(--saffron-d);background:rgba(227,167,47,.08)}
+.err{color:#A3341F;font-size:13px}
+.err:empty{display:none}
+.empty{color:var(--mut);text-align:center;padding:40px 0;display:grid;gap:8px}
+.done{display:grid;gap:12px;text-align:center;padding:24px 0;justify-items:center}
+.done .tick{width:64px;height:64px;border-radius:50%;background:var(--saffron);display:grid;place-items:center;color:var(--rye);font-size:30px;animation:pop .5s cubic-bezier(.22,1,.36,1)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}}
+.ordernr{font:400 28px var(--disp);letter-spacing:.06em}
+.note{font-size:13px;color:var(--mut);background:var(--flour);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:left}
+
+/* Bokad */
+.booked{display:grid;gap:10px;justify-items:start}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,calc(100% + 40px));opacity:0;visibility:hidden;z-index:50;background:var(--rye);color:var(--on-dark);border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s,visibility 0s linear .35s;max-width:calc(100% - 32px);text-align:center}
+.toast.on{transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s,visibility 0s}
+.toast.on{transform:translate(-50%,0);opacity:1;visibility:visible}
+
+/* Rörelse */
+.rv{transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+.js .rv.pre{opacity:0;transform:translateY(22px)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .rv.pre{opacity:1;transform:none}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<div class="demo gut">Demosida byggd av Nordvy UF · Bageriet är påhittat och inga beställningar eller bokningar skickas</div>
+
+<header><div class="wrap hbar gut">
+  <a class="brand" href="#top" aria-label="Solkorn, till toppen">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#E3A72F"/><path d="M13 13m-1.5 0a1.5 1.5 0 1 1 3 0a3.5 3.5 0 1 1 -7 0a5.5 5.5 0 1 1 11 0a7.5 7.5 0 1 1 -15 0" fill="none" stroke="#2A1E17" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Solkorn
+  </a>
+  <nav aria-label="Huvudmeny"><ul>
+    <li><a href="#sortiment">Sortiment</a></li><li><a href="#boka">Boka bord</a></li><li><a href="#om">Om oss</a></li><li><a href="#hitta">Hitta hit</a></li>
+  </ul></nav>
+  <span class="sp"></span>
+  <button class="cartbtn" id="cartBtn" aria-haspopup="dialog">Varukorg <b id="cartCount">0</b></button>
+</div></header>
+
+<main id="top">
+  <section class="hero gut"><div class="wrap hgrid">
+    <div>
+      <p class="eyebrow" style="color:var(--saffron)">Surdegsbageri och kafé i Malmö</p>
+      <h1 style="margin-top:16px">Bakat i natt. <span>Slut till lunch.</span></h1>
+      <p class="lead">Vi bakar på långjäst surdeg och svensk spannmål varje natt. Förbeställ online så ligger ditt bröd undanlagt, eller boka ett bord och stanna en stund.</p>
+      <div class="cta"><a class="btn btn-s" href="#sortiment">Förbeställ bröd</a><a class="btn btn-o" href="#boka">Boka bord</a></div>
+      <p class="season"><i></i>Lussekatter från 1 december</p>
+    </div>
+    <div class="bun" aria-hidden="true"><canvas id="bun"></canvas></div>
+  </div></section>
+
+  <section id="sortiment" class="gut"><div class="wrap">
+    <div class="head rv"><p class="eyebrow">Sortiment</p><h2>Förbeställ och hämta i butiken</h2><p class="mut">Beställ senast kl. 20 dagen innan. Tårtor behöver 48 timmar. Du väljer hämtningstid och betalar med Swish, kort eller i butiken.</p></div>
+    <div class="filters" id="filters" role="group" aria-label="Filtrera sortiment"></div>
+    <div class="grid" id="grid"></div>
+  </div></section>
+
+  <section id="boka" class="band gut"><div class="wrap">
+    <div class="head rv"><p class="eyebrow">Boka bord</p><h2>Ett bord, en kanelbulle, ingen kö</h2></div>
+    <div class="book">
+      <div class="panel rv" id="bookPanel">
+        <div><p class="lbl">Dag</p><div class="days" id="days"></div></div>
+        <div><p class="lbl">Antal personer</p>
+          <div class="step"><button id="pMinus" aria-label="Färre personer">−</button><output id="pOut" aria-live="polite">2 personer</output><button id="pPlus" aria-label="Fler personer">+</button></div>
+        </div>
+        <div><p class="lbl">Tid</p><div class="slots" id="slots"></div></div>
+        <div class="sum"><span id="bookSum" class="mut">Välj en tid.</span><button class="btn btn-d" id="bookGo" disabled>Boka bordet</button></div>
+      </div>
+      <div class="side rv">
+        <h3>Så funkar bokningen</h3>
+        <p class="mut">Vi håller bordet i 15 minuter. Är ni fler än sex, ring oss så ordnar vi ett långbord.</p>
+        <p class="mut">Du får en bekräftelse på mejl direkt, och en påminnelse samma morgon.</p>
+        <ul class="facts">
+          <li>Grå tider är redan bokade</li>
+          <li>Avboka fritt fram till två timmar innan</li>
+          <li>Barnstol och ramp finns</li>
+        </ul>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="om" class="gut"><div class="wrap story">
+    <p class="quote rv">Mjöl, vatten, salt och <em>arton timmar</em>. Resten är tålamod.</p>
+    <div class="rv">
+      <p class="eyebrow">Om oss</p>
+      <p style="margin-top:12px">Solkorn startade som ett hemmabageri med en enda surdegsgrund. I dag bakar vi i liten skala, med mjöl från skånska kvarnar och utan tillsatser.</p>
+      <p class="mut">Allt bakas på plats samma natt. Det som blir över går till matutdelning dagen efter.</p>
+      <dl class="clock">
+        <dt>02:30</dt><dd>Degarna tas fram</dd>
+        <dt>04:00</dt><dd>Första bröden in i ugnen</dd>
+        <dt>07:00</dt><dd>Vi öppnar</dd>
+      </dl>
+    </div>
+  </div></section>
+
+  <section class="band gut"><div class="wrap">
+    <div class="rev rv">
+      <p class="eyebrow">Omdömen</p>
+      <h3>Här visas era riktiga omdömen</h3>
+      <p class="mut">På en riktig kundsida hämtar vi omdömen från er Google-profil, eller lägger in citat som ni har fått tillstånd att visa. Nordvy hittar aldrig på omdömen, därför är den här rutan tom i demon.</p>
+    </div>
+  </div></section>
+
+  <section id="hitta" class="gut"><div class="wrap find">
+    <div class="rv">
+      <p class="eyebrow">Hitta hit</p>
+      <p class="addr" style="margin:12px 0 16px">Exempelgatan 12<br>Malmö</p>
+      <span class="open" id="openNow"><i></i><span>Kollar öppettider…</span></span>
+      <p class="mut" style="margin-top:16px;font-size:14px">Adressen är påhittad. På en riktig sida finns en knapp som öppnar vägbeskrivningen i kartappen.</p>
+    </div>
+    <div class="rv">
+      <table class="hours" id="hours"><caption class="sr">Öppettider</caption><tbody></tbody></table>
+    </div>
+  </div></section>
+</main>
+
+<footer class="gut"><div class="wrap">
+  <div class="fgrid">
+    <div><strong>Solkorn</strong>Surdegsbageri och kafé<br>Exempelgatan 12, Malmö</div>
+    <div><strong>Kontakt</strong>hej@solkorn.example<br>040-000 00 00 (påhittat)</div>
+    <div><strong>Integritet</strong>Vi sparar bara det som behövs för din beställning eller bokning och raderar det efter 30 dagar. Du kan be oss radera dina uppgifter när som helst.</div>
+  </div>
+  <div class="credit"><span>© Solkorn. Ett påhittat bageri.</span><span>Demo byggd av Nordvy UF</span></div>
+</div></footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="dh"><h2 id="dTitle">Din beställning</h2><button class="x" id="dClose" aria-label="Stäng">×</button></div>
+  <div class="db" id="dBody"></div>
+  <div class="df" id="dFoot"></div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+document.documentElement.classList.add("js");
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const kr = n => new Intl.NumberFormat("sv-SE").format(n) + " kr";
+const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Sortiment (påhittade produkter och priser för demon) ---------- */
+const CATS = ["Allt","Bröd","Bullar","Kakor","Tårtor"];
+const P = [
+  {id:"rag",  cat:"Bröd",  n:"Rågsurdeg",         d:"Kompakt och syrlig, med hela rågkärnor. Håller en vecka.", p:69, art:"loaf",  hue:28},
+  {id:"dink", cat:"Bröd",  n:"Dinkellimpa",       d:"Ljus och luftig, bakad på skånskt dinkelmjöl.",            p:65, art:"loaf",  hue:38},
+  {id:"bagu", cat:"Bröd",  n:"Surdegsbaguette",   d:"Krispig skorpa, bakad två gånger om dagen.",                p:39, art:"bag",   hue:34},
+  {id:"kard", cat:"Bullar",n:"Kardemummabulle",   d:"Knuten för hand, med nymald kardemumma.",                   p:38, art:"knot",  hue:36},
+  {id:"kan",  cat:"Bullar",n:"Kanelbulle",        d:"Smörig deg, mycket kanel, pärlsocker.",                     p:35, art:"bun",   hue:30},
+  {id:"luss", cat:"Bullar",n:"Lussekatt",         d:"Saffran och russin. Från 1 december.",                      p:32, art:"luss",  hue:42, tag:"Säsong"},
+  {id:"maz",  cat:"Kakor", n:"Mazarin",           d:"Mandelmassa i mördeg, tunn glasyr.",                        p:34, art:"tart",  hue:40},
+  {id:"hav",  cat:"Kakor", n:"Havreflarn, 6 st",  d:"Tunna, spröda och lite salta.",                             p:45, art:"flarn", hue:35},
+  {id:"prin", cat:"Tårtor",n:"Prinsesstårta, 8 bitar", d:"Vaniljkräm, hallon och grön marsipan. Beställ 48 h innan.", p:445, art:"cake", hue:105, tag:"48 h"}
+];
+let cat = "Allt";
+const cart = new Map();
+
+/* Små illustrationer ritade i canvas, en per produkttyp. */
+function drawArt(cv, kind, hue){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio||1);
+  const w = Math.max(10, r.width), h = Math.max(10, r.height);
+  cv.width = w*dpr; cv.height = h*dpr;
+  const c = cv.getContext("2d"); c.scale(dpr,dpr);
+  const bg = c.createLinearGradient(0,0,w,h); bg.addColorStop(0,"hsl("+hue+" 45% 90%)"); bg.addColorStop(1,"hsl("+hue+" 40% 82%)");
+  c.fillStyle = bg; c.fillRect(0,0,w,h);
+  const cx = w/2, cy = h/2+4, s = Math.min(w,h)*.34;
+  const crust = "hsl("+hue+" 52% 38%)", hi = "hsl("+hue+" 60% 55%)", dark = "hsl("+hue+" 45% 22%)";
+  c.lineCap = "round"; c.lineJoin = "round";
+  const shadow = () => { c.fillStyle = "rgba(42,30,23,.12)"; c.beginPath(); c.ellipse(cx, cy+s*.62, s*1.15, s*.16, 0, 0, 7); c.fill(); };
+  shadow();
+  if(kind==="loaf"){
+    c.fillStyle = crust; c.beginPath(); c.ellipse(cx, cy, s*1.15, s*.62, 0, 0, 7); c.fill();
+    c.strokeStyle = hi; c.lineWidth = 3;
+    for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(cx+i*s*.38-s*.15, cy-s*.32); c.quadraticCurveTo(cx+i*s*.38, cy-s*.05, cx+i*s*.38+s*.12, cy+s*.28); c.stroke(); }
+  } else if(kind==="bag"){
+    c.save(); c.translate(cx,cy); c.rotate(-.35);
+    c.fillStyle = crust; c.beginPath(); c.ellipse(0,0,s*1.5,s*.28,0,0,7); c.fill();
+    c.strokeStyle = hi; c.lineWidth = 3;
+    for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(i*s*.5-s*.16,-s*.1); c.lineTo(i*s*.5+s*.16,s*.08); c.stroke(); }
+    c.restore();
+  } else if(kind==="bun"||kind==="knot"){
+    c.fillStyle = crust; c.beginPath(); c.arc(cx,cy,s*.8,0,7); c.fill();
+    c.strokeStyle = dark; c.lineWidth = kind==="bun"?4:5;
+    c.beginPath();
+    for(let t=0;t<Math.PI*(kind==="bun"?6:4.5);t+=.08){ const rr = s*.06 + t*s*(kind==="bun"?.038:.05); const x = cx+Math.cos(t)*rr, y = cy+Math.sin(t)*rr*.9; t===0?c.moveTo(x,y):c.lineTo(x,y); }
+    c.stroke();
+    c.fillStyle = "#fff";
+    for(let i=0;i<14;i++){ const a = i*2.4, rr = s*(.2+((i*37)%50)/100); c.beginPath(); c.arc(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr*.9, 1.8, 0, 7); c.fill(); }
+  } else if(kind==="luss"){
+    c.strokeStyle = "hsl(42 85% 50%)"; c.lineWidth = s*.42;
+    c.beginPath();
+    for(let t=0;t<Math.PI*2.2;t+=.06){ const x = cx - s*.55 - Math.cos(t)*s*.38, y = cy - Math.sin(t)*s*.38; t===0?c.moveTo(x,y):c.lineTo(x,y); }
+    c.stroke();
+    c.beginPath();
+    for(let t=0;t<Math.PI*2.2;t+=.06){ const x = cx + s*.55 + Math.cos(t)*s*.38, y = cy + Math.sin(t)*s*.38; t===0?c.moveTo(x,y):c.lineTo(x,y); }
+    c.stroke();
+    c.fillStyle = dark; [[-.55,0],[.55,0]].forEach(([dx])=>{ c.beginPath(); c.arc(cx+dx*s, cy, s*.09, 0, 7); c.fill(); });
+  } else if(kind==="tart"){
+    c.fillStyle = crust; c.beginPath(); c.moveTo(cx-s,cy-s*.2); c.lineTo(cx+s,cy-s*.2); c.lineTo(cx+s*.75,cy+s*.5); c.lineTo(cx-s*.75,cy+s*.5); c.closePath(); c.fill();
+    c.fillStyle = "#fff"; c.beginPath(); c.ellipse(cx,cy-s*.2,s,s*.22,0,0,7); c.fill();
+  } else if(kind==="flarn"){
+    for(let i=0;i<3;i++){ c.fillStyle = i%2?hi:crust; c.beginPath(); c.ellipse(cx-s*.5+i*s*.5, cy-s*.1+i*s*.08, s*.62, s*.5, 0, 0, 7); c.fill(); }
+  } else if(kind==="cake"){
+    c.fillStyle = "hsl(105 35% 62%)"; c.beginPath(); c.ellipse(cx,cy,s*1.1,s*.5,0,Math.PI,0); c.lineTo(cx+s*1.1,cy+s*.35); c.ellipse(cx,cy+s*.35,s*1.1,s*.3,0,0,Math.PI); c.closePath(); c.fill();
+    c.fillStyle = "hsl(105 40% 72%)"; c.beginPath(); c.ellipse(cx,cy,s*1.1,s*.3,0,0,7); c.fill();
+    c.fillStyle = "hsl(340 70% 70%)"; c.beginPath(); c.arc(cx,cy-s*.28,s*.17,0,7); c.fill();
+    c.fillStyle = "hsl(110 45% 35%)"; c.beginPath(); c.ellipse(cx+s*.16,cy-s*.42,s*.12,s*.05,-.5,0,7); c.fill();
+  }
+}
+
+function renderFilters(){
+  $("#filters").innerHTML = CATS.map(x=>'<button class="fchip" aria-pressed="'+(x===cat)+'">'+x+'</button>').join("");
+  [...$("#filters").children].forEach((b,i)=>b.onclick=()=>{ cat = CATS[i]; renderFilters(); renderGrid(); });
+}
+function renderGrid(){
+  const list = P.filter(p => cat==="Allt" || p.cat===cat);
+  $("#grid").innerHTML = list.map(p=>'<article class="prod"><div class="art"><canvas data-art="'+p.art+'" data-hue="'+p.hue+'" aria-hidden="true"></canvas></div>'+
+    '<div>'+(p.tag?'<span class="tag">'+esc(p.tag)+'</span>':'')+'<h3>'+esc(p.n)+'</h3><p class="d">'+esc(p.d)+'</p></div>'+
+    '<div class="prow"><span class="price">'+kr(p.p)+'</span><button class="add'+(cart.has(p.id)?' on':'')+'" data-id="'+p.id+'">'+(cart.has(p.id)?'I korgen · '+cart.get(p.id):'Lägg till')+'</button></div></article>').join("");
+  $("#grid").querySelectorAll("canvas").forEach(cv=>drawArt(cv, cv.dataset.art, +cv.dataset.hue));
+  $("#grid").querySelectorAll(".add").forEach(b=>b.onclick=()=>add(b.dataset.id));
+}
+let toastT;
+function toast(t){ const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove("on"), 2200); }
+function add(id){
+  cart.set(id, (cart.get(id)||0)+1);
+  const p = P.find(x=>x.id===id);
+  updateCount(); syncButtons(); toast(p.n+" ligger i varukorgen");
+}
+function syncButtons(){
+  document.querySelectorAll("#grid .add").forEach(b=>{
+    const q = cart.get(b.dataset.id);
+    b.classList.toggle("on", !!q);
+    b.textContent = q ? "I korgen · "+q : "Lägg till";
+  });
+}
+function updateCount(){
+  const n = [...cart.values()].reduce((a,b)=>a+b,0);
+  $("#cartCount").textContent = n;
+  const b = $("#cartBtn"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+}
+
+/* ---------- Varukorg och kassa (demo: inget skickas) ---------- */
+let stage = "cart", lastFocus = null;
+function openCart(){ lastFocus = document.activeElement; stage = cart.size ? "cart" : "cart"; renderCart(); $("#drawer").classList.add("on"); $("#scrim").classList.add("on"); $("#drawer").setAttribute("aria-hidden","false"); setTimeout(()=>$("#dClose").focus(), 50); }
+function closeCart(){ $("#drawer").classList.remove("on"); $("#scrim").classList.remove("on"); $("#drawer").setAttribute("aria-hidden","true"); if(stage==="done"){ cart.clear(); updateCount(); syncButtons(); stage = "cart"; } lastFocus && lastFocus.focus(); }
+const total = () => [...cart].reduce((s,[id,q])=>s + P.find(p=>p.id===id).p*q, 0);
+function pickupOptions(){
+  const out = [], d = new Date(); d.setDate(d.getDate()+1);
+  const needCake = cart.has("prin");
+  if(needCake) d.setDate(d.getDate()+1);
+  const fmt = new Intl.DateTimeFormat("sv-SE",{weekday:"long",day:"numeric",month:"long"});
+  for(let i=0;i<5;i++){ const x = new Date(d); x.setDate(d.getDate()+i); if(x.getDay()===1) continue; out.push(fmt.format(x)); }
+  return out;
+}
+function renderCart(){
+  const B = $("#dBody"), F = $("#dFoot");
+  $("#dTitle").textContent = stage==="done" ? "Tack!" : stage==="pay" ? "Hämtning och betalning" : "Din beställning";
+  if(stage==="done"){
+    const nr = "SK-" + String(Math.floor(1000+Math.random()*9000));
+    B.innerHTML = '<div class="done"><span class="tick" aria-hidden="true">✓</span><p>Beställningen är mottagen.</p><p class="ordernr">'+nr+'</p>'+
+      '<p class="mut">Visa numret i kassan när du hämtar.</p><p class="note">Det här är en demo. På en riktig sida hade ett bekräftelsemejl skickats nu, och bageriet hade fått en notis. Inget har skickats och inga pengar har dragits.</p></div>';
+    F.innerHTML = '<button class="btn btn-d" id="dDone">Stäng</button>';
+    $("#dDone").onclick = closeCart; return;
+  }
+  if(!cart.size){
+    B.innerHTML = '<div class="empty"><strong style="color:var(--ink);font-family:var(--disp);font-size:22px;font-weight:400">Varukorgen är tom</strong><span>Lägg till något från sortimentet så hamnar det här.</span></div>';
+    F.innerHTML = '<a class="btn btn-d" href="#sortiment" id="dBrowse">Till sortimentet</a>';
+    $("#dBrowse").onclick = closeCart; return;
+  }
+  if(stage==="cart"){
+    B.innerHTML = [...cart].map(([id,q])=>{ const p = P.find(x=>x.id===id);
+      return '<div class="line"><span class="n">'+esc(p.n)+'</span><span class="p">'+kr(p.p*q)+'</span><span class="qty"><button data-m="'+id+'" aria-label="En färre '+esc(p.n)+'">−</button><span>'+q+'</span><button data-p="'+id+'" aria-label="En till '+esc(p.n)+'">+</button></span><span class="mut" style="font-size:13px;text-align:right">'+kr(p.p)+' st</span></div>'; }).join("") +
+      (cart.has("prin")?'<p class="note">Prinsesstårtan behöver 48 timmar, så första hämtdag flyttas fram.</p>':'');
+    F.innerHTML = '<div class="tot"><span>Totalt</span><span>'+kr(total())+'</span></div><button class="btn btn-d" id="dNext">Välj hämtning och betalning</button>';
+    B.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{ const id=b.dataset.m, q=cart.get(id)-1; q>0?cart.set(id,q):cart.delete(id); updateCount(); syncButtons(); renderCart(); });
+    B.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ const id=b.dataset.p; cart.set(id,cart.get(id)+1); updateCount(); syncButtons(); renderCart(); });
+    $("#dNext").onclick = ()=>{ stage="pay"; renderCart(); };
+    return;
+  }
+  /* stage === "pay" */
+  B.innerHTML =
+    '<div class="field"><label for="pDay">Hämtdag</label><select id="pDay">'+pickupOptions().map(d=>'<option>'+esc(d)+'</option>').join("")+'</select></div>'+
+    '<div class="field"><label for="pTime">Hämttid</label><select id="pTime">'+["07:00–09:00","09:00–11:00","11:00–13:00","13:00–15:00"].map(t=>'<option>'+t+'</option>').join("")+'</select></div>'+
+    '<div class="field"><label for="pName">Namn</label><input id="pName" autocomplete="name"><span class="err" id="eName"></span></div>'+
+    '<div class="field"><label for="pMail">E-post för bekräftelse</label><input id="pMail" type="email" autocomplete="email"><span class="err" id="eMail"></span></div>'+
+    '<fieldset class="pay field"><legend>Betalning</legend>'+
+      '<label><input type="radio" name="pay" value="swish" checked> Swish</label>'+
+      '<label><input type="radio" name="pay" value="kort"> Kort</label>'+
+      '<label><input type="radio" name="pay" value="butik"> Betala när du hämtar</label></fieldset>'+
+    '<p class="note">Demo: på en riktig sida öppnas Swish-appen eller en säker kortbetalning här. Den här sidan frågar aldrig efter kortuppgifter.</p>';
+  F.innerHTML = '<div class="tot"><span>Att betala</span><span>'+kr(total())+'</span></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dBack">Tillbaka</button><button class="btn btn-s" id="dPay" style="flex:1">Bekräfta beställning</button></div>';
+  $("#dBack").onclick = ()=>{ stage="cart"; renderCart(); };
+  $("#dPay").onclick = ()=>{
+    const n = $("#pName"), m = $("#pMail"); let ok = true;
+    $("#eName").textContent = n.value.trim() ? "" : (ok=false, "Skriv ditt namn så vi vet vems beställningen är.");
+    $("#eMail").textContent = /^\S+@\S+\.\S+$/.test(m.value.trim()) ? "" : (ok=false, "Skriv en e-postadress, t.ex. namn@exempel.se.");
+    if(!ok){ (n.value.trim()?m:n).focus(); return; }
+    stage = "done"; renderCart();
+  };
+}
+$("#cartBtn").onclick = openCart;
+$("#dClose").onclick = closeCart;
+$("#scrim").onclick = closeCart;
+addEventListener("keydown", e => { if(e.key==="Escape" && $("#drawer").classList.contains("on")) closeCart(); });
+
+/* ---------- Bordsbokning ---------- */
+const B = { day:null, n:2, time:null };
+const DAYS = (()=>{ const out = [], d = new Date(); for(let i=0;i<10;i++){ const x = new Date(d); x.setDate(d.getDate()+i); out.push(x); } return out; })();
+const closed = d => d.getDay()===1;
+const SLOTS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"];
+/* Några tider är "bokade", samma varje gång för samma dag och sällskap, så demon ser levande ut. */
+const taken = (d, t, n) => { const k = d.getDate()*31 + SLOTS.indexOf(t)*7 + n*3; return (k*2654435761 % 100) < (n>4?55:28); };
+function renderDays(){
+  const wd = new Intl.DateTimeFormat("sv-SE",{weekday:"short"});
+  $("#days").innerHTML = DAYS.map((d,i)=>'<button class="day" data-i="'+i+'" aria-pressed="'+(B.day===i)+'"'+(closed(d)?' disabled title="Stängt måndagar"':'')+'><small>'+(i===0?"idag":wd.format(d).replace(".",""))+'</small><strong>'+d.getDate()+'</strong></button>').join("");
+  $("#days").querySelectorAll(".day").forEach(b=>b.onclick=()=>{ B.day = +b.dataset.i; B.time = null; renderDays(); renderSlots(); });
+}
+function renderSlots(){
+  if(B.day===null){ $("#slots").innerHTML = '<p class="mut" style="grid-column:1/-1">Välj en dag först.</p>'; summary(); return; }
+  const d = DAYS[B.day], nowT = new Date();
+  $("#slots").innerHTML = SLOTS.map(t=>{
+    const [h,m] = t.split(":").map(Number); const past = B.day===0 && (h*60+m) <= nowT.getHours()*60+nowT.getMinutes()+30;
+    const dis = past || taken(d,t,B.n);
+    return '<button class="slot" aria-pressed="'+(B.time===t)+'"'+(dis?' disabled aria-label="'+t+', inte ledig"':'')+'>'+t+'</button>';
+  }).join("");
+  $("#slots").querySelectorAll(".slot:not(:disabled)").forEach(b=>b.onclick=()=>{ B.time = b.textContent; renderSlots(); });
+  summary();
+}
+function summary(){
+  $("#pOut").textContent = B.n + (B.n===1?" person":" personer");
+  $("#pMinus").disabled = B.n<=1; $("#pPlus").disabled = B.n>=6;
+  const ok = B.day!==null && B.time;
+  $("#bookGo").disabled = !ok;
+  $("#bookSum").textContent = ok ? new Intl.DateTimeFormat("sv-SE",{weekday:"long",day:"numeric",month:"long"}).format(DAYS[B.day])+" kl. "+B.time+", "+$("#pOut").textContent : "Välj dag och tid.";
+}
+$("#pMinus").onclick = ()=>{ if(B.n>1){ B.n--; B.time=null; renderSlots(); } };
+$("#pPlus").onclick = ()=>{ if(B.n<6){ B.n++; B.time=null; renderSlots(); } };
+$("#bookGo").onclick = ()=>{
+  const txt = $("#bookSum").textContent;
+  $("#bookPanel").innerHTML = '<div class="booked"><span class="tick" style="width:52px;height:52px;border-radius:50%;background:var(--saffron);display:grid;place-items:center;font-size:24px" aria-hidden="true">✓</span>'+
+    '<h3 style="font-size:28px">Bordet är bokat</h3><p>'+esc(txt.charAt(0).toUpperCase()+txt.slice(1))+'.</p>'+
+    '<p class="note">Demo: på en riktig sida skickas en bekräftelse till din e-post och bageriet ser bokningen i sin kalender. Här skickas ingenting.</p>'+
+    '<button class="btn btn-d" id="again">Gör en ny bokning</button></div>';
+  $("#again").onclick = ()=>location.reload();
+};
+
+/* ---------- Öppettider med "öppet nu" ---------- */
+const H = [["Måndag",null],["Tisdag",[7,17]],["Onsdag",[7,17]],["Torsdag",[7,17]],["Fredag",[7,18]],["Lördag",[8,16]],["Söndag",[8,14]]];
+function renderHours(){
+  const now = new Date(), wd = (now.getDay()+6)%7;
+  $("#hours tbody").innerHTML = H.map(([d,t],i)=>'<tr'+(i===wd?' class="today"':'')+'><td>'+d+(i===wd?" (idag)":"")+'</td><td>'+(t?String(t[0]).padStart(2,"0")+":00–"+t[1]+":00":"Stängt")+'</td></tr>').join("");
+  const t = H[wd][1], h = now.getHours()+now.getMinutes()/60, el = $("#openNow");
+  const open = t && h>=t[0] && h<t[1];
+  el.classList.toggle("is", !!open);
+  el.lastElementChild.textContent = open ? "Öppet nu, stänger "+t[1]+":00" : (t && h<t[0] ? "Öppnar "+String(t[0]).padStart(2,"0")+":00 idag" : "Stängt just nu");
+}
+
+/* ---------- Hero: en kanelbulle som rullas upp ---------- */
+function bun(){
+  const cv = $("#bun"), r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio||1);
+  const w = r.width||300, h = r.height||300; cv.width = w*dpr; cv.height = h*dpr;
+  const c = cv.getContext("2d"); c.scale(dpr,dpr);
+  const cx = w/2, cy = h/2, R = Math.min(w,h)*.44, turns = 4.2, T = Math.PI*2*turns;
+  const draw = p => {
+    c.clearRect(0,0,w,h);
+    const g = c.createRadialGradient(cx-R*.3,cy-R*.3,R*.1,cx,cy,R);
+    g.addColorStop(0,"#D9944A"); g.addColorStop(1,"#9C5A25");
+    c.fillStyle = g; c.beginPath(); c.arc(cx,cy,R*Math.min(1,.6+p*.4),0,7); c.fill();
+    c.strokeStyle = "#5A3218"; c.lineWidth = R*.07; c.lineCap = "round";
+    c.beginPath();
+    const end = T*p;
+    for(let t=0;t<=end;t+=.05){ const rr = R*.05 + (t/T)*R*.8; const x = cx+Math.cos(t+1.2)*rr, y = cy+Math.sin(t+1.2)*rr; t===0?c.moveTo(x,y):c.lineTo(x,y); }
+    c.stroke();
+    if(p>.85){ c.fillStyle = "rgba(255,255,255,"+((p-.85)/.15)+")";
+      for(let i=0;i<26;i++){ const a = i*2.39996, rr = R*(.15+((i*53)%80)/100); c.beginPath(); c.arc(cx+Math.cos(a)*rr*.9, cy+Math.sin(a)*rr*.9, R*.022, 0, 7); c.fill(); } }
+  };
+  if(rm){ draw(1); return; }
+  const t0 = performance.now(), dur = 2200;
+  const step = now => { const p = Math.min(1,(now-t0)/dur); draw(1-Math.pow(1-p,3)); if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+/* ---------- Avslöjande vid scroll ---------- */
+function reveal(){
+  if(rm || !("IntersectionObserver" in window)) return;
+  const els = [...document.querySelectorAll(".rv")].filter(el => el.getBoundingClientRect().top > innerHeight);
+  els.forEach(el => el.classList.add("pre"));
+  const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.remove("pre"); io.unobserve(e.target); } }), {threshold:.12});
+  els.forEach(el => io.observe(el));
+}
+
+renderFilters(); renderGrid(); renderDays(); renderSlots(); renderHours(); bun(); reveal();
+let rz, lastW = innerWidth;
+addEventListener("resize", ()=>{
+  if(innerWidth === lastW) return;   /* mobilens adressfält ändrar bara höjden: rita inte om då */
+  lastW = innerWidth; clearTimeout(rz);
+  rz = setTimeout(()=>{ document.querySelectorAll("#grid canvas").forEach(cv=>drawArt(cv, cv.dataset.art, +cv.dataset.hue)); bun(); }, 200);
+});
+setInterval(renderHours, 60000);
+</script>
+</body>
+</html>
