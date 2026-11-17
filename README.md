@@ -11,6 +11,8 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 | `public/assets/` | Stil, skript, typsnitt och bilder för de två sidorna ovan. |
 | `public/assets/shared/brief.js` | Checklistan för intervjun, paketpriserna och logiken för utkastet. Används av både webbläsaren och servern. |
 | `public/demo/…` | Fyra demosidor med påhittade företag. De har `noindex`. |
+| `public/kund/…` | Kundernas sidor, en mapp per kund. Byggs enligt `.claude/skills/kundsida/`. |
+| `CLAUDE.md` | Fakta och regler för Claude när den arbetar i repot. |
 | `src/worker.js` | Servern: säkerhetsrubriker, kontaktformulär och API:et för självintervjun. |
 | `src/interview.js` | Reglerna för intervjun och anropen till Workers AI. |
 | `test/` | Tester. Kör med `npm test`. |
