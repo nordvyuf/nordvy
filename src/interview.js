@@ -487,15 +487,15 @@ export function applyTurn(state, ai) {
 
 async function runModel(env, payload) {
   const models = [env.AI_MODEL || DEFAULT_MODEL, BACKUP_MODEL].filter((m, i, list) => list.indexOf(m) === i);
-  let lastError;
+  const failures = [];
   for (const model of models) {
     try {
       return await env.AI.run(model, payload);
     } catch (error) {
-      lastError = error;
+      failures.push(`${model}: ${String(error?.message || error).slice(0, 200)}`);
     }
   }
-  throw lastError;
+  throw new Error(failures.join(' | '));
 }
 
 // Dagens gratiskvot för Workers AI är slut. Då är det ingen idé att försöka igen förrän nästa dygn.
