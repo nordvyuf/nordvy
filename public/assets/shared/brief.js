@@ -414,12 +414,12 @@ export function draftModel(brief, copy) {
 
 /* ----------------------------------------------------- reservläge (utan AI) */
 
-const ACKS = ['Tack.', 'Bra, noterat.', 'Toppen.', 'Då vet jag det.'];
+// Ingen kvittens före frågan: fyllnad som "Toppen." gör intervjun stel.
 
-// Nästa fråga när AI:n inte svarar: en kort kvittens och frågan för första fältet som saknas.
+// Nästa fråga när AI:n inte svarar: checklistans fråga för första fältet som saknas.
 export function fallbackQuestion(key, seed = 0) {
   const q = FIELD[key]?.question || FIELDS[0].question;
-  return key === 'foretagsnamn' ? q : `${ACKS[Math.abs(seed) % ACKS.length]} ${q}`;
+  return q;
 }
 
 /* ------------------------------------------------------------ underlag */
