@@ -46,6 +46,7 @@ const state = {
   asked: [],
   askCount: 1,
   carry: '',
+  carryField: '',
   copy: null,
   coreShown: false,
   partial: false,
@@ -91,6 +92,7 @@ function restore() {
       asked: Array.isArray(saved.asked) ? saved.asked.filter((k) => NEED.includes(k)).slice(0, 2) : [],
       askCount: Number(saved.askCount) || 1,
       carry: String(saved.carry || '').slice(0, LIMITS.value),
+      carryField: NEED.includes(saved.carryField) ? saved.carryField : '',
       copy: saved.copy && typeof saved.copy === 'object' ? saved.copy : null,
       coreShown: Boolean(saved.coreShown),
       partial: Boolean(saved.partial),
@@ -330,6 +332,7 @@ async function submitAnswer() {
     asked: state.asked,
     askCount: state.askCount,
     carry: state.carry,
+    carryField: state.carryField,
     message,
     edit: editing,
   });
@@ -350,6 +353,7 @@ async function submitAnswer() {
   // Följdfråga på samma fält: spara det kunden redan sagt så att det inte tappas.
   const sameField = turn.asked?.[0] && turn.asked[0] === previousAsked && !hasValue(state.brief, previousAsked);
   state.carry = sameField ? [state.carry, message].filter(Boolean).join(' / ').slice(0, LIMITS.value) : '';
+  state.carryField = sameField ? previousAsked : '';
   state.askCount = sameField ? state.askCount + 1 : 1;
   state.asked = turn.asked || [];
   save();

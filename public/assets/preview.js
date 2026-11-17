@@ -1,7 +1,8 @@
 // Ritar utkastet: en liten hemsida i ett webbläsarfönster.
 // All text sätts med textContent, så inget kunden eller AI:n skriver kan bli HTML.
 
-import { INDUSTRIES, slugify } from './shared/brief.js';
+import { INDUSTRIES, slugify, capitalize } from './shared/brief.js';
+import { sceneSvg } from './scenes.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -18,6 +19,10 @@ const ICONS = {
   pin: [['path', { d: 'M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0' }], ['circle', { cx: 12, cy: 10, r: 3 }]],
   phone: [['path', { d: 'M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384' }]],
   check: [['path', { d: 'M20 6 9 17l-5-5' }]],
+  mail: [['rect', { width: 20, height: 16, x: 2, y: 4, rx: 2 }], ['path', { d: 'm22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7' }]],
+  clock: [['circle', { cx: 12, cy: 12, r: 10 }], ['path', { d: 'M12 6v6l4 2' }]],
+  star: [['path', { d: 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z' }]],
+  insta: [['rect', { width: 20, height: 20, x: 2, y: 2, rx: 5 }], ['path', { d: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37' }], ['path', { d: 'M17.5 6.5h.01' }]],
   bag: [['path', { d: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z' }], ['path', { d: 'M3 6h18' }], ['path', { d: 'M16 10a4 4 0 0 1-8 0' }]],
 };
 
@@ -100,6 +105,41 @@ function chips(m) {
   return [el('span', 'pv-chip a', icon(a[0]), a[1]), el('span', 'pv-chip b', icon(b[0]), b[1])];
 }
 
+const SECTION_TITLE = {
+  frisor: 'Behandlingar',
+  cafe: 'Det här bjuder vi på',
+  hantverk: 'Det här gör vi',
+  butik: 'Ur sortimentet',
+  halsa: 'Så hjälper vi dig',
+  tjanst: 'Det här hjälper vi dig med',
+};
+
+function contactBlock(m) {
+  const c = m.contact || {};
+  const card = el('div', 'pv-info');
+  card.append(el('h4', '', 'Kontakt'));
+  const rows = el('div', 'pv-rows');
+  if (c.phone) rows.append(el('div', 'pv-row2', icon('phone'), c.phone));
+  if (c.email) rows.append(el('div', 'pv-row2', icon('mail'), c.email));
+  if (c.address) rows.append(el('div', 'pv-row2', icon('pin'), c.address));
+  if (m.instagram) rows.append(el('div', 'pv-row2', icon('insta'), m.instagram));
+  card.append(rows);
+  return card;
+}
+
+function hoursBlock(m) {
+  const card = el('div', 'pv-info');
+  card.append(el('h4', '', 'Öppettider'));
+  const rows = el('div', 'pv-rows');
+  for (const h of m.hours) {
+    const parts = h.match(/^(\D+?)\s+(\d.*)$/);
+    if (parts) rows.append(el('div', 'pv-hour', el('span', '', capitalize(parts[1].trim())), el('b', '', parts[2].trim())));
+    else rows.append(el('div', 'pv-hour', el('span', '', capitalize(h))));
+  }
+  card.append(rows);
+  return card;
+}
+
 /**
  * Ritar utkastet i `frame` (elementet med klassen pv-frame).
  * Fält som saknas i `model` visas som grå väntrader, så samma funktion
@@ -137,7 +177,18 @@ export function renderPreview(frame, model, { animate = true } = {}) {
   else cta.append(sk('8em'));
   copy.append(cta);
 
-  const art = el('div', 'pv-art', el('div', 'pv-art-icon', icon(industry || 'tjanst')));
+  const facts = [];
+  if (m.since) facts.push(['star', m.since]);
+  if (m.city) facts.push(['pin', m.city]);
+  if (m.hours?.[0]) facts.push(['clock', m.hours[0]]);
+  if (facts.length) {
+    const row = el('div', 'pv-facts');
+    for (const [ic, text] of facts.slice(0, 3)) row.append(el('span', '', icon(ic), text));
+    copy.append(mark(row, 'since'));
+  }
+
+  const art = el('div', 'pv-art');
+  art.insertAdjacentHTML('beforeend', sceneSvg(industry || 'tjanst'));
   if (m.features) art.append(...chips(m));
   if (fresh('industry') || fresh('vibe')) art.classList.add('pv-new');
 
@@ -154,12 +205,19 @@ export function renderPreview(frame, model, { animate = true } = {}) {
     }
     cards.append(card);
   });
-  root.append(el('div', 'pv-sec', el('h3', 'pv-h2', industry === 'butik' ? 'Ur sortimentet' : 'Det här hjälper vi dig med'), cards));
+  root.append(el('div', 'pv-sec', el('h3', 'pv-h2', SECTION_TITLE[industry || 'tjanst']), cards));
 
   if (m.features) root.append(mark(el('div', 'pv-sec', featureBand(m)), 'features'));
   if (m.about) {
     const quote = el('div', 'pv-quote', m.about, el('small', '', `Därför ${m.company || 'vi'}`));
     root.append(mark(el('div', 'pv-sec', quote), 'about'));
+  }
+  if (m.contact || m.hours) {
+    const grid = el('div', 'pv-infos');
+    if (m.contact) grid.append(contactBlock(m));
+    if (m.hours) grid.append(hoursBlock(m));
+    const sec = el('div', 'pv-sec', el('h3', 'pv-h2', 'Hitta hit och hör av dig'), grid);
+    root.append(mark(sec, m.contact ? 'contact' : 'hours'));
   }
   root.append(el('div', 'pv-foot', el('span', '', [m.company || 'Ditt företag', m.city].filter(Boolean).join(' · ')), el('span', '', 'Utkast från Nordvys självintervju')));
 
