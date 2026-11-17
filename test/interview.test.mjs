@@ -21,8 +21,9 @@ import {
   mailParts,
   slugify,
   parseInstagram,
+  fallbackQuestion,
 } from '../public/assets/shared/brief.js';
-import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, isVagueGoal, tidyReply, questionFits, fieldForQuestion } from '../src/interview.js';
+import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, isVagueGoal, tidyReply, questionFits, fieldForQuestion, asksUs } from '../src/interview.js';
 import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -130,7 +131,7 @@ test('vagt svar: en följdfråga tillåts, sedan sparas det kunden sa', () => {
   assert.equal(first.brief.tjanster_produkter, undefined);
   assert.deepEqual(first.asked, ['tjanster_produkter']);
   const second = applyTurn({ brief: {}, asked: ['tjanster_produkter'], askCount: 2, carry: 'Allt möjligt', carryField: 'tjanster_produkter', message: 'Lite av varje' }, ai);
-  assert.equal(second.brief.tjanster_produkter, 'Allt möjligt / Lite av varje');
+  assert.equal(second.brief.tjanster_produkter, 'Lite av varje');
 });
 
 test('vaga svar på tjänster och bransch ger alltid en följdfråga, även om AI:n hoppar över den', () => {
@@ -141,7 +142,7 @@ test('vaga svar på tjänster och bransch ger alltid en följdfråga, även om A
   assert.match(r.reply, /tre exempel/);
   // Andra gången sparas det kunden sa, och vi går vidare.
   const again = applyTurn({ brief: r.brief, asked: ['tjanster_produkter'], askCount: 2, carry: 'Allt möjligt', carryField: 'tjanster_produkter', message: 'Mest kök och badrum' }, { saves: [], reply: 'x', asked: 'mal_med_sidan' });
-  assert.equal(again.brief.tjanster_produkter, 'Allt möjligt / Mest kök och badrum');
+  assert.equal(again.brief.tjanster_produkter, 'Mest kök och badrum');
   for (const t of ['Allt möjligt', 'Byggföretag, allt möjligt', 'Lite av varje', 'Hemsidor och sånt']) assert.equal(isVague(t), true, t);
   for (const t of ['Klippning, färg', 'Kök och badrum', 'Frisörsalong']) assert.equal(isVague(t), false, t);
 });
@@ -396,4 +397,62 @@ test('ingen följdfråga om målet när kunden redan sagt vad besökaren ska gö
   const brief = { foretagsnamn: 'A', bransch: 'Kockbok', funktioner: 'beställning' };
   const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 1, message: 'att tjäna pengar' }, null);
   assert.equal(r.brief.mal_med_sidan, 'att tjäna pengar');
+});
+
+// Från testkörningarna 17 november: fel som syntes när AI:n inte svarade.
+test('"Inga priser på sidan" sparas som vad kunden vill undvika, inte som ett nej', () => {
+  const brief = { ...full(), undvik: '', referens_ok: '' };
+  const r = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'Inga priser på sidan' }, null);
+  assert.equal(r.brief.undvik, 'Inga priser på sidan');
+  const r2 = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'inget särskilt' }, null);
+  assert.equal(r2.brief.undvik, 'saknas');
+  const r3 = applyTurn({ brief: { ...brief, undvik: 'x' }, asked: ['referens_ok'], askCount: 1, message: 'Hellre inte' }, null);
+  assert.equal(r3.brief.referens_ok, 'Nej');
+  assert.equal(isNegative('Det vet jag inte'), true);
+});
+
+test('en fråga om pris sparas inte som svar, och samma fråga ställs igen', () => {
+  const brief = { foretagsnamn: 'A', bransch: 'Snickeri', ort_omrade: 'Kristianstad', tjanster_produkter: 'Kök' };
+  const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 1, message: 'Vad kostar en sån här sida egentligen?' }, null);
+  assert.equal(r.brief.mal_med_sidan, undefined);
+  assert.deepEqual(r.asked, ['mal_med_sidan']);
+  assert.equal(r.skip, true);
+  assert.match(r.reply, /^Det går teamet igenom med dig efter intervjun\. /);
+  assert.equal(asksUs('Hur lång tid tar det?'), true);
+  assert.equal(asksUs('Vi vill att man ska kunna boka tid'), false);
+});
+
+test('önskan om hjälp med logga och frågor om ledig adress blir uppföljningspunkter', () => {
+  const brief = { ...full(), logga: '', doman_onskemal: '' };
+  const r = applyTurn({ brief, asked: ['logga'], askCount: 1, message: 'Kan du göra en logga åt mig?' }, null);
+  assert.equal(r.brief.logga, 'saknas');
+  assert.ok(r.issues.some((i) => /hjälp att ta fram en logga/.test(i.text)));
+  const r2 = applyTurn({ brief: { ...brief, logga: 'saknas' }, asked: ['doman_onskemal'], askCount: 1, message: 'Är starkmedsara.se ledig?' }, null);
+  assert.match(r2.brief.doman_onskemal, /starkmedsara\.se/);
+  assert.ok(r2.issues.some((i) => /ledig/.test(i.text)));
+});
+
+test('ett vagt första svar följer inte med när kunden ger ett bättre', () => {
+  const brief = { foretagsnamn: 'Lumen UF' };
+  const r = applyTurn({ brief, asked: ['bransch'], askCount: 2, carry: 'allt möjligt typ', carryField: 'bransch', message: 'Vi gör doftljus av sojavax för hand' }, null);
+  assert.equal(r.brief.bransch, 'Vi gör doftljus av sojavax för hand');
+});
+
+test('reservfrågorna anpassas efter det kunden sagt', () => {
+  assert.match(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Vi gör doftljus' }), /produkter säljer ni/);
+  assert.match(fallbackQuestion('oppettider', 0, { ort_omrade: 'Helsingborg men vi säljer online också' }), /bara online/);
+  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Frisörsalong' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
+});
+
+test('frågar kunden om pris två gånger i rad fastnar inte intervjun', () => {
+  const brief = { foretagsnamn: 'A', bransch: 'Snickeri', ort_omrade: 'Kristianstad', tjanster_produkter: 'Kök' };
+  const ai = { saves: [{ field: 'mal_med_sidan', value: 'Vad kostar en sån här sida?' }], reply: 'Vilken känsla ska sidan ha?', asked: 'stil' };
+  const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 2, message: 'Vad kostar en sån här sida?' }, ai);
+  assert.equal(r.brief.mal_med_sidan, 'saknas');
+  assert.notDeepEqual(r.asked, ['mal_med_sidan']);
+  assert.ok(r.issues.some((i) => /i stället för att svara/.test(i.text)));
+});
+
+test('en tjänst som också finns online får inte produktfrågan', () => {
+  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Personlig tränare', ort_omrade: 'Malmö, mostly online coaching too' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
 });

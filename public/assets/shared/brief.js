@@ -99,7 +99,7 @@ export const missing = (brief) => NEED.filter((k) => !hasValue(brief, k));
 export const coreDone = (brief) => CORE.every((k) => hasValue(brief, k));
 
 // Svar som betyder "nej / har inget / vet inte".
-const NEGATIVE = /^(nej|nä|nix|nope|inga|inget|ingen|ingenting|inte än|vi har inga|vi har inget|har inga|har inget|har ingen|vet inte|vet ej|saknas|finns inte|finns inga|-+)(?![a-zåäö])/i;
+const NEGATIVE = /^(nej|nä|nix|nope|inga|inget|ingen|ingenting|inte än|vi har inga|vi har inget|har inga|har inget|har ingen|vet inte|vet ej|det vet jag inte|ingen aning|ingen koll|hellre inte|helst inte|inte direkt|saknas|finns inte|finns inga|-+)(?![a-zåäö])/i;
 export const isNegative = (text) => NEGATIVE.test(String(text || '').trim());
 
 // Tar emot vad som helst från webbläsaren och ger tillbaka en säker, begränsad brief.
@@ -419,9 +419,17 @@ export function draftModel(brief, copy) {
 // Ingen kvittens före frågan: fyllnad som "Toppen." gör intervjun stel.
 
 // Nästa fråga när AI:n inte svarar: checklistans fråga för första fältet som saknas.
-export function fallbackQuestion(key, seed = 0) {
-  const q = FIELD[key]?.question || FIELDS[0].question;
-  return q;
+// Säljer företaget saker (snarare än tjänster eller tider)? Då passar frågorna om produkter bättre.
+const SELLS = /(säljer|sälja|produkt|webshop|bok\b|böcker|kokbok|kockbok|ljus|smycke|kläder|tröj|väsk|tavl|kort\b|uf\b)/i;
+const ONLINE = /(online|på nätet|internet|webshop|bara digitalt)/i;
+
+// Checklistans fråga, anpassad lite efter det kunden redan sagt. Används när AI:n inte svarar.
+export function fallbackQuestion(key, seed = 0, brief = {}) {
+  const said = ['foretagsnamn', 'bransch', 'ort_omrade', 'tjanster_produkter', 'mal_med_sidan'].map((k) => brief?.[k] || '').join(' ');
+  if (key === 'tjanster_produkter' && SELLS.test(said)) return 'Vilka produkter säljer ni? Skriv dem som en lista, gärna med pris om ni vill att det syns.';
+  if (key === 'oppettider' && ONLINE.test(said)) return 'Säljer ni bara online, eller finns det också tider då man kan komma förbi?';
+  if (key === 'bilder' && SELLS.test(said)) return 'Har ni bilder på produkterna?';
+  return FIELD[key]?.question || FIELDS[0].question;
 }
 
 /* ------------------------------------------------------------ underlag */

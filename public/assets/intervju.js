@@ -304,7 +304,7 @@ function offlineTurn(message) {
   return {
     brief,
     issues: state.issues,
-    reply: left.length ? fallbackQuestion(left[0], NEED.length - left.length) : null,
+    reply: left.length ? fallbackQuestion(left[0], NEED.length - left.length, state.brief) : null,
     asked: left.length ? [left[0]] : [],
     done: !left.length,
   };
@@ -351,9 +351,13 @@ async function submitAnswer() {
     return showSummary();
   }
   // Följdfråga på samma fält: spara det kunden redan sagt så att det inte tappas.
+  // En fråga till oss (turn.skip) var inget svar: den följer inte med, men räknas som ett försök
+  // så att intervjun går vidare om kunden frågar igen.
   const sameField = turn.asked?.[0] && turn.asked[0] === previousAsked && !hasValue(state.brief, previousAsked);
-  state.carry = sameField ? [state.carry, message].filter(Boolean).join(' / ').slice(0, LIMITS.value) : '';
-  state.carryField = sameField ? previousAsked : '';
+  if (!turn.skip) {
+    state.carry = sameField ? [state.carry, message].filter(Boolean).join(' / ').slice(0, LIMITS.value) : '';
+    state.carryField = sameField ? previousAsked : '';
+  }
   state.askCount = sameField ? state.askCount + 1 : 1;
   state.asked = turn.asked || [];
   save();
@@ -617,7 +621,7 @@ async function resumeQuestion() {
   if (!state.asked.length || hasValue(state.brief, state.asked[0])) {
     state.asked = [left[0]];
     state.askCount = 1;
-    await guideSays(fallbackQuestion(left[0], NEED.length - left.length));
+    await guideSays(fallbackQuestion(left[0], NEED.length - left.length, state.brief));
   }
   setupComposer();
 }
