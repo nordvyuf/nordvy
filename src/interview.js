@@ -45,12 +45,24 @@ SÅ SKRIVER DU
 - Upprepa inte kundens ord som inledning ("Tis-fre 10-18, vilka sociala länkar har ni?"). Ställ frågan direkt, eller reagera på något konkret.
 - Du vet inget om domäner, priser, tider eller vad Nordvy kan leverera. Säg aldrig att en webbadress är ledig eller upptagen, och nämn inga priser. Teamet kollar det efteråt.
 - Är något kunden skrivit inte ett svar på frågan, säg det vänligt och ställ frågan igen med andra ord. Aldrig "Det låter inte som…".
+- Återberätta aldrig kundens svar ("Malmö är er bas.", "Ni har alltså arbetat i 2 månader.", "Att tjäna pengar är ett bra mål."). Kunden vet vad de nyss skrev. Antingen en ny tanke om hemsidan, eller ingen reaktion alls.
+
+FRÅGORNA SKA BYGGA PÅ DET KUNDEN BERÄTTAT
+- Fråga aldrig om något kunden redan har svarat på, inte ens med andra ord. Täcker ett svar flera fält (t.ex. "vi gör en kockbok" svarar både på vad de gör och vad de säljer), spara alla och gå vidare.
+- Gör frågan specifik för just det här företaget. Använd det du vet: vad de säljer, till vem och var. Allmänna frågor är sista utvägen.
+- Passar ett fält dåligt för verksamheten, formulera frågan så att kunden lätt kan säga nej. Exempel för någon som säljer en bok: "Säljer ni bara online, eller har ni en butik med öppettider?"
+- Utgå inte från att kunden har något. Skriv "Har ni omdömen från kunder som ni får visa?", inte "Vilka omdömen har ni fått?".
+- Vill kunden sälja något, föreslå beställning eller webshop när du frågar om funktioner. Erbjuder de tider, föreslå bokning.
 
 BRA OCH DÅLIGT
 Dåligt: "Det låter som en trevlig salong! Var är ni verksamma?"
 Bra: "Tre frisörer på en och samma plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?"
 Dåligt: "Jättebra! Vilka tjänster erbjuder ni?"
 Bra: "Vilka tjänster ska stå först på sidan?"
+Dåligt (kunden har sagt "vi gör en kockbok"): "Vilka produkter har ni?"
+Bra: "Vad gör kockboken annorlunda än andra kokböcker?"
+Dåligt (kunden säljer en bok online): "Har ni funktioner som bokning eller webshop på sidan?"
+Bra: "Ska man kunna beställa boken direkt på sidan, eller räcker det med en länk dit den säljs?"
 
 REGLER
 1. Ställ EN fråga i taget, kort. Du får slå ihop två närliggande fält i samma fråga.
@@ -135,7 +147,7 @@ export function buildTurnMessages({ brief, history, asked, message, edit }) {
   const left = missing(brief);
   const saved = KEYS.filter((k) => hasValue(brief, k) && FIELD[k].level > 0).map((k) => `- ${k}: «${short(brief[k])}»`);
   const todo = left.map((k) => `- ${k}: ${FIELD[k].about}`);
-  const talk = history.slice(-6).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 260)}`);
+  const talk = history.slice(-12).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 260)}`);
   const task = edit
     ? `Kunden vill rätta något i det som redan är sparat. Lägg de ändrade fälten i "saves" med de nya värdena. Sätt "reply" till en kort bekräftelse utan fråga och "asked" till en tom sträng.`
     : `Du frågade senast om: ${asked.length ? asked.join(', ') : '(inget)'}.`;
@@ -259,8 +271,33 @@ export function tidyReply(raw, message = '') {
   }
   // En fråga som själv gör ett påstående ("är redan taget. Vill ni…") behålls bara om påståendet är en egen mening.
   if (sentences.length === 1 && UNKNOWN_CLAIM.test(sentences[0])) return '';
+  // Reaktioner som bara återberättar kundens svar tas bort ("Malmö är er bas.").
+  if (message) {
+    const kept = sentences.filter((s) => s.includes('?') || !restates(s, message));
+    if (kept.some((s) => s.includes('?'))) {
+      sentences.length = 0;
+      sentences.push(...kept);
+    }
+  }
   const out = stripEcho(sentences.join(' ').trim(), message);
   return /^[a-zåäö]/.test(out) ? out.charAt(0).toLocaleUpperCase('sv-SE') + out.slice(1) : out;
+}
+
+// Småord som inte räknas som ny information i en reaktion.
+const STOP = new Set(
+  'att och det den detta som för med från till av om på i är var har hade ska skulle kan kunde vill vi ni er era ert din ditt dina sin sitt sina de dem man en ett så då nu här där alltså också bara mycket lite mer bra fint kul gott perfekt viktigt tydligt toppen jättebra låter verkar ganska riktigt helt inte inga något några alla allt hela'
+    .split(' ')
+    .map(STEM),
+);
+
+// Säger meningen något nytt, eller upprepar den bara det kunden skrev? Kräver minst tre nya ord.
+function restates(sentence, message) {
+  const said = new Set(String(message).split(/\s+/).map(STEM).filter(Boolean));
+  const fresh = sentence
+    .split(/\s+/)
+    .map(STEM)
+    .filter((w) => w.length >= 3 && !STOP.has(w) && !said.has(w));
+  return new Set(fresh).size < 3;
 }
 
 const VAGUE_PHRASES = ['allt möjligt', 'lite av varje', 'och sånt', 'och så vidare', 'diverse', 'osv', 'det mesta', 'mycket olika'];
@@ -272,9 +309,27 @@ export function isVague(text) {
   return /^(allt|allting|alla|mycket|olika|massa|saker|sånt)(?![a-zåäö])/.test(t) && t.split(/\s+/).length <= 4;
 }
 
-const VAGUE_FIELDS = {
-  tjanster_produkter: 'Kan du ge tre exempel på det ni gör mest? Skriv dem som en lista, så blir sidan tydlig.',
-  bransch: 'Kan du berätta med några konkreta exempel vad ni gör?',
+// "Att tjäna pengar" eller "få fler kunder" är ett mål för företaget, inte något besökaren gör på sidan.
+const ACTION_WORDS = /(boka|köp|beställ|betal|ring|mejl|kontakt|offert|arbeten|portfolio|meny|hitta|läsa|information|anmäl|prenumer|ladda ner)/i;
+export function isVagueGoal(text) {
+  const t = String(text || '').toLocaleLowerCase('sv-SE').trim();
+  if (!t || ACTION_WORDS.test(t)) return false;
+  return /(tjäna|pengar|sälja|försälj|fler kunder|mer kunder|nya kunder|synas|bli känd|marknadsför|reklam|växa|öka)/.test(t);
+}
+
+// Svar som inte går att bygga en sida av ger en följdfråga, en gång. Det avgörs här i koden, inte av AI:n.
+const FOLLOW_UPS = {
+  bransch: { needs: isVague, question: 'Kan du berätta med några konkreta exempel vad ni gör?' },
+  tjanster_produkter: { needs: isVague, question: 'Kan du ge tre exempel på det ni gör mest? Skriv dem som en lista, så blir sidan tydlig.' },
+  mal_med_sidan: {
+    needs: isVagueGoal,
+    question: 'Vad ska en besökare kunna göra direkt på sidan för att det ska hända? Till exempel köpa, beställa, boka tid eller kontakta er.',
+  },
+  kontakt: {
+    // Kunden har bara sagt hur man når dem ("nummer och mejl"), inte själva uppgifterna.
+    needs: (t) => !/\d{3}|@/.test(String(t || '')),
+    question: 'Vilket telefonnummer och vilken mejladress ska stå på sidan? Skriv dem gärna här, så kommer de med direkt.',
+  },
 };
 
 const words = (s) => new Set(String(s).toLocaleLowerCase('sv-SE').split(/[^a-zåäöé0-9@.]+/).filter((w) => w.length >= 3));
@@ -302,7 +357,8 @@ export function applyTurn(state, ai) {
   const saves = [];
   const negative = isNegative(message);
   // Ett vagt svar på bransch eller tjänster ger en följdfråga, en gång. Det avgörs här i koden, inte av AI:n.
-  const vagueField = !edit && !negative && askCount < 2 && VAGUE_FIELDS[lastAsked[0]] && isVague(message) ? lastAsked[0] : '';
+  const followUp = FOLLOW_UPS[lastAsked[0]];
+  const vagueField = !edit && !negative && askCount < 2 && followUp && followUp.needs(message) ? lastAsked[0] : '';
   // Det som sagts tidigare på samma fält får bara följa med om det var samma fråga.
   const carryFor = (field) => (state.carryField === field ? state.carry || '' : '');
 
@@ -369,7 +425,7 @@ export function applyTurn(state, ai) {
   if (!left.length) return { brief, issues, saves, reply: null, asked: [], done: true, missing: left };
 
   if (vagueField) {
-    return { brief, issues, saves, reply: VAGUE_FIELDS[vagueField], asked: [vagueField], done: false, missing: left };
+    return { brief, issues, saves, reply: FOLLOW_UPS[vagueField].question, asked: [vagueField], done: false, missing: left };
   }
   // AI:n får hoppa över något kunden redan har sagt, men inte hoppa långt framåt i checklistan.
   let asked = ai && left.includes(ai.asked) && left.indexOf(ai.asked) <= 1 ? ai.asked : '';
