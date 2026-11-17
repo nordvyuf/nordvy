@@ -378,3 +378,22 @@ test('"vi säljer bara online" blir inga öppettider i utkastet', () => {
   assert.equal(draftModel({ foretagsnamn: 'A', oppettider: 'Vi säljer bara online' }).hours, undefined);
   assert.equal(draftModel({ foretagsnamn: 'A', oppettider: 'nej, ingen fysisk affär' }).hours, undefined);
 });
+
+test('samtycke om referens frågas alltid med checklistans fråga, och gatuadress blandas inte ihop med domän', () => {
+  const left = ['doman_onskemal', 'referens_ok'];
+  assert.equal(fieldForQuestion('Har ni en adress i Malmö som ska stå på sidan?', 'doman_onskemal', left), '');
+  assert.equal(fieldForQuestion('Vilken webbadress vill ni ha?', 'doman_onskemal', left), 'doman_onskemal');
+  assert.equal(fieldForQuestion('Vill ni visa en lista över era recept?', 'referens_ok', left), '');
+  const r = applyTurn(
+    { brief: { ...Object.fromEntries(NEED.map((k) => [k, 'x'])), referens_ok: '' }, asked: ['undvik'], askCount: 1, message: 'Nej' },
+    { saves: [], reply: 'Vill ni då också visa en lista över era senaste recept?', asked: 'referens_ok' },
+  );
+  assert.deepEqual(r.asked, ['referens_ok']);
+  assert.match(r.reply, /som exempel för andra kunder/);
+});
+
+test('ingen följdfråga om målet när kunden redan sagt vad besökaren ska göra', () => {
+  const brief = { foretagsnamn: 'A', bransch: 'Kockbok', funktioner: 'beställning' };
+  const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 1, message: 'att tjäna pengar' }, null);
+  assert.equal(r.brief.mal_med_sidan, 'att tjäna pengar');
+});
