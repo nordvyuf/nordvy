@@ -22,7 +22,7 @@ import {
   slugify,
   parseInstagram,
 } from '../public/assets/shared/brief.js';
-import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, tidyReply, questionFits } from '../src/interview.js';
+import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, isVagueGoal, tidyReply, questionFits } from '../src/interview.js';
 import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -311,7 +311,7 @@ test('AI:n får inte påstå saker den inte kan veta, och upprepar inte kundens 
   assert.equal(tidyReply('Salonglinnea.se är redan taget. Vill ni ha något särskilt på sidan?'), 'Vill ni ha något särskilt på sidan?');
   assert.equal(tidyReply('Domänen är ledig.'), '');
   assert.equal(tidyReply('Tis-fre 10-18, vilka sociala länkar har ni?', 'Tis-fre 10-18, lör 10-15'), 'Vilka sociala länkar har ni?');
-  assert.equal(tidyReply('Karta är bra för er salong i Malmö. Vilken är er telefon?', 'Bokning, Karta'), 'Karta är bra för er salong i Malmö. Vilken är er telefon?');
+  assert.equal(tidyReply('Karta är bra för er salong i Malmö. Vilken är er telefon?', 'Bokning, Karta'), 'Vilken är er telefon?');
   assert.equal(tidyReply('Möllevångstorget, vilka tjänster erbjuder ni?', 'Vi finns i Malmö vid Möllevångstorget'), 'Vilka tjänster erbjuder ni?');
 });
 
@@ -335,4 +335,41 @@ test('en fråga som inte handlar om fältet används inte, och inledande "låter
   assert.match(r.reply, /känsla/);
   assert.equal(tidyReply('Kafé Kajkanten låter som en trevlig plats. Vad gör ni?'), 'Vad gör ni?');
   assert.equal(tidyReply('Surdegsbageri och kafé, det låter gott. Var ligger kaféet?'), 'Var ligger kaféet?');
+});
+
+// Fallen nedan kommer från en riktig testintervju (en UF-kockbok).
+test('reaktioner som bara återberättar kundens svar tas bort', () => {
+  assert.equal(tidyReply('Malmö är er bas. Vad är målet med er hemsida?', 'malmö sverige'), 'Vad är målet med er hemsida?');
+  assert.equal(tidyReply('Att tjäna pengar är ett bra mål. Vilken känsla ska sidan förmedla?', 'att tjäna pengar'), 'Vilken känsla ska sidan förmedla?');
+  assert.equal(tidyReply('Ni har alltså arbetat med kockboken i 2 månader. Vem är er målgrupp?', '2 månader'), 'Vem är er målgrupp?');
+  assert.equal(tidyReply('Diet och receptbok för matintresserade. Har ni en logga?', 'mat och diet intresserade'), 'Har ni en logga?');
+  // En reaktion med en ny tanke om hemsidan får stå kvar.
+  const good = 'Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?';
+  assert.equal(tidyReply(good, 'Frisörsalong med tre frisörer'), good);
+});
+
+test('ett mål som "tjäna pengar" ger en följdfråga om vad besökaren ska göra', () => {
+  assert.equal(isVagueGoal('att tjäna pengar'), true);
+  assert.equal(isVagueGoal('få fler kunder'), true);
+  assert.equal(isVagueGoal('Boka tid'), false);
+  assert.equal(isVagueGoal('sälja boken, man ska kunna beställa'), false);
+  const r = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'Kockbok', ort_omrade: 'Malmö', tjanster_produkter: 'Kockbok' }, asked: ['mal_med_sidan'], askCount: 1, message: 'att tjäna pengar' }, null);
+  assert.equal(r.brief.mal_med_sidan, undefined);
+  assert.deepEqual(r.asked, ['mal_med_sidan']);
+  assert.match(r.reply, /köpa, beställa, boka/);
+});
+
+test('kontakt utan själva uppgifterna ger en följdfråga, en gång', () => {
+  const r = applyTurn({ brief: {}, asked: ['kontakt'], askCount: 1, message: 'nummer och mejl, sociala medier' }, null);
+  assert.deepEqual(r.asked, ['kontakt']);
+  assert.match(r.reply, /telefonnummer och vilken mejladress/);
+  const ok = applyTurn({ brief: {}, asked: ['kontakt'], askCount: 1, message: '070-123 45 67, hej@matochmatt.se' }, null);
+  assert.equal(ok.brief.kontakt, '070-123 45 67, hej@matochmatt.se');
+  const second = applyTurn({ brief: {}, asked: ['kontakt'], askCount: 2, carry: 'nummer och mejl', carryField: 'kontakt', message: 'vill inte skriva det här' }, null);
+  assert.ok(second.brief.kontakt);
+});
+
+test('"vi säljer bara online" blir inga öppettider i utkastet', () => {
+  assert.equal(draftModel({ foretagsnamn: 'A', oppettider: 'Vi säljer bara online' }).hours, undefined);
+  assert.equal(draftModel({ foretagsnamn: 'A', oppettider: 'nej, ingen fysisk affär' }).hours, undefined);
 });
