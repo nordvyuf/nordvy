@@ -176,7 +176,7 @@ export function detectCity(text) {
   }
   const after = t.match(/(?:^|[\s,(])(?:i|på|utanför|nära|runt|från)\s+([A-ZÅÄÖ][a-zåäöé]+(?:[ -][A-ZÅÄÖ][a-zåäöé]+)?)/);
   if (after && !NOT_A_CITY.has(after[1].split(/[ -]/)[0])) return after[1];
-  const cap = words.find((w, i) => /^[A-ZÅÄÖ][a-zåäöé]{2,}$/.test(w) && !NOT_A_CITY.has(w) && i > 0);
+  const cap = words.find((w, i) => /^[A-ZÅÄÖ][a-zåäöé]{2,}$/.test(w) && !NOT_A_CITY.has(w));
   return cap || '';
 }
 
@@ -305,7 +305,7 @@ export function cleanCopy(ai, company = '') {
   if (about.length >= 20) out.about = about;
   if (Array.isArray(ai.services)) {
     const services = ai.services
-      .map((s) => ({ title: capitalize(aiString(s?.title, 34)), text: aiString(s?.text, 110) }))
+      .map((s) => ({ title: capitalize(aiString(s?.title, 34)), text: ((t) => (t.length >= 16 && !echoes(t) ? t : ''))(aiString(s?.text, 110)) }))
       .filter((s) => s.title.length >= 2)
       .slice(0, 3);
     if (services.length >= 2) out.services = services;
@@ -407,7 +407,7 @@ export function draftModel(brief, copy) {
 
   if (copy) {
     for (const key of ['headline', 'sub', 'tagline', 'cta', 'about']) if (copy[key] && (key !== 'about' || m.about)) m[key] = copy[key];
-    if (copy.services && m.services) m.services = copy.services.map((s, i) => ({ title: s.title, text: s.text || m.services[i]?.text || preset.text }));
+    if (copy.services && m.services) m.services = m.services.map((s, i) => ({ title: s.title, text: copy.services[i]?.text || s.text }));
   }
   return m;
 }
