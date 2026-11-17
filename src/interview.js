@@ -191,7 +191,37 @@ export function extractJson(result) {
 // Fyllnadsmeningar som modellen gärna börjar med. De tas bort så att svaret blir frågan,
 // eventuellt med en konkret reaktion.
 const FILLER =
-  /^(det (är|var) (okej|bra|helt)|det låter|låter|vad (kul|bra|roligt|trevligt|spännande|fint|gott|härligt)|jättebra|toppen|super|perfekt|tack|okej|ok|bra|härligt|fantastiskt|så fint|vilket|[^.]{0,40} är en fin stad)(?![a-zåäö])/i;
+  /^(det (är|var) (okej|bra|helt)|det låter|låter|[^.?]{0,45}\blåter\b|vad (kul|bra|roligt|trevligt|spännande|fint|gott|härligt)|jättebra|toppen|super|perfekt|tack|okej|ok|bra|härligt|fantastiskt|så fint|vilket|[^.]{0,40} är en fin stad)(?![a-zåäö])/i;
+
+// Ord som måste finnas i en fråga för att den ska handla om fältet. Stämmer inte frågan med fältet
+// som AI:n säger att den frågar om, skulle kundens svar sparas på fel plats.
+const ABOUT = {
+  foretagsnamn: /heter|namn/i,
+  bransch: /gör ni|verksamhet|bransch|vad är ni|beskriv/i,
+  ort_omrade: /\bvar\b|\bort\b|område|stad|ligger|finns ni|verksam/i,
+  tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment/i,
+  mal_med_sidan: /mål|viktigaste|besökare|kunna göra|syfte|sidan ska/i,
+  stil: /stil|känsla|färg|utseende|ser ut|design|ton\b|uttryck/i,
+  varfor_valja_oss: /varför|unik|bättre|skiljer|väljer|speciell|särskil/i,
+  erfarenhet: /hur länge|sedan när|funnits|erfarenhet|år\b|startade|verksamma/i,
+  malgrupp: /målgrupp|vilka är era kunder|vem är|kunder är|vilka kunder|vem vänder/i,
+  funktioner: /funktion|bokning|kontaktformulär|karta|webshop|ska finnas|på sidan/i,
+  kontakt: /telefon|mejl|e-post|adress|kontakt|nå er|nummer/i,
+  oppettider: /öppettid|öppet|öppnar|tider/i,
+  sociala_lankar: /instagram|facebook|sociala|länk/i,
+  logga: /logga|logotyp/i,
+  bilder: /bild|foto/i,
+  egna_texter: /text/i,
+  omdomen: /omdöme|recension|betyg/i,
+  doman_onskemal: /webbadress|domän|adress|sidnamn|webbplatsnamn/i,
+  undvik: /undvik|inte vill ha|inte ha|vill ni slippa/i,
+  referens_ok: /exempel|referens|visa/i,
+};
+
+export function questionFits(field, question) {
+  const re = ABOUT[field];
+  return !re || re.test(String(question || ''));
+}
 
 // Påståenden som AI:n inte kan veta. Meningen tas bort, så att inget påhitt når kunden.
 const UNKNOWN_CLAIM = /(redan (taget|upptagen|registrerad)|är (ledig|upptagen|tillgänglig)|finns inte|kostar|\d+\s*(kr|kronor)|på \d+ dagar|garanterar|lovar)/i;
@@ -344,6 +374,8 @@ export function applyTurn(state, ai) {
   // AI:n får hoppa över något kunden redan har sagt, men inte hoppa långt framåt i checklistan.
   let asked = ai && left.includes(ai.asked) && left.indexOf(ai.asked) <= 1 ? ai.asked : '';
   let reply = asked ? tidyReply(ai.reply, message) : '';
+  // Frågan måste handla om fältet den gäller. Annars används checklistans fråga.
+  if (reply && !questionFits(asked, reply.slice(reply.lastIndexOf('.') + 1))) reply = '';
   if (!reply || !reply.includes('?')) {
     asked = left[0];
     reply = fallbackQuestion(asked, NEED.length - left.length);
