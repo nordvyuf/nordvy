@@ -23,7 +23,7 @@ import {
   parseInstagram,
   fallbackQuestion,
 } from '../public/assets/shared/brief.js';
-import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, isVagueGoal, tidyReply, questionFits, fieldForQuestion, asksUs } from '../src/interview.js';
+import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, isVagueGoal, tidyReply, questionFits, fieldForQuestion, asksUs, needsAi } from '../src/interview.js';
 import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -455,4 +455,42 @@ test('frågar kunden om pris två gånger i rad fastnar inte intervjun', () => {
 
 test('en tjänst som också finns online får inte produktfrågan', () => {
   assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Personlig tränare', ort_omrade: 'Malmö, mostly online coaching too' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
+});
+
+test('AI:n används bara där den gör nytta, så att dagens kvot räcker till fler intervjuer', () => {
+  const brief = { ...full() };
+  for (const k of ['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok']) delete brief[k];
+  // Svaret på funktioner ger nästa fråga (kontakt): AI:n tar emot svaret och kan plocka ut flera saker.
+  assert.equal(needsAi({ brief: { ...brief, funktioner: '' }, asked: ['funktioner'] }), true);
+  // Mellan enkla frågor räcker checklistan.
+  assert.equal(needsAi({ brief, asked: ['kontakt'] }), false);
+  assert.equal(needsAi({ brief: { ...brief, kontakt: 'x', oppettider: 'x' }, asked: ['sociala_lankar'] }), false);
+  // Saknas ett tidigare innehållsfält, eller rättar kunden något, används AI:n.
+  assert.equal(needsAi({ brief: { ...brief, stil: '' }, asked: ['logga'] }), true);
+  assert.equal(needsAi({ brief, asked: ['kontakt'], edit: true }), true);
+});
+
+test('utkastet för ett företag som bara säljer online lovar ingen butik, inga öppettider och ingen betalning', () => {
+  const brief = {
+    foretagsnamn: 'Lumen UF', bransch: 'Vi gör doftljus av sojavax för hand', ort_omrade: 'Helsingborg, vi säljer online',
+    tjanster_produkter: 'Doftljus, vaxkakor, presentaskar', mal_med_sidan: 'Att man kan beställa ljus', funktioner: 'Beställning', oppettider: 'Vi säljer bara online',
+  };
+  const m = draftModel(brief);
+  assert.equal(m.online, true);
+  assert.doesNotMatch(`${m.headline} ${m.sub} ${m.tagline}`, /nära dig|vägen hit|öppettider/i);
+  assert.ok(m.services.every((s) => !/i butiken/i.test(s.text)));
+  assert.equal(m.features.payments, false);
+  assert.equal(m.features.shop, true);
+  // En frisör med öppettider är inte ett onlineföretag.
+  const salon = draftModel({ foretagsnamn: 'Salong Vera', bransch: 'Frisör', ort_omrade: 'Lund', oppettider: 'Tis-fre 10-18' });
+  assert.equal(salon.online, undefined);
+  // Den som skriver Swish får betalning i utkastet.
+  assert.equal(draftModel({ ...brief, funktioner: 'Beställning och betalning med Swish' }).features.payments, true);
+});
+
+test('vill kunden sälja men saknar bilder blir det en uppföljningspunkt', () => {
+  const brief = { ...full(), mal_med_sidan: 'Att man kan beställa ljus', bilder: '' };
+  const r = applyTurn({ brief, asked: ['bilder'], askCount: 1, message: 'Inte än' }, null);
+  assert.equal(r.brief.bilder, 'saknas');
+  assert.ok(r.issues.some((i) => /produktbilder/.test(i.text)));
 });
