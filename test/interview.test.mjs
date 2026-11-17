@@ -443,3 +443,16 @@ test('reservfrågorna anpassas efter det kunden sagt', () => {
   assert.match(fallbackQuestion('oppettider', 0, { ort_omrade: 'Helsingborg men vi säljer online också' }), /bara online/);
   assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Frisörsalong' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
 });
+
+test('frågar kunden om pris två gånger i rad fastnar inte intervjun', () => {
+  const brief = { foretagsnamn: 'A', bransch: 'Snickeri', ort_omrade: 'Kristianstad', tjanster_produkter: 'Kök' };
+  const ai = { saves: [{ field: 'mal_med_sidan', value: 'Vad kostar en sån här sida?' }], reply: 'Vilken känsla ska sidan ha?', asked: 'stil' };
+  const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 2, message: 'Vad kostar en sån här sida?' }, ai);
+  assert.equal(r.brief.mal_med_sidan, 'saknas');
+  assert.notDeepEqual(r.asked, ['mal_med_sidan']);
+  assert.ok(r.issues.some((i) => /i stället för att svara/.test(i.text)));
+});
+
+test('en tjänst som också finns online får inte produktfrågan', () => {
+  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Personlig tränare', ort_omrade: 'Malmö, mostly online coaching too' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
+});
