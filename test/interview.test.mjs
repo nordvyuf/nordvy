@@ -306,3 +306,21 @@ test('kontaktformuläret: robotfältet stoppar tyst, saknad koppling ger 503', a
   const none = await worker.fetch(post('/api/contact', { name: 'A', email: 'a@b.se', message: 'Hej' }), env());
   assert.equal(none.status, 503);
 });
+
+test('AI:n får inte påstå saker den inte kan veta, och upprepar inte kundens ord', () => {
+  assert.equal(tidyReply('Salonglinnea.se är redan taget. Vill ni ha något särskilt på sidan?'), 'Vill ni ha något särskilt på sidan?');
+  assert.equal(tidyReply('Domänen är ledig.'), '');
+  assert.equal(tidyReply('Tis-fre 10-18, vilka sociala länkar har ni?', 'Tis-fre 10-18, lör 10-15'), 'Vilka sociala länkar har ni?');
+  assert.equal(tidyReply('Karta är bra för er salong i Malmö. Vilken är er telefon?', 'Bokning, Karta'), 'Karta är bra för er salong i Malmö. Vilken är er telefon?');
+  assert.equal(tidyReply('Möllevångstorget, vilka tjänster erbjuder ni?', 'Vi finns i Malmö vid Möllevångstorget'), 'Vilka tjänster erbjuder ni?');
+});
+
+test('staden hittas även när svaret börjar med den, och kundens tjänster behåller sina namn', () => {
+  assert.equal(detectCity('Malmö vid Möllevångstorget'), 'Malmö');
+  const m = draftModel(
+    { foretagsnamn: 'A', bransch: 'Frisör', tjanster_produkter: 'Klippning, färg och slingor, bryn och fransar' },
+    { services: [{ title: 'Klippning', text: 'Hårklippning' }, { title: 'Färg', text: 'Anpassad hårfärgning för varje hårtyp' }, { title: 'Bryn', text: 'x' }] },
+  );
+  assert.deepEqual(m.services.map((s) => s.title), ['Klippning', 'Färg och slingor', 'Bryn och fransar']);
+  assert.equal(m.services[1].text, 'Anpassad hårfärgning för varje hårtyp');
+});
