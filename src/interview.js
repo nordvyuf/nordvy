@@ -27,6 +27,7 @@ import {
   fallbackQuestion,
   recommendPackage,
   packageLine,
+  sellsOnlineOnly,
 } from '../public/assets/shared/brief.js';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -148,7 +149,8 @@ export function buildTurnMessages({ brief, history, asked, message, edit }) {
   const left = missing(brief);
   const saved = KEYS.filter((k) => hasValue(brief, k) && FIELD[k].level > 0).map((k) => `- ${k}: «${short(brief[k])}»`);
   const todo = left.map((k) => `- ${k}: ${FIELD[k].about}`);
-  const talk = history.slice(-12).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 260)}`);
+  // De senaste fyra frågorna och svaren räcker för att inte upprepa sig. Det som sparats står ovanför.
+  const talk = history.slice(-8).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 220)}`);
   const task = edit
     ? `Kunden vill rätta något i det som redan är sparat. Lägg de ändrade fälten i "saves" med de nya värdena. Sätt "reply" till en kort bekräftelse utan fråga och "asked" till en tom sträng.`
     : `Du frågade senast om: ${asked.length ? asked.join(', ') : '(inget)'}.`;
@@ -171,7 +173,12 @@ export function buildCopyMessages(brief) {
   const industry = detectIndustry(`${brief.bransch || ''} ${brief.tjanster_produkter || ''}`);
   return [
     { role: 'system', content: COPY_PROMPT },
-    { role: 'user', content: `Intervjun (kundens egna ord inom «»):\n${rows.join('\n')}\n\nBransch: ${INDUSTRIES[industry].label}` },
+    {
+      role: 'user',
+      content: `Intervjun (kundens egna ord inom «»):\n${rows.join('\n')}\n\nBransch: ${INDUSTRIES[industry].label}${
+        sellsOnlineOnly(brief) ? '\nFöretaget säljer bara online och har ingen butik eller lokal att besöka. Skriv inget om att hitta hit, öppettider eller "nära dig".' : ''
+      }`,
+    },
   ];
 }
 
@@ -466,6 +473,11 @@ export function applyTurn(state, ai) {
   if (showsWork && isSaknas(brief.bilder) && saves.some((s) => s.field === 'bilder' || s.field === 'mal_med_sidan')) {
     addIssue('bilder', 'Målet är att visa arbeten, men kunden har inga bilder än.');
   }
+  // Att sälja eller ta emot beställningar kräver produktbilder.
+  const sells = /beställ|köp|sälj|webshop|webbshop/i.test(`${brief.mal_med_sidan || ''} ${brief.funktioner || ''}`);
+  if (sells && isSaknas(brief.bilder) && saves.some((s) => s.field === 'bilder')) {
+    addIssue('bilder', 'Kunden vill sälja eller ta emot beställningar men har inga produktbilder än. De behövs innan sidan kan bli klar.');
+  }
   if (edit && !saves.length && message) addIssue('annat', `Kunden vill ändra: ${message}`);
 
   const left = missing(brief);
@@ -545,14 +557,27 @@ function readState(body) {
   };
 }
 
+// Enkla fält där checklistans fråga räcker och svaret sparas som det är. Mellan två sådana
+// frågor behövs ingen AI, vilket ungefär halverar vad en intervju drar av dagens AI-kvot.
+const PLAIN = new Set(['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok']);
+
+export function needsAi(state) {
+  if (state.edit) return true;
+  const field = state.asked?.[0];
+  if (!PLAIN.has(field)) return true;
+  const next = missing(state.brief || {}).find((k) => k !== field);
+  return Boolean(next) && !PLAIN.has(next);
+}
+
 export async function interviewTurn(env, body) {
   const state = readState(body);
   if (!state.message) return { ok: false, error: 'empty_message' };
   let ai = null;
   const errors = [];
-  if (env?.AI) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors);
+  const useAi = Boolean(env?.AI) && needsAi(state);
+  if (useAi) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors);
   const result = applyTurn(state, ai);
-  const out = { ok: true, ...result, source: ai ? 'ai' : 'fallback' };
+  const out = { ok: true, ...result, source: ai ? 'ai' : useAi || !env?.AI ? 'fallback' : 'app' };
   // Felsökning: med debug: true följer AI:ns oredigerade förslag med (eller felet), så att filtren går att justera.
   if (body?.debug === true) out.debug = ai ? { asked: ai.asked, reply: ai.reply, saves: ai.saves } : { errors };
   return out;
