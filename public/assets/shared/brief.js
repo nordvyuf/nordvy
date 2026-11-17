@@ -1,0 +1,396 @@
+// Delad logik för självintervjun. Körs både i webbläsaren och i Workern.
+// Inga beroenden och inget DOM här – bara rena funktioner som går att testa.
+//
+// Checklistan och reglerna kommer från dokumentet "Nordvy – intervjuchatten".
+// Appen (inte AI:n) håller reda på vad som är ifyllt, räknar förloppet och
+// avgör när intervjun får avslutas.
+
+export const PACKAGES = {
+  uf: { id: 'uf', name: 'UF-paket', oneTime: 499, monthly: 0 },
+  bas: { id: 'bas', name: 'Bas', oneTime: 2999, ordinary: 3499, monthly: 149 },
+  premium: { id: 'premium', name: 'Premium', oneTime: 5999, ordinary: 6999, monthly: 299 },
+};
+
+export const INDUSTRIES = {
+  frisor: { label: 'Frisör & skönhet', short: 'Salong' },
+  cafe: { label: 'Café & restaurang', short: 'Café' },
+  hantverk: { label: 'Hantverk & bygg', short: 'Hantverkare' },
+  butik: { label: 'Butik', short: 'Butik' },
+  halsa: { label: 'Hälsa & träning', short: 'Hälsa' },
+  tjanst: { label: 'Tjänsteföretag', short: 'Företag' },
+};
+
+// nivå 1 = obligatorisk, 2 = ska frågas (svar eller "saknas"), 0 = fylls i av appen.
+// Ordningen är den vi frågar i: de sex första räcker för ett första utkast.
+export const FIELDS = [
+  { key: 'foretagsnamn', label: 'Företagsnamn', level: 1, about: 'Namn, och tagline om de har en.', question: 'Vad heter ditt företag?' },
+  { key: 'bransch', label: 'Bransch', level: 1, about: 'Vad de gör, i en mening.', question: 'Vad gör ni? Beskriv det gärna i en mening.' },
+  { key: 'ort_omrade', label: 'Ort / område', level: 1, about: 'Var de verkar och var de vill synas.', question: 'Var finns ni, och i vilket område vill ni synas?' },
+  { key: 'tjanster_produkter', label: 'Tjänster / produkter', level: 1, about: 'Lista VARJE tjänst eller produkt separat: namn och kort beskrivning. Pris bara om kunden själv anger det.', question: 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.' },
+  { key: 'mal_med_sidan', label: 'Mål med sidan', level: 1, about: 'Boka tid, beställa, ringa, visa arbeten eller bara visa information.', question: 'Vad är det viktigaste en besökare ska kunna göra på sidan?', chips: ['Boka tid', 'Beställa eller köpa', 'Ringa eller mejla', 'Se våra arbeten', 'Hitta information'], multi: true },
+  { key: 'stil', label: 'Stil', level: 1, about: 'Känsla, färger och gärna sidor de gillar.', question: 'Vilken känsla ska sidan ha? Nämn gärna färger eller en sida du gillar.', chips: ['Varm och personlig', 'Ren och modern', 'Exklusiv', 'Lekfull', 'Naturnära'] },
+  { key: 'varfor_valja_oss', label: 'Varför välja er', level: 2, about: 'Vad som gör dem bättre eller annorlunda, med kundens egna ord.', question: 'Varför väljer kunder just er?' },
+  { key: 'erfarenhet', label: 'Erfarenhet', level: 2, about: 'Hur länge de funnits eller hållit på.', question: 'Hur länge har ni funnits eller hållit på?' },
+  { key: 'malgrupp', label: 'Målgrupp', level: 2, about: 'Vilka kunderna är, t.ex. privatpersoner eller företag, ålder, närområde.', question: 'Vilka är era kunder? Till exempel privatpersoner eller företag.' },
+  { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vilka funktioner vill ni ha på sidan?', chips: ['Bokning', 'Kontaktformulär', 'Karta', 'Webshop', 'Betalning med Swish'], multi: true },
+  { key: 'kontakt', label: 'Kontakt', level: 1, about: 'Telefon, mejl och adress.', question: 'Vilka kontaktuppgifter ska stå på sidan? Telefon, mejl och adress.' },
+  { key: 'oppettider', label: 'Öppettider', level: 2, about: 'Exakt som kunden anger. "saknas" om de inte har fasta tider.', question: 'Vilka öppettider har ni?', chips: ['Vi har inga fasta tider'] },
+  { key: 'sociala_lankar', label: 'Sociala länkar', level: 1, about: 'Instagram, Facebook, LinkedIn med mera.', question: 'Har ni Instagram, Facebook eller andra sociala medier? Skriv gärna namnen eller länkarna.', chips: ['Vi har inga'] },
+  { key: 'logga', label: 'Logga', level: 2, about: 'Har de en logga? Den mejlas till Nordvy efter intervjun.', question: 'Har ni en logga?', chips: ['Ja, jag mejlar den', 'Nej, ingen logga'] },
+  { key: 'logga_status', label: 'Logga: status', level: 0, about: 'ej verifierad eller saknas.' },
+  { key: 'bilder', label: 'Bilder', level: 2, about: 'Bilder på lokal, produkter, personal eller arbeten. De mejlas till Nordvy efter intervjun.', question: 'Har ni bilder på lokalen, produkterna eller era arbeten?', chips: ['Ja, jag mejlar bilder', 'Inte än'] },
+  { key: 'egna_texter', label: 'Egna texter', level: 2, about: 'Texter de redan har, t.ex. om oss eller tjänstebeskrivningar.', question: 'Har ni texter som redan är skrivna, till exempel en presentation av företaget?', chips: ['Ja, det har vi', 'Nej'] },
+  { key: 'omdomen', label: 'Omdömen', level: 2, about: 'Bara riktiga omdömen som de har tillstånd att visa.', question: 'Har ni omdömen från riktiga kunder som ni får visa?', chips: ['Ja, det har vi', 'Nej, inga än'] },
+  { key: 'doman_onskemal', label: 'Domän', level: 1, about: 'Önskat sidnamn eller webbadress.', question: 'Vilken webbadress skulle ni vilja ha? Till exempel dittforetag.se.', chips: ['Vet inte än'] },
+  { key: 'undvik', label: 'Undvik', level: 2, about: 'Något de inte vill ha på sidan.', question: 'Finns det något ni inte vill ha på sidan?', chips: ['Nej, inget särskilt'] },
+  { key: 'referens_ok', label: 'Referens', level: 1, about: 'Får Nordvy visa sidan som exempel? Ja eller nej.', question: 'Får Nordvy visa er färdiga sida som exempel för andra kunder?', chips: ['Ja', 'Nej'] },
+];
+
+export const FIELD = Object.fromEntries(FIELDS.map((f) => [f.key, f]));
+export const KEYS = FIELDS.map((f) => f.key);
+export const NEED = FIELDS.filter((f) => f.level > 0).map((f) => f.key);
+// Räcker för ett första utkast av sidan.
+export const CORE = ['foretagsnamn', 'bransch', 'ort_omrade', 'tjanster_produkter', 'mal_med_sidan', 'stil'];
+export const TOPICS = ['bilder', 'logga', 'kontakt', 'innehall', 'funktioner', 'annat'];
+export const LIMITS = { value: 600, message: 800, log: 60 };
+export const MAIL_TO = 'Nordvyuf@gmail.com';
+
+/* ---------------------------------------------------------------- text */
+
+export function cleanText(value, max = LIMITS.value) {
+  return String(value ?? '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, max);
+}
+
+const oneLine = (s, max) => cleanText(s, max).replace(/\s+/g, ' ');
+const lower = (s) => String(s || '').toLocaleLowerCase('sv-SE');
+
+export function capitalize(s) {
+  const t = String(s || '').trim();
+  return t ? t.charAt(0).toLocaleUpperCase('sv-SE') + t.slice(1) : '';
+}
+
+export function slugify(name) {
+  const s = lower(name)
+    .replace(/[åä]/g, 'a')
+    .replace(/ö/g, 'o')
+    .replace(/[éè]/g, 'e')
+    .replace(/&/g, 'och')
+    .replace(/[^a-z0-9]+/g, '');
+  return s.slice(0, 28) || 'dittforetag';
+}
+
+// Helt ord, även med å/ä/ö (\b fungerar inte för dem i JavaScript).
+function hasWord(text, word) {
+  return new RegExp(`(?<![a-zåäöé])${word}(?![a-zåäöé])`, 'i').test(text);
+}
+const hasStem = (text, stems) => stems.some((s) => text.includes(s));
+
+/* ------------------------------------------------------------ briefen */
+
+export const isSaknas = (v) => /^saknas\b/i.test(String(v || '').trim());
+export const hasValue = (brief, key) => Boolean(String(brief?.[key] || '').trim());
+export const hasAnswer = (brief, key) => hasValue(brief, key) && !isSaknas(brief[key]);
+export const missing = (brief) => NEED.filter((k) => !hasValue(brief, k));
+export const coreDone = (brief) => CORE.every((k) => hasValue(brief, k));
+
+// Svar som betyder "nej / har inget / vet inte".
+const NEGATIVE = /^(nej|nä|nix|nope|inga|inget|ingen|ingenting|inte än|vi har inga|vi har inget|har inga|har inget|har ingen|vet inte|vet ej|saknas|finns inte|finns inga|-+)(?![a-zåäö])/i;
+export const isNegative = (text) => NEGATIVE.test(String(text || '').trim());
+
+// Tar emot vad som helst från webbläsaren och ger tillbaka en säker, begränsad brief.
+export function cleanBrief(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const key of KEYS) {
+    const v = cleanText(raw[key]);
+    if (v) out[key] = v;
+  }
+  return out;
+}
+
+export function cleanIssues(raw) {
+  const out = [];
+  if (!Array.isArray(raw)) return out;
+  for (const item of raw.slice(0, 12)) {
+    const topic = TOPICS.includes(item?.topic) ? item.topic : 'annat';
+    const text = oneLine(item?.text, 240);
+    if (!text) continue;
+    const at = out.findIndex((x) => x.topic === topic && topic !== 'annat');
+    if (at >= 0) out[at] = { topic, text };
+    else if (!out.some((x) => x.text === text)) out.push({ topic, text });
+  }
+  return out;
+}
+
+export function cleanLog(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+    .slice(-LIMITS.log)
+    .map((m) => ({ who: m.who === 'me' ? 'me' : 'guide', text: cleanText(m.text, LIMITS.message) }));
+}
+
+/* ----------------------------------------------------------- tolkning */
+
+const INDUSTRY_STEMS = {
+  frisor: ['fris', 'salong', 'barber', 'skönhet', 'nagel', 'naglar', 'fransar', 'hudvård', 'massage', 'makeup', 'smink', 'bryn', 'hårvård', 'klippning'],
+  cafe: ['café', 'cafe', 'kafé', 'kafe', 'restaurang', 'bageri', 'kondit', 'pizz', 'bistro', 'lunch', 'sushi', 'krog', 'catering', 'foodtruck', 'glass', 'fika'],
+  hantverk: ['snick', 'bygg', 'målar', 'måleri', 'elektr', 'elinstall', 'rörmok', 'vvs', 'städ', 'flytt', 'trädgård', 'takläg', 'golv', 'murar', 'plåt', 'hantverk', 'renover', 'bilverk', 'verkstad', 'däck', 'låssm', 'kakel', 'fönsterputs'],
+  butik: ['butik', 'affär', 'kläd', 'blomster', 'blommor', 'second hand', 'inredning', 'smycken', 'present', 'leksak', 'cykel', 'webshop', 'keramik', 'bokhandel', 'säljer'],
+  halsa: ['gym', 'träning', 'tränare', 'yoga', 'fysio', 'naprapat', 'kiroprakt', 'tandläk', 'tandvård', 'klinik', 'terapi', 'terapeut', 'hälsa', 'pilates', 'kostråd', 'psykolog', 'friskvård'],
+};
+
+export function detectIndustry(text) {
+  const t = lower(text);
+  if (!t) return 'tjanst';
+  let best = 'tjanst';
+  let bestScore = 0;
+  for (const [id, stems] of Object.entries(INDUSTRY_STEMS)) {
+    let score = stems.filter((s) => t.includes(s)).length;
+    if (id === 'frisor' && (hasWord(t, 'hår') || hasWord(t, 'spa'))) score += 1;
+    if (id === 'cafe' && (hasWord(t, 'mat') || hasWord(t, 'bar') || hasWord(t, 'kaffe'))) score += 1;
+    if (id === 'hantverk' && (hasWord(t, 'el') || hasWord(t, 'tak') || hasWord(t, 'bil'))) score += 1;
+    if (id === 'halsa' && hasWord(t, 'pt')) score += 1;
+    if (score > bestScore) {
+      best = id;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+const NOT_A_CITY = new Set(['Sverige', 'Hela', 'Vi', 'Vår', 'Vårt', 'Våra', 'Här', 'Runt', 'Online', 'Centrum', 'Stan', 'Staden', 'Främst', 'Mest', 'Ingen', 'Inget', 'Saknas', 'Både', 'Och', 'Samt', 'Nära', 'Utanför', 'Hemma', 'Alla', 'Över']);
+
+// Plockar ut orten ur svaret om var företaget finns, t.ex. "Vi finns i Malmö" -> "Malmö".
+export function detectCity(text) {
+  const t = String(text || '').trim();
+  if (!t || isSaknas(t)) return '';
+  const words = t.split(/[\s,.;:/()]+/).filter(Boolean);
+  if (words.length <= 2 && t.length <= 26 && /^[A-Za-zÅÄÖåäöé -]+$/.test(t)) {
+    return words.map((w) => capitalize(lower(w))).join(' ');
+  }
+  const after = t.match(/(?:^|[\s,(])(?:i|på|utanför|nära|runt|från)\s+([A-ZÅÄÖ][a-zåäöé]+(?:[ -][A-ZÅÄÖ][a-zåäöé]+)?)/);
+  if (after && !NOT_A_CITY.has(after[1].split(/[ -]/)[0])) return after[1];
+  const cap = words.find((w, i) => /^[A-ZÅÄÖ][a-zåäöé]{2,}$/.test(w) && !NOT_A_CITY.has(w) && i > 0);
+  return cap || '';
+}
+
+export function detectVibe(text) {
+  const t = lower(text);
+  if (hasStem(t, ['exklusiv', 'lyx', 'premium', 'elegant', 'mörk', 'svart', 'guld'])) return 'exklusiv';
+  if (hasStem(t, ['lekfull', 'färgglad', 'rolig', 'glad', 'busig', 'rosa', 'gul'])) return 'lekfull';
+  if (hasStem(t, ['natur', 'grön', 'ekolog', 'jordnära', 'lugn', 'hållbar'])) return 'natur';
+  if (hasStem(t, ['modern', 'stilren', 'minimal', 'enkel', 'proffsig', 'professionell', 'tydlig', 'ren och', 'blå', 'vit'])) return 'modern';
+  if (hasStem(t, ['varm', 'personlig', 'hemtrev', 'mysig', 'familj', 'välkomn', 'beige', 'brun'])) return 'varm';
+  return '';
+}
+
+const DEFAULT_VIBE = { frisor: 'varm', cafe: 'varm', hantverk: 'modern', butik: 'lekfull', halsa: 'natur', tjanst: 'modern' };
+
+export function parseServices(text) {
+  if (isSaknas(text)) return [];
+  const listed = String(text || '').replace(/\b\d+[.)]\s*/g, '\n');
+  // Finns det kommatecken eller radbrytningar är det de som skiljer tjänsterna åt.
+  // Då får "färg och slingor" vara kvar som en tjänst.
+  const strong = listed.split(/\n|,|;|•|·/).filter((x) => x.trim());
+  const raw = (strong.length >= 2 ? strong : listed.split(/\n|,|;|•|·|\/|\s+och\s+|\s+samt\s+|\s+&\s+/i))
+    .map((s) => s.replace(/\s*[:(–—-]\s+.*$/, '').replace(/\(.*$/, ''))
+    .map((s) => s.replace(/^[\s\-–—*]+|[\s.!]+$/g, ''))
+    .map((s) => s.replace(/^(vi (erbjuder|gör|säljer|har|jobbar med)|bland annat|t\.?ex\.?|till exempel)\s+/i, ''))
+    .filter((s) => s.length >= 2 && s.length <= 44);
+  const seen = new Set();
+  const out = [];
+  for (const s of raw) {
+    const key = lower(s);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(capitalize(s));
+    if (out.length === 3) break;
+  }
+  return out;
+}
+
+const wishText = (b) => lower(`${b.mal_med_sidan || ''} ${b.funktioner || ''}`);
+export const wantsBooking = (b) => hasStem(wishText(b), ['boka', 'bokning', 'tidsbok']);
+export const wantsPayments = (b) => hasStem(wishText(b), ['betal', 'swish', 'webshop', 'webbshop', 'köpa', 'sälj', 'beställ', 'presentkort']);
+export const isUF = (b) => hasWord(lower(`${b.foretagsnamn || ''} ${b.bransch || ''}`), 'uf') || lower(b.bransch).includes('ung företagsamhet');
+
+export function recommendPackage(brief) {
+  const b = brief || {};
+  if (isUF(b)) return { id: 'uf', reason: 'Ni är ett UF-företag. UF-paketet ger er en sida med produkter och beställningsförfrågan.' };
+  const booking = wantsBooking(b);
+  const pay = wantsPayments(b);
+  if (booking && pay) return { id: 'premium', reason: 'Ni vill ta emot både bokningar och beställningar på sidan. Det ingår i Premium.' };
+  if (booking) return { id: 'premium', reason: 'Ni vill att kunderna ska kunna boka direkt på sidan. Bokningssystem ingår i Premium.' };
+  if (pay) return { id: 'premium', reason: 'Ni vill kunna ta emot beställningar eller betalning på sidan. Det ingår i Premium.' };
+  return { id: 'bas', reason: 'Ni behöver synas, visa vad ni gör och bli kontaktade. Det klarar Bas, och ni kan uppgradera senare.' };
+}
+
+const kr = (n) => `${new Intl.NumberFormat('sv-SE').format(n).replace(/[  ]/g, ' ')} kr`;
+
+export function packageLine(id) {
+  const p = PACKAGES[id] || PACKAGES.bas;
+  return p.monthly ? `${p.name}: ${kr(p.oneTime)} + ${kr(p.monthly)}/mån` : `${p.name}: ${kr(p.oneTime)}`;
+}
+
+/* ------------------------------------------------------------ utkastet */
+
+const PRESET = {
+  frisor: { headline: 'Hår du trivs i, varje dag', sub: (n, c) => `Boka tid hos ${n}${c} när det passar dig. Enkelt och direkt i mobilen.`, cta: 'Boka tid', text: 'Boka en tid som passar dig.' },
+  cafe: { headline: 'Nybakat, nära och gjort med omsorg', sub: (n, c) => `${n}${c}. Se menyn, öppettiderna och hitta hit på några sekunder.`, cta: 'Se menyn', text: 'Gjort på riktiga råvaror.' },
+  hantverk: { headline: 'Rätt gjort från början', sub: (n, c) => `${n} hjälper dig${c}, från första samtal till färdigt resultat. Begär offert direkt på sidan.`, cta: 'Begär offert', text: 'Tydlig offert och tidsplan.' },
+  butik: { headline: 'Det du letar efter, nära dig', sub: (n, c) => `Välkommen till ${n}${c}. Se sortimentet, öppettiderna och vägen hit.`, cta: 'Se sortimentet', text: 'Finns hos oss just nu.' },
+  halsa: { headline: 'Må bättre, ett steg i taget', sub: (n, c) => `${n}${c} hjälper dig att komma igång. Boka första besöket direkt på sidan.`, cta: 'Boka besök', text: 'Anpassat efter dig.' },
+  tjanst: { headline: 'Tydlig hjälp när du behöver den', sub: (n, c) => `${n}${c} gör det enkelt att komma igång. Hör av dig så berättar vi mer.`, cta: 'Kontakta oss', text: 'Vi hjälper dig hela vägen.' },
+};
+
+function ctaFor(b, industry) {
+  const wish = wishText(b);
+  if (wantsBooking(b)) return industry === 'cafe' ? 'Boka bord' : 'Boka tid';
+  if (hasStem(wish, ['köpa', 'beställ', 'webshop', 'sälj'])) return 'Beställ nu';
+  if (hasStem(wish, ['arbeten', 'portfolio', 'galleri'])) return 'Se våra arbeten';
+  if (hasStem(wish, ['ring', 'mejl', 'kontakt', 'offert'])) return industry === 'hantverk' ? 'Begär offert' : 'Kontakta oss';
+  return PRESET[industry].cta;
+}
+
+function aiString(v, max) {
+  if (typeof v !== 'string') return '';
+  const s = v
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[*_#`>|\[\]{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s.length > max ? '' : s;
+}
+
+// Rensar AI:ns textförslag. Bara fält som klarar kontrollen släpps igenom.
+export function cleanCopy(ai) {
+  if (!ai || typeof ai !== 'object') return null;
+  const out = {};
+  const headline = aiString(ai.headline, 70).replace(/[.!]+$/, '');
+  const sub = aiString(ai.sub ?? ai.subheadline, 190);
+  const tagline = aiString(ai.tagline, 48).replace(/[.!]+$/, '');
+  const cta = aiString(ai.cta, 22).replace(/[.!]+$/, '');
+  const about = aiString(ai.about, 260);
+  if (headline.length >= 8) out.headline = headline;
+  if (sub.length >= 20) out.sub = sub;
+  if (tagline.length >= 3) out.tagline = tagline;
+  if (cta.length >= 3) out.cta = cta;
+  if (about.length >= 20) out.about = about;
+  if (Array.isArray(ai.services)) {
+    const services = ai.services
+      .map((s) => ({ title: capitalize(aiString(s?.title, 34)), text: aiString(s?.text, 110) }))
+      .filter((s) => s.title.length >= 2)
+      .slice(0, 3);
+    if (services.length >= 2) out.services = services;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/**
+ * Bygger utkastet (den lilla hemsidan) av det som hittills finns i briefen.
+ * Fält som inte är besvarade lämnas tomma och ritas som grå väntrader.
+ * `copy` är AI:ns textförslag och läggs ovanpå när det finns.
+ */
+export function draftModel(brief, copy) {
+  const b = brief || {};
+  const m = {};
+  const hasBusiness = hasAnswer(b, 'bransch');
+  const industry = hasBusiness ? detectIndustry(`${b.bransch} ${hasAnswer(b, 'tjanster_produkter') ? b.tjanster_produkter : ''}`) : null;
+  const preset = PRESET[industry || 'tjanst'];
+  const company = hasAnswer(b, 'foretagsnamn') ? oneLine(b.foretagsnamn, 60) : '';
+  const city = hasAnswer(b, 'ort_omrade') ? detectCity(b.ort_omrade) : '';
+  const inCity = city ? ` i ${city}` : '';
+
+  m.vibe = (hasAnswer(b, 'stil') && detectVibe(b.stil)) || (industry ? DEFAULT_VIBE[industry] : 'modern');
+  if (company) m.company = company;
+  if (industry) {
+    m.industry = industry;
+    m.headline = preset.headline;
+    m.sub = preset.sub(company || 'Vi', inCity);
+    m.tagline = `${INDUSTRIES[industry].short}${inCity}`;
+  }
+  if (city) m.city = city;
+  if (hasAnswer(b, 'tjanster_produkter')) {
+    const titles = parseServices(b.tjanster_produkter);
+    if (titles.length) m.services = titles.map((title) => ({ title, text: preset.text }));
+  }
+  if (hasValue(b, 'mal_med_sidan')) {
+    const wish = wishText(b);
+    const booking = wantsBooking(b);
+    const payments = wantsPayments(b);
+    m.cta = ctaFor(b, industry || 'tjanst');
+    m.features = {
+      booking,
+      payments,
+      shop: hasStem(wish, ['köpa', 'beställ', 'webshop', 'sälj']),
+      menu: industry === 'cafe' || hasStem(wish, ['meny', 'pris']),
+      map: hasStem(wish, ['karta', 'hitta']),
+      contact: !booking && !payments,
+    };
+  }
+  if (hasAnswer(b, 'varfor_valja_oss')) m.about = oneLine(b.varfor_valja_oss, 220);
+
+  if (copy) {
+    for (const key of ['headline', 'sub', 'tagline', 'cta', 'about']) if (copy[key] && (key !== 'about' || m.about)) m[key] = copy[key];
+    if (copy.services && m.services) m.services = copy.services.map((s, i) => ({ title: s.title, text: s.text || m.services[i]?.text || preset.text }));
+  }
+  return m;
+}
+
+/* ----------------------------------------------------- reservläge (utan AI) */
+
+const ACKS = ['Tack.', 'Bra, noterat.', 'Toppen.', 'Då vet jag det.'];
+
+// Nästa fråga när AI:n inte svarar: en kort kvittens och frågan för första fältet som saknas.
+export function fallbackQuestion(key, seed = 0) {
+  const q = FIELD[key]?.question || FIELDS[0].question;
+  return key === 'foretagsnamn' ? q : `${ACKS[Math.abs(seed) % ACKS.length]} ${q}`;
+}
+
+/* ------------------------------------------------------------ underlag */
+
+// Texten som mejlas till Nordvy och följer med i bokningen.
+export function briefToText(brief, issues = [], contact = null) {
+  const b = brief || {};
+  const pkg = recommendPackage(b);
+  const lines = ['SJÄLVINTERVJU – UNDERLAG', ''];
+  if (contact?.name) lines.push(`Kontaktperson: ${contact.name}, ${contact.email}${contact.phone ? `, ${contact.phone}` : ''}`, '');
+  for (const f of FIELDS) {
+    if (!hasValue(b, f.key)) continue;
+    lines.push(`${f.label}: ${b[f.key]}`);
+  }
+  const left = missing(b);
+  lines.push('', `Saknar svar: ${left.length ? left.map((k) => FIELD[k].label).join(', ') : 'inget'}`);
+  lines.push(`Att följa upp: ${issues.length ? issues.map((i) => `[${i.topic}] ${i.text}`).join(' | ') : 'inget'}`);
+  lines.push(`Rekommenderat paket: ${packageLine(pkg.id)}`);
+  return lines.join('\n');
+}
+
+export function logToText(log = []) {
+  return log.map((m) => `[${m.who === 'me' ? 'KUND' : 'BOT'}] ${m.text}`).join('\n');
+}
+
+// Delar upp en lång text i mejl som ryms i formulärets gräns.
+export function mailParts(text, size = 1850, max = 4) {
+  const parts = [];
+  let rest = String(text || '');
+  while (rest && parts.length < max) {
+    if (rest.length <= size) {
+      parts.push(rest);
+      rest = '';
+      break;
+    }
+    let cut = rest.lastIndexOf('\n', size);
+    if (cut < size * 0.5) cut = size;
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut).replace(/^\n+/, '');
+  }
+  if (rest && parts.length) parts[parts.length - 1] += '\n[…avkortat]';
+  return parts.map((p, i) => (parts.length > 1 ? `(${i + 1}/${parts.length})\n${p}` : p));
+}
