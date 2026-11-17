@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Självintervjun – berätta om din nya hemsida | Nordvy</title>
+<meta name="description" content="Berätta om ditt företag i en chatt, en fråga i taget. Du ser ett första utkast av din hemsida efter några minuter, och Nordvy får underlaget för att bygga den. Gratis och utan köpkrav.">
+<meta name="theme-color" content="#071428">
+<link rel="canonical" href="__ORIGIN__/intervju">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta property="og:site_name" content="Nordvy">
+<meta property="og:url" content="__ORIGIN__/intervju">
+<meta property="og:title" content="Berätta om din nya hemsida och se ett första utkast">
+<meta property="og:description" content="En fråga i taget. Utkastet byggs medan du svarar. Gratis och utan köpkrav.">
+<meta property="og:image" content="__ORIGIN__/assets/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/preview.css">
+<link rel="stylesheet" href="/assets/intervju.css">
+<script src="/assets/boot.js"></script>
+<script type="module" src="/assets/intervju.js"></script>
+</head>
+<body class="iv" data-view="chat">
+
+<svg width="0" height="0" class="sr" aria-hidden="true">
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 0c.9 6.6 4.4 10.1 12 12-7.6 1.9-11.1 5.4-12 12-.9-6.6-4.4-10.1-12-12C7.6 10.1 11.1 6.6 12 0z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+
+<header class="iv-head">
+  <a class="logo" href="/" aria-label="Nordvy, till startsidan"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg>Nordvy</a>
+  <div class="iv-progress">
+    <span id="step-label">0 av 20 punkter</span>
+    <div class="iv-bar" id="bar" role="progressbar" aria-label="Hur långt du kommit" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"><i></i></div>
+  </div>
+  <a class="iv-exit" href="/">Avsluta</a>
+</header>
+
+<div class="iv-tabs" role="tablist" aria-label="Visa">
+  <button type="button" role="tab" id="tab-chat" aria-selected="true" data-view="chat">Intervju</button>
+  <button type="button" role="tab" id="tab-preview" aria-selected="false" data-view="preview">Utkast<i class="dot" aria-hidden="true"></i></button>
+  <button type="button" role="tab" id="tab-list" aria-selected="false" data-view="list">Checklista</button>
+</div>
+
+<main class="iv-main">
+  <section class="iv-chat" aria-label="Intervju">
+    <div class="iv-log" id="log" role="log" aria-live="polite"></div>
+
+    <form class="iv-composer" id="composer" novalidate autocomplete="off">
+      <div class="iv-chips" id="chips" hidden></div>
+      <div class="iv-row">
+        <label class="sr" for="answer">Ditt svar</label>
+        <textarea id="answer" rows="1" enterkeyhint="send"></textarea>
+        <button class="iv-send" type="submit" aria-label="Skicka svaret"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
+      </div>
+      <div class="iv-hint">
+        <span id="hint"></span>
+        <button type="button" id="early" hidden>Skicka det jag har</button>
+      </div>
+    </form>
+    <p class="iv-legal">Assistenten är en AI och kan missförstå. Nordvys team läser alltid igenom underlaget.</p>
+  </section>
+
+  <section class="iv-preview" aria-label="Ditt utkast">
+    <div class="iv-ptop">
+      <p class="eyebrow"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><span id="pstatus">Utkastet byggs medan du svarar</span></p>
+      <div class="iv-device" role="group" aria-label="Visa">
+        <button type="button" data-panel="desktop" aria-pressed="true">Dator</button>
+        <button type="button" data-panel="mobile" aria-pressed="false">Mobil</button>
+        <button type="button" data-panel="list" aria-pressed="false">Checklista</button>
+      </div>
+    </div>
+    <div class="iv-stage" id="stage"></div>
+    <div class="iv-list" id="list" hidden>
+      <p class="iv-list-note">Intervjun kan inte avslutas förrän varje punkt har ett svar. Har ni inte något räcker det att säga det.</p>
+      <dl id="fields"></dl>
+      <div id="issue-box" hidden><h3>Det här följer teamet upp</h3><ul id="issues"></ul></div>
+    </div>
+  </section>
+</main>
+
+<noscript>
+  <div class="iv-noscript">
+    <p>Självintervjun behöver JavaScript. Du kan i stället <a href="/#kontakt">skicka en förfrågan</a> eller <a href="https://cal.com/nordvy-zovyfw">boka ett möte</a>.</p>
+  </div>
+</noscript>
+</body>
+</html>

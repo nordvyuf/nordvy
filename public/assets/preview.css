@@ -1,0 +1,665 @@
+/* Utkastet: en liten hemsida som ritas i ett webbläsarfönster.
+   Allt inuti .pv mäts i em och skalar med fönstrets bredd (cqw). */
+
+.pv-window {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0d1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), 0 2px 0 rgba(255, 255, 255, 0.06) inset;
+}
+.pv-chrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: #0f2038;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pv-chrome i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.pv-url {
+  flex: 1;
+  margin-left: 8px;
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #9fb0c6;
+  font: 500 11px/1.4 Inter, system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-frame {
+  container-type: inline-size;
+  background: var(--pv-bg, #fff);
+}
+
+.pv {
+  --pv-bg: #fbf5ec;
+  --pv-ink: #2b1d14;
+  --pv-mut: #7a6657;
+  --pv-acc: #c4572f;
+  --pv-acc-ink: #fff;
+  --pv-card: #fff;
+  --pv-soft: #f3e6d6;
+  --pv-line: rgba(43, 29, 20, 0.12);
+  --pv-display: "Fraunces", Georgia, serif;
+  --pv-dw: 560;
+  --pv-r: 1.2em;
+  font-size: 1.39cqw;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.5;
+  color: var(--pv-ink);
+  background: var(--pv-bg);
+  text-align: left;
+  transition: background-color 0.6s, color 0.6s;
+}
+.pv[data-vibe="modern"] {
+  --pv-bg: #fff;
+  --pv-ink: #0e1116;
+  --pv-mut: #5b6472;
+  --pv-acc: #2456f5;
+  --pv-card: #f6f7f9;
+  --pv-soft: #eaf0ff;
+  --pv-line: rgba(14, 17, 22, 0.1);
+  --pv-display: Inter, system-ui, sans-serif;
+  --pv-dw: 700;
+  --pv-r: 0.7em;
+}
+.pv[data-vibe="exklusiv"] {
+  --pv-bg: #12100e;
+  --pv-ink: #f3ede2;
+  --pv-mut: #a99f8f;
+  --pv-acc: #c9a45c;
+  --pv-acc-ink: #12100e;
+  --pv-card: #1b1815;
+  --pv-soft: #231e18;
+  --pv-line: rgba(243, 237, 226, 0.14);
+  --pv-dw: 480;
+  --pv-r: 0.3em;
+}
+.pv[data-vibe="lekfull"] {
+  --pv-bg: #fff8e7;
+  --pv-ink: #26183a;
+  --pv-mut: #6b5c82;
+  --pv-acc: #f0447a;
+  --pv-card: #fff;
+  --pv-soft: #ffe1ea;
+  --pv-line: rgba(38, 24, 58, 0.12);
+  --pv-display: Inter, system-ui, sans-serif;
+  --pv-dw: 800;
+  --pv-r: 1.8em;
+}
+.pv[data-vibe="natur"] {
+  --pv-bg: #f2f5ee;
+  --pv-ink: #1f2f25;
+  --pv-mut: #5e7064;
+  --pv-acc: #2f6b4a;
+  --pv-card: #fff;
+  --pv-soft: #dfead9;
+  --pv-line: rgba(31, 47, 37, 0.12);
+}
+
+.pv * {
+  box-sizing: border-box;
+  margin: 0;
+}
+.pv svg {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+/* Rader som ännu inte har något innehåll */
+.pv-sk {
+  display: block;
+  height: 0.9em;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--pv-line), color-mix(in srgb, var(--pv-line) 40%, transparent), var(--pv-line));
+  background-size: 200% 100%;
+  animation: pv-shimmer 1.8s linear infinite;
+}
+@keyframes pv-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.pv-new {
+  animation: pv-pop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pv-pop {
+  from {
+    opacity: 0;
+    transform: translateY(0.8em);
+    filter: blur(4px);
+  }
+}
+
+.pv-nav {
+  display: flex;
+  align-items: center;
+  gap: 2em;
+  padding: 1.5em 3em;
+  border-bottom: 1px solid var(--pv-line);
+}
+.pv-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font: var(--pv-dw) 1.5em/1 var(--pv-display);
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+.pv-logo span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-mark {
+  display: grid;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: calc(var(--pv-r) * 0.45);
+  background: var(--pv-acc);
+  color: var(--pv-acc-ink);
+  font-size: 0.95em;
+}
+.pv-links {
+  display: flex;
+  gap: 2em;
+  margin-left: auto;
+  color: var(--pv-mut);
+  font-size: 1.05em;
+  white-space: nowrap;
+}
+.pv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em 1.5em;
+  border-radius: calc(var(--pv-r) * 0.8);
+  background: var(--pv-acc);
+  color: var(--pv-acc-ink);
+  font-weight: 600;
+  font-size: 1.05em;
+  white-space: nowrap;
+}
+.pv-btn.ghost {
+  background: transparent;
+  color: var(--pv-ink);
+  box-shadow: inset 0 0 0 1px var(--pv-line);
+}
+
+.pv-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 3em;
+  align-items: center;
+  padding: 4.2em 3em 4em;
+}
+.pv-eyebrow {
+  color: var(--pv-acc);
+  font-weight: 600;
+  font-size: 1em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-height: 1.5em;
+}
+.pv-h1 {
+  font: var(--pv-dw) 4.1em/1.03 var(--pv-display);
+  letter-spacing: -0.025em;
+  margin: 0.3em 0 0.4em;
+  text-wrap: balance;
+}
+.pv-sub {
+  color: var(--pv-mut);
+  font-size: 1.3em;
+  max-width: 30em;
+  text-wrap: pretty;
+}
+.pv-cta {
+  display: flex;
+  gap: 1em;
+  margin-top: 2em;
+  flex-wrap: wrap;
+}
+.pv-art {
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  border-radius: calc(var(--pv-r) * 1.6);
+  background:
+    radial-gradient(60% 50% at 30% 25%, color-mix(in srgb, var(--pv-acc) 38%, transparent), transparent 70%),
+    radial-gradient(50% 50% at 80% 85%, color-mix(in srgb, var(--pv-acc) 22%, transparent), transparent 70%),
+    var(--pv-soft);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.pv-art::before,
+.pv-art::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--pv-acc) 40%, transparent);
+}
+.pv-art::before {
+  inset: 14%;
+}
+.pv-art::after {
+  inset: 27%;
+  border-style: dashed;
+  animation: pv-spin 40s linear infinite;
+}
+@keyframes pv-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+.pv-art-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pv-card);
+  color: var(--pv-acc);
+  box-shadow: 0 1.5em 3em color-mix(in srgb, var(--pv-ink) 18%, transparent);
+  font-size: 5em;
+}
+.pv-art-icon svg {
+  stroke-width: 1.4;
+}
+.pv-chip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6em 1em;
+  border-radius: 99px;
+  background: var(--pv-card);
+  color: var(--pv-ink);
+  font-weight: 600;
+  font-size: 0.95em;
+  box-shadow: 0 0.8em 2em color-mix(in srgb, var(--pv-ink) 16%, transparent);
+  white-space: nowrap;
+}
+.pv-chip svg {
+  color: var(--pv-acc);
+}
+.pv-chip.a {
+  left: 7%;
+  top: 10%;
+}
+.pv-chip.b {
+  right: 6%;
+  bottom: 10%;
+}
+
+.pv-sec {
+  padding: 0 3em 4em;
+}
+.pv-h2 {
+  font: var(--pv-dw) 2.2em/1.1 var(--pv-display);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.9em;
+}
+.pv-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.4em;
+}
+.pv-card {
+  padding: 1.8em;
+  border-radius: var(--pv-r);
+  background: var(--pv-card);
+  border: 1px solid var(--pv-line);
+  min-height: 9.5em;
+}
+.pv-dot {
+  display: grid;
+  place-items: center;
+  width: 2.4em;
+  height: 2.4em;
+  border-radius: calc(var(--pv-r) * 0.5);
+  background: var(--pv-soft);
+  color: var(--pv-acc);
+  font-weight: 700;
+  margin-bottom: 1em;
+}
+.pv-card h4 {
+  font: var(--pv-dw) 1.45em/1.2 var(--pv-display);
+  margin-bottom: 0.35em;
+}
+.pv-card p {
+  color: var(--pv-mut);
+  font-size: 1.05em;
+}
+
+.pv-band {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 2.5em;
+  align-items: center;
+  padding: 2.6em;
+  border-radius: calc(var(--pv-r) * 1.3);
+  background: var(--pv-soft);
+}
+.pv-band p {
+  color: var(--pv-mut);
+  font-size: 1.1em;
+}
+.pv-widget {
+  padding: 1.5em;
+  border-radius: var(--pv-r);
+  background: var(--pv-card);
+  border: 1px solid var(--pv-line);
+  display: grid;
+  gap: 1em;
+}
+.pv-row {
+  display: flex;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+.pv-pill {
+  padding: 0.55em 0.95em;
+  border-radius: calc(var(--pv-r) * 0.5);
+  border: 1px solid var(--pv-line);
+  font-weight: 600;
+  font-size: 0.95em;
+  white-space: nowrap;
+}
+.pv-pill.on {
+  background: var(--pv-acc);
+  color: var(--pv-acc-ink);
+  border-color: transparent;
+}
+.pv-pay {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  color: var(--pv-mut);
+  font-size: 0.95em;
+  padding-top: 0.9em;
+  border-top: 1px dashed var(--pv-line);
+}
+.pv-menu {
+  display: grid;
+  gap: 0.9em;
+}
+.pv-menu div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8em;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+.pv-menu div::after {
+  content: "";
+  flex: 1;
+  order: 1;
+  border-bottom: 1px dotted var(--pv-mut);
+  opacity: 0.6;
+}
+.pv-menu small {
+  order: 2;
+  color: var(--pv-mut);
+  font-weight: 500;
+}
+.pv-quote {
+  padding: 2.4em 2.6em;
+  border-left: 0.3em solid var(--pv-acc);
+  background: var(--pv-card);
+  border-radius: 0 var(--pv-r) var(--pv-r) 0;
+  font: 400 1.65em/1.4 var(--pv-display);
+  text-wrap: pretty;
+}
+.pv-quote small {
+  display: block;
+  margin-top: 0.8em;
+  font: 600 0.6em/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pv-mut);
+}
+.pv-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 1.8em 3em;
+  border-top: 1px solid var(--pv-line);
+  color: var(--pv-mut);
+  font-size: 0.95em;
+}
+
+/* Smal bredd = mobilvy */
+@container (max-width: 600px) {
+  .pv {
+    font-size: min(3.05cqw, 12.5px);
+  }
+  .pv-nav {
+    padding: 1.2em 1.6em;
+  }
+  .pv-links {
+    display: none;
+  }
+  .pv-nav .pv-btn {
+    margin-left: auto;
+    font-size: 0.9em;
+    padding: 0.6em 1.1em;
+  }
+  .pv-hero {
+    grid-template-columns: 1fr;
+    gap: 2em;
+    padding: 2.4em 1.6em;
+  }
+  .pv-h1 {
+    font-size: 3em;
+  }
+  .pv-art {
+    aspect-ratio: 16 / 10;
+  }
+  .pv-art-icon {
+    width: 24%;
+    font-size: 4em;
+  }
+  .pv-art::before {
+    inset: 8% 24%;
+  }
+  .pv-art::after {
+    inset: 22% 33%;
+  }
+  .pv-sec {
+    padding: 0 1.6em 2.6em;
+  }
+  .pv-cards,
+  .pv-band {
+    grid-template-columns: 1fr;
+  }
+  .pv-card {
+    min-height: 0;
+  }
+  .pv-band {
+    padding: 1.8em;
+    gap: 1.4em;
+  }
+  .pv-foot {
+    padding: 1.4em 1.6em;
+    flex-direction: column;
+    gap: 0.3em;
+  }
+}
+
+/* ---- Finare utkast: illustration, fakta, kontakt och öppettider ---- */
+.pv-art {
+  aspect-ratio: 1 / 1.02;
+  border-radius: calc(var(--pv-r) * 1.7);
+  background:
+    radial-gradient(70% 55% at 25% 15%, color-mix(in srgb, var(--pv-acc) 42%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 85% 90%, color-mix(in srgb, var(--pv-acc) 26%, transparent), transparent 70%),
+    var(--pv-soft);
+  box-shadow: 0 2.4em 5em color-mix(in srgb, var(--pv-ink) 14%, transparent);
+}
+.pv-art::before {
+  inset: 0;
+  border: 0;
+  border-radius: inherit;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.pv-art::after {
+  display: none;
+}
+.pv .pv-scene {
+  position: absolute;
+  inset: 5% 6%;
+  width: 88%;
+  height: 90%;
+  z-index: 1;
+  overflow: visible;
+  stroke: none;
+  stroke-width: 0;
+}
+.pv .pv-scene * { stroke: none; fill: none; }
+.pv .pv-scene .s { fill: color-mix(in srgb, var(--pv-card) 70%, var(--pv-soft)); }
+.pv .pv-scene .c { fill: var(--pv-card); }
+.pv .pv-scene .a { fill: var(--pv-acc); }
+.pv .pv-scene .g { fill: color-mix(in srgb, var(--pv-acc) 24%, transparent); }
+.pv .pv-scene .ls,
+.pv .pv-scene .o,
+.pv .pv-scene .h { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pv .pv-scene .ls { stroke: var(--pv-acc); stroke-width: 4; }
+.pv .pv-scene .o { stroke: color-mix(in srgb, var(--pv-ink) 30%, transparent); stroke-width: 2.5; }
+.pv .pv-scene .h { stroke: color-mix(in srgb, var(--pv-card) 85%, transparent); stroke-width: 3.5; }
+.pv .pv-scene .gr path { stroke: color-mix(in srgb, var(--pv-acc) 22%, transparent); stroke-width: 1.5; fill: none; }
+.pv-h1 {
+  font-size: 4.5em;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.pv-sub {
+  font-size: 1.35em;
+}
+.pv-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8em 1.6em;
+  margin-top: 2.4em;
+  padding-top: 1.6em;
+  border-top: 1px solid var(--pv-line);
+  color: var(--pv-mut);
+  font-size: 1.02em;
+  font-weight: 500;
+}
+.pv-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+}
+.pv-facts svg {
+  color: var(--pv-acc);
+}
+.pv-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--pv-card), color-mix(in srgb, var(--pv-card) 80%, var(--pv-soft)));
+  box-shadow: 0 0.8em 2em color-mix(in srgb, var(--pv-ink) 6%, transparent);
+}
+.pv-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0.28em;
+  background: var(--pv-acc);
+  opacity: 0.85;
+}
+.pv-infos {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.4em;
+}
+.pv-info {
+  padding: 1.8em;
+  border-radius: var(--pv-r);
+  background: var(--pv-card);
+  border: 1px solid var(--pv-line);
+}
+.pv-info h4 {
+  font: var(--pv-dw) 1.35em/1.2 var(--pv-display);
+  margin-bottom: 0.9em;
+}
+.pv-rows {
+  display: grid;
+  gap: 0.85em;
+}
+.pv-row2 {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.pv-row2 svg {
+  color: var(--pv-acc);
+  font-size: 1.15em;
+}
+.pv-hour {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  padding-bottom: 0.7em;
+  border-bottom: 1px dashed var(--pv-line);
+  color: var(--pv-mut);
+}
+.pv-hour:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.pv-hour b {
+  color: var(--pv-ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+@container (max-width: 600px) {
+  .pv-h1 {
+    font-size: 3.1em;
+  }
+  .pv-art {
+    aspect-ratio: 16 / 11;
+  }
+  .pv .pv-scene {
+    inset: 4% 20%;
+    width: 60%;
+    height: 92%;
+  }
+  .pv-infos {
+    grid-template-columns: 1fr;
+  }
+  .pv-facts {
+    margin-top: 1.6em;
+    padding-top: 1.2em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-sk,
+  .pv-new,
+  .pv-art::after {
+    animation: none;
+  }
+}
