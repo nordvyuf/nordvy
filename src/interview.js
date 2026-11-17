@@ -225,18 +225,22 @@ const ABOUT = {
   bilder: /bild|foto/i,
   egna_texter: /text/i,
   omdomen: /omdöme|recension|betyg/i,
-  doman_onskemal: /webbadress|domän|adress|sidnamn|webbplatsnamn/i,
+  doman_onskemal: /webbadress|webbplatsadress|domän|sidnamn|webbplatsnamn|\.se\b/i,
   undvik: /undvik|inte vill ha|inte ha|vill ni slippa/i,
-  referens_ok: /exempel|referens|visa/i,
+  referens_ok: /som exempel|referens/i,
 };
 
 // Vilket fält handlar frågan om? AI:n säger själv vad den frågar om, men märker ibland fel.
 // Det fält AI:n angav vinner om frågan passar det, annars det första saknade fältet som frågan
 // passar. Passar frågan inget saknat fält används den inte.
+// Fält där frågan alltid ska vara exakt checklistans, eftersom svaret är ett samtycke.
+const FIXED_QUESTION = new Set(['referens_ok']);
+
 export function fieldForQuestion(question, aiField, left) {
   const q = String(question || '');
+  if (FIXED_QUESTION.has(aiField)) return '';
   if (left.includes(aiField) && ABOUT[aiField]?.test(q)) return aiField;
-  return left.find((f) => ABOUT[f]?.test(q)) || '';
+  return left.find((f) => !FIXED_QUESTION.has(f) && ABOUT[f]?.test(q)) || '';
 }
 
 export function questionFits(field, question) {
@@ -331,7 +335,7 @@ const FOLLOW_UPS = {
   bransch: { needs: isVague, question: 'Kan du berätta med några konkreta exempel vad ni gör?' },
   tjanster_produkter: { needs: isVague, question: 'Kan du ge tre exempel på det ni gör mest? Skriv dem som en lista, så blir sidan tydlig.' },
   mal_med_sidan: {
-    needs: isVagueGoal,
+    needs: (t, brief) => isVagueGoal(t) && !ACTION_WORDS.test(String(brief?.funktioner || '')),
     question: 'Vad ska en besökare kunna göra direkt på sidan för att det ska hända? Till exempel köpa, beställa, boka tid eller kontakta er.',
   },
   kontakt: {
@@ -367,7 +371,7 @@ export function applyTurn(state, ai) {
   const negative = isNegative(message);
   // Ett vagt svar på bransch eller tjänster ger en följdfråga, en gång. Det avgörs här i koden, inte av AI:n.
   const followUp = FOLLOW_UPS[lastAsked[0]];
-  const vagueField = !edit && !negative && askCount < 2 && followUp && followUp.needs(message) ? lastAsked[0] : '';
+  const vagueField = !edit && !negative && askCount < 2 && followUp && followUp.needs(message, state.brief) ? lastAsked[0] : '';
   // Det som sagts tidigare på samma fält får bara följa med om det var samma fråga.
   const carryFor = (field) => (state.carryField === field ? state.carry || '' : '');
 
