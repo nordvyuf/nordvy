@@ -354,6 +354,14 @@ function overlaps(value, message) {
   return false;
 }
 
+// Frågor till oss om pris, avtal eller tid. AI:n får inte svara på dem, och de ska inte sparas som svar.
+export const asksUs = (text) => {
+  const t = String(text || '').trim();
+  return /\?\s*$|^(vad|hur|när)\b/i.test(t) && /(kostar|kosta\b|pris|betala|avgift|hur lång tid|när blir|när är|leverans|avtal|bindning|uppsägning)/i.test(t);
+};
+const LISTS_AVOIDED = /^(inga|ingen|inget)\s+(?!(särskilt|speciellt|alls|direkt|än|tyvärr|egentligen|aning|koll)(?![a-zåäö]))[a-zåäö]/i;
+const LOGO_HELP = /(göra|skapa|designa|fixa|ta fram|hjälp).{0,30}(logga|logotyp)|(logga|logotyp).{0,30}(åt (mig|oss)|hjälp)/i;
+
 const yesNo = (text) => (/^(ja|japp|jajamän|absolut|självklart|gärna|okej|ok|visst)(?![a-zåäö])/i.test(text.trim()) ? 'Ja' : isNegative(text) ? 'Nej' : '');
 
 /**
@@ -368,12 +376,23 @@ export function applyTurn(state, ai) {
   const brief = { ...state.brief };
   let issues = [...(state.issues || [])];
   const saves = [];
-  const negative = isNegative(message);
+  // "Inga priser på sidan" är ett svar på vad de vill undvika, inte ett nej.
+  const negative = isNegative(message) && !(lastAsked[0] === 'undvik' && LISTS_AVOIDED.test(message.trim()));
   // Ett vagt svar på bransch eller tjänster ger en följdfråga, en gång. Det avgörs här i koden, inte av AI:n.
   const followUp = FOLLOW_UPS[lastAsked[0]];
   const vagueField = !edit && !negative && askCount < 2 && followUp && followUp.needs(message, state.brief) ? lastAsked[0] : '';
   // Det som sagts tidigare på samma fält får bara följa med om det var samma fråga.
-  const carryFor = (field) => (state.carryField === field ? state.carry || '' : '');
+  // Ett vagt första svar ("allt möjligt", "att tjäna pengar") följer inte med när kunden har gett ett bättre.
+  const carryFor = (field) => {
+    if (state.carryField !== field || !state.carry) return '';
+    return FOLLOW_UPS[field]?.needs(state.carry, state.brief) ? '' : state.carry;
+  };
+
+  // Kunden frågar oss om pris eller tid i stället för att svara. Svara kort och ställ samma fråga igen.
+  if (!edit && lastAsked[0] && asksUs(message) && !hasValue(brief, lastAsked[0])) {
+    const again = fallbackQuestion(lastAsked[0], 0, brief);
+    return { brief, issues, saves, reply: `Det går teamet igenom med dig efter intervjun. ${again}`, asked: [lastAsked[0]], skip: true, done: false, missing: missing(brief) };
+  }
 
   const accept = (field, value) => {
     brief[field] = value;
@@ -416,6 +435,15 @@ export function applyTurn(state, ai) {
     }
   }
 
+  // Kunden vill ha hjälp med loggan, eller undrar om en webbadress är ledig: det följer teamet upp.
+  if (lastAsked[0] === 'logga' && LOGO_HELP.test(message)) {
+    accept('logga', 'saknas');
+    issues = cleanIssues([...issues, { topic: 'logga', text: 'Kunden vill ha hjälp att ta fram en logga (tillägget Enkel logotyp).' }]);
+  }
+  if (lastAsked[0] === 'doman_onskemal' && /ledig|upptagen|tagen|finns den/i.test(message)) {
+    issues = cleanIssues([...issues, { topic: 'annat', text: 'Kunden undrar om webbadressen är ledig. Kolla det innan ni lovar något.' }]);
+  }
+
   // Fält som appen sköter själv.
   if (saves.some((s) => s.field === 'logga')) brief.logga_status = isSaknas(brief.logga) ? 'saknas' : 'ej verifierad';
 
@@ -448,7 +476,7 @@ export function applyTurn(state, ai) {
   // Frågan måste handla om fältet den gäller. Annars används checklistans fråga.
   if (!reply || !reply.includes('?')) {
     asked = left[0];
-    reply = fallbackQuestion(asked, NEED.length - left.length);
+    reply = fallbackQuestion(asked, NEED.length - left.length, brief);
   } else {
     reply = reply.slice(0, reply.lastIndexOf('?') + 1);
   }
@@ -470,7 +498,10 @@ async function runModel(env, payload) {
   throw lastError;
 }
 
-async function askJson(env, messages, schema, maxTokens) {
+// Dagens gratiskvot för Workers AI är slut. Då är det ingen idé att försöka igen förrän nästa dygn.
+const QUOTA = /4006|daily free allocation|neurons/i;
+
+async function askJson(env, messages, schema, maxTokens, errors = []) {
   const attempts = [
     { messages, max_tokens: maxTokens, temperature: 0.4, response_format: { type: 'json_schema', json_schema: schema } },
     { messages, max_tokens: maxTokens, temperature: 0.4 },
@@ -479,8 +510,12 @@ async function askJson(env, messages, schema, maxTokens) {
     try {
       const json = extractJson(await runModel(env, payload));
       if (json && typeof json === 'object') return json;
+      errors.push('inget json i svaret');
     } catch (error) {
-      console.warn('workers ai call failed', error?.message || error);
+      const message = String(error?.message || error).slice(0, 300);
+      errors.push(message);
+      console.warn('workers ai call failed', message);
+      if (QUOTA.test(message)) break;
     }
   }
   return null;
@@ -505,11 +540,12 @@ export async function interviewTurn(env, body) {
   const state = readState(body);
   if (!state.message) return { ok: false, error: 'empty_message' };
   let ai = null;
-  if (env?.AI) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420);
+  const errors = [];
+  if (env?.AI) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors);
   const result = applyTurn(state, ai);
   const out = { ok: true, ...result, source: ai ? 'ai' : 'fallback' };
-  // Felsökning: med debug: true följer AI:ns oredigerade förslag med, så att filtren går att justera.
-  if (body?.debug === true && ai) out.debug = { asked: ai.asked, reply: ai.reply, saves: ai.saves };
+  // Felsökning: med debug: true följer AI:ns oredigerade förslag med (eller felet), så att filtren går att justera.
+  if (body?.debug === true) out.debug = ai ? { asked: ai.asked, reply: ai.reply, saves: ai.saves } : { errors };
   return out;
 }
 
