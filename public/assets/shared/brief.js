@@ -32,9 +32,9 @@ export const FIELDS = [
   { key: 'varfor_valja_oss', label: 'Varför välja er', level: 2, about: 'Vad som gör dem bättre eller annorlunda, med kundens egna ord.', question: 'Varför väljer kunder just er?' },
   { key: 'erfarenhet', label: 'Erfarenhet', level: 2, about: 'Hur länge de funnits eller hållit på.', question: 'Hur länge har ni funnits eller hållit på?' },
   { key: 'malgrupp', label: 'Målgrupp', level: 2, about: 'Vilka kunderna är, t.ex. privatpersoner eller företag, ålder, närområde.', question: 'Vilka är era kunder? Till exempel privatpersoner eller företag.' },
-  { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vilka funktioner vill ni ha på sidan?', chips: ['Bokning', 'Kontaktformulär', 'Karta', 'Webshop', 'Betalning med Swish'], multi: true },
+  { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vad ska gå att göra på sidan? Välj det som passar.', chips: ['Bokning', 'Beställning', 'Webshop', 'Betalning med Swish', 'Kontaktformulär', 'Karta'], multi: true },
   { key: 'kontakt', label: 'Kontakt', level: 1, about: 'Telefon, mejl och adress.', question: 'Vilka kontaktuppgifter ska stå på sidan? Telefon, mejl och adress.' },
-  { key: 'oppettider', label: 'Öppettider', level: 2, about: 'Exakt som kunden anger. "saknas" om de inte har fasta tider.', question: 'Vilka öppettider har ni?', chips: ['Vi har inga fasta tider'] },
+  { key: 'oppettider', label: 'Öppettider', level: 2, about: 'Exakt som kunden anger. "saknas" om de inte har fasta tider.', question: 'Har ni öppettider? Säljer ni bara online räcker det att säga det.', chips: ['Vi har inga fasta tider', 'Vi säljer bara online'] },
   { key: 'sociala_lankar', label: 'Sociala länkar', level: 1, about: 'Instagram, Facebook, LinkedIn med mera.', question: 'Har ni Instagram, Facebook eller andra sociala medier? Skriv gärna namnen eller länkarna.', chips: ['Vi har inga'] },
   { key: 'logga', label: 'Logga', level: 2, about: 'Har de en logga? Den mejlas till Nordvy efter intervjun.', question: 'Har ni en logga?', chips: ['Ja, jag mejlar den', 'Nej, ingen logga'] },
   { key: 'logga_status', label: 'Logga: status', level: 0, about: 'ej verifierad eller saknas.' },
@@ -333,6 +333,8 @@ export function parseContact(text) {
 export function parseHours(text) {
   const t = String(text || '').trim();
   if (!t || isSaknas(t)) return [];
+  // "Vi säljer bara online" är ett svar, men inga öppettider att visa.
+  if (!/\d/.test(t) || /online|ingen (fysisk|butik|lokal)|inga fasta/i.test(t)) return [];
   return t
     .split(/[,;\n]|\s+och\s+(?=[a-zåäö]{3,}\b.*\d)/i)
     .map((x) => x.replace(/\s+/g, ' ').trim())
