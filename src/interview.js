@@ -210,17 +210,17 @@ const FILLER =
 const ABOUT = {
   foretagsnamn: /heter|namn/i,
   bransch: /gör ni|verksamhet|bransch|vad är ni|beskriv/i,
-  ort_omrade: /\bvar\b|\bort\b|område|stad|ligger|finns ni|verksam/i,
-  tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment/i,
+  ort_omrade: /\bvar\b|\bort\b|område|stad|ligger|finns ni|verksam|online|sverige|hela landet|lokalt/i,
+  tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment|fler (böcker|saker|varor)/i,
   mal_med_sidan: /mål|viktigaste|besökare|kunna göra|syfte|sidan ska/i,
-  stil: /stil|känsla|färg|utseende|ser ut|design|ton\b|uttryck/i,
-  varfor_valja_oss: /varför|unik|bättre|skiljer|väljer|speciell|särskil/i,
-  erfarenhet: /hur länge|sedan när|funnits|erfarenhet|år\b|startade|verksamma/i,
-  malgrupp: /målgrupp|vilka är era kunder|vem är|kunder är|vilka kunder|vem vänder/i,
-  funktioner: /funktion|bokning|kontaktformulär|karta|webshop|ska finnas|på sidan/i,
+  stil: /stil|känsla|känn|färg|utseende|ser ut|design|ton\b|uttryck/i,
+  varfor_valja_oss: /varför|unik|bättre|skiljer|väljer|speciell|särskil|annorlunda|sticker ut/i,
+  erfarenhet: /hur länge|sedan när|funnits|erfarenhet|år\b|startade|verksamma|hur gammal/i,
+  malgrupp: /målgrupp|vilka är era kunder|vem är|kunder är|vilka kunder|vem vänder|vem köper|vilka köper|nå ut till|riktar/i,
+  funktioner: /funktion|bokning|boka|kontaktformulär|karta|webshop|ska finnas|på sidan|beställa|köpa direkt|betala/i,
   kontakt: /telefon|mejl|e-post|adress|kontakt|nå er|nummer/i,
   oppettider: /öppettid|öppet|öppnar|tider/i,
-  sociala_lankar: /instagram|facebook|sociala|länk/i,
+  sociala_lankar: /instagram|facebook|tiktok|sociala|länk/i,
   logga: /logga|logotyp/i,
   bilder: /bild|foto/i,
   egna_texter: /text/i,
@@ -229,6 +229,15 @@ const ABOUT = {
   undvik: /undvik|inte vill ha|inte ha|vill ni slippa/i,
   referens_ok: /exempel|referens|visa/i,
 };
+
+// Vilket fält handlar frågan om? AI:n säger själv vad den frågar om, men märker ibland fel.
+// Det fält AI:n angav vinner om frågan passar det, annars det första saknade fältet som frågan
+// passar. Passar frågan inget saknat fält används den inte.
+export function fieldForQuestion(question, aiField, left) {
+  const q = String(question || '');
+  if (left.includes(aiField) && ABOUT[aiField]?.test(q)) return aiField;
+  return left.find((f) => ABOUT[f]?.test(q)) || '';
+}
 
 export function questionFits(field, question) {
   const re = ABOUT[field];
@@ -427,11 +436,12 @@ export function applyTurn(state, ai) {
   if (vagueField) {
     return { brief, issues, saves, reply: FOLLOW_UPS[vagueField].question, asked: [vagueField], done: false, missing: left };
   }
-  // AI:n får hoppa över något kunden redan har sagt, men inte hoppa långt framåt i checklistan.
-  let asked = ai && left.includes(ai.asked) && left.indexOf(ai.asked) <= 1 ? ai.asked : '';
-  let reply = asked ? tidyReply(ai.reply, message) : '';
+  // AI:ns fråga används om den handlar om något som fortfarande saknas. Fältet bestäms av vad frågan
+  // faktiskt frågar om, så att kundens svar sparas på rätt plats.
+  let reply = ai ? tidyReply(ai.reply, message) : '';
+  let asked = reply ? fieldForQuestion(reply.slice(reply.lastIndexOf('.') + 1), ai.asked, left) : '';
+  if (!asked) reply = '';
   // Frågan måste handla om fältet den gäller. Annars används checklistans fråga.
-  if (reply && !questionFits(asked, reply.slice(reply.lastIndexOf('.') + 1))) reply = '';
   if (!reply || !reply.includes('?')) {
     asked = left[0];
     reply = fallbackQuestion(asked, NEED.length - left.length);
