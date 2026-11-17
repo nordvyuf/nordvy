@@ -328,7 +328,7 @@ async function submitAnswer() {
   const data = await post('/api/interview/turn', {
     brief: state.brief,
     issues: state.issues,
-    history: state.log.slice(-8),
+    history: state.log.slice(-14),
     asked: state.asked,
     askCount: state.askCount,
     carry: state.carry,
