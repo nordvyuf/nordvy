@@ -249,6 +249,19 @@ const PRESET = {
   tjanst: { headline: 'Tydlig hjälp när du behöver den', sub: (n, c) => `${n}${c} gör det enkelt att komma igång. Hör av dig så berättar vi mer.`, cta: 'Kontakta oss', text: 'Vi hjälper dig hela vägen.' },
 };
 
+// Tre korta texter per bransch, så att tjänsterutorna inte säger samma sak.
+const SERVICE_TEXTS = {
+  frisor: ['Anpassat efter ditt hår och din stil.', 'Vi tar oss tid att lyssna först.', 'Produkter som håller hemma också.'],
+  cafe: ['Bakat och lagat från grunden.', 'Gott hela dagen, sittande eller som takeaway.', 'Gjort på råvaror vi litar på.'],
+  hantverk: ['Fast pris och tydlig tidsplan.', 'Samma ansvariga från start till slut.', 'Rent och snyggt när vi går.'],
+  butik: ['Utvalt med omsorg.', 'Finns i butiken just nu.', 'Fråga oss, vi hjälper dig välja.'],
+  halsa: ['Anpassat efter dig och dina mål.', 'Vi börjar där du är.', 'Stöd hela vägen, steg för steg.'],
+  tjanst: ['Tydligt och utan krångel.', 'Vi hjälper dig hela vägen.', 'Anpassat efter ditt behov.'],
+};
+
+// Pekar ut företagsnamnet och vanliga fyllnadsord så att en rubrik inte bara upprepar dem.
+const BARE_HEADLINE = /^(välkommen( till)?|hem|startsida|hemsida|vår hemsida|om oss|hej)\b/i;
+
 function ctaFor(b, industry) {
   const wish = wishText(b);
   if (wantsBooking(b)) return industry === 'cafe' ? 'Boka bord' : 'Boka tid';
@@ -269,16 +282,24 @@ function aiString(v, max) {
 }
 
 // Rensar AI:ns textförslag. Bara fält som klarar kontrollen släpps igenom.
-export function cleanCopy(ai) {
+export function cleanCopy(ai, company = '') {
   if (!ai || typeof ai !== 'object') return null;
   const out = {};
-  const headline = aiString(ai.headline, 70).replace(/[.!]+$/, '');
-  const sub = aiString(ai.sub ?? ai.subheadline, 190);
+  const name = lower(company).trim();
+  const echoes = (t) => {
+    const x = lower(t).replace(/[^a-zåäö0-9 ]/g, '').trim();
+    return !x || (name && (x === name || (x.includes(name) && x.length < name.length + 14)));
+  };
+  let headline = aiString(ai.headline, 70).replace(/[.!]+$/, '');
+  // En rubrik som bara är företagsnamnet eller ett fyllnadsord säger ingenting. Då behålls färdig rubrik.
+  if (headline.split(' ').length < 3 || BARE_HEADLINE.test(headline) || echoes(headline)) headline = '';
+  let sub = aiString(ai.sub ?? ai.subheadline, 190);
+  if (sub.length < 40 || echoes(sub)) sub = '';
   const tagline = aiString(ai.tagline, 48).replace(/[.!]+$/, '');
   const cta = aiString(ai.cta, 22).replace(/[.!]+$/, '');
   const about = aiString(ai.about, 260);
-  if (headline.length >= 8) out.headline = headline;
-  if (sub.length >= 20) out.sub = sub;
+  if (headline) out.headline = headline;
+  if (sub) out.sub = sub;
   if (tagline.length >= 3) out.tagline = tagline;
   if (cta.length >= 3) out.cta = cta;
   if (about.length >= 20) out.about = about;
@@ -290,6 +311,41 @@ export function cleanCopy(ai) {
     if (services.length >= 2) out.services = services;
   }
   return Object.keys(out).length ? out : null;
+}
+
+// Plockar telefon, e-post och adress ur kundens fria svar om kontaktuppgifter.
+export function parseContact(text) {
+  const t = String(text || '');
+  if (!t.trim() || isSaknas(t)) return {};
+  const email = (t.match(/[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+/) || [''])[0];
+  const phone = (t.match(/(?:\+46|0)[\d\s-]{6,14}\d/) || [''])[0].replace(/\s+/g, ' ').trim();
+  const rest = t
+    .replace(email, ' ')
+    .replace(phone, ' ')
+    .replace(/\b(tel(?:efon)?|mobil|mejl|mail|e-?post|adress|besöksadress)\b\s*:?/gi, ' ')
+    .split(/[,;\n]/)
+    .map((x) => x.replace(/^[\s\-–:]+|[\s\-–:]+$/g, ''))
+    .filter((x) => x.length > 2);
+  return { email: email.slice(0, 60), phone: phone.slice(0, 20), address: rest.join(', ').slice(0, 80) };
+}
+
+// "Tis-fre 10-18, lör 10-15" blir två rader. Bara det kunden skrev, aldrig påhittat.
+export function parseHours(text) {
+  const t = String(text || '').trim();
+  if (!t || isSaknas(t)) return [];
+  return t
+    .split(/[,;\n]|\s+och\s+(?=[a-zåäö]{3,}\b.*\d)/i)
+    .map((x) => x.replace(/\s+/g, ' ').trim())
+    .filter((x) => x.length > 2)
+    .slice(0, 6)
+    .map((x) => x.slice(0, 40));
+}
+
+export function parseInstagram(text) {
+  const t = String(text || '');
+  if (!t || isSaknas(t)) return '';
+  const m = t.match(/instagram\.com\/([\w.]{2,30})/i) || t.match(/@([\w.]{2,30})/);
+  return m ? `@${m[1]}` : '';
 }
 
 /**
@@ -318,7 +374,7 @@ export function draftModel(brief, copy) {
   if (city) m.city = city;
   if (hasAnswer(b, 'tjanster_produkter')) {
     const titles = parseServices(b.tjanster_produkter);
-    if (titles.length) m.services = titles.map((title) => ({ title, text: preset.text }));
+    if (titles.length) m.services = titles.map((title, i) => ({ title, text: (SERVICE_TEXTS[industry || 'tjanst'] || SERVICE_TEXTS.tjanst)[i % 3] }));
   }
   if (hasValue(b, 'mal_med_sidan')) {
     const wish = wishText(b);
@@ -335,6 +391,19 @@ export function draftModel(brief, copy) {
     };
   }
   if (hasAnswer(b, 'varfor_valja_oss')) m.about = oneLine(b.varfor_valja_oss, 220);
+  if (hasAnswer(b, 'erfarenhet')) m.since = oneLine(b.erfarenhet, 32);
+  if (hasAnswer(b, 'kontakt')) {
+    const c = parseContact(b.kontakt);
+    if (c.email || c.phone || c.address) m.contact = c;
+  }
+  if (hasAnswer(b, 'oppettider')) {
+    const hours = parseHours(b.oppettider);
+    if (hours.length) m.hours = hours;
+  }
+  if (hasAnswer(b, 'sociala_lankar')) {
+    const insta = parseInstagram(b.sociala_lankar);
+    if (insta) m.instagram = insta;
+  }
 
   if (copy) {
     for (const key of ['headline', 'sub', 'tagline', 'cta', 'about']) if (copy[key] && (key !== 'about' || m.about)) m[key] = copy[key];
