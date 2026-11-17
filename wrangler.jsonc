@@ -32,5 +32,20 @@
     "SITE_URL": ""
   },
 
+  // Förhandsvisningar (en per förfrågan på GitHub) byggs med "wrangler preview",
+  // som kräver egna värden här. Förhandsvisningen använder samma mejlskript som
+  // riktiga sidan, så testmejl hamnar i Nordvyuf@gmail.com och räknas mot de 30 per dag.
+  "previews": {
+    "vars": {
+      "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "CONTACT_ENDPOINT": "https://script.google.com/macros/s/AKfycbyaHYnnZe3xiOlYQmhCcOokTQEq14nSBq7rZo2KAWSxX_n0oknz774UO0e-Zm9jnpz1/exec",
+      "SITE_URL": ""
+    },
+    "ratelimits": [
+      { "name": "RATE_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } }
+    ],
+    "ai": { "binding": "AI" }
+  },
+
   "observability": { "enabled": true }
 }
