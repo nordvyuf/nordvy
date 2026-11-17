@@ -30,7 +30,8 @@ import {
 } from '../public/assets/shared/brief.js';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-export const BACKUP_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+// llama-3.1-8b-instruct togs bort av Cloudflare 2026-05-30. Llama 4 Scout klarar JSON-svar och är billigare per svar.
+export const BACKUP_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
 
 const ASKABLE = FIELDS.filter((f) => f.level > 0).map((f) => f.key);
 
@@ -493,6 +494,8 @@ async function runModel(env, payload) {
       return await env.AI.run(model, payload);
     } catch (error) {
       failures.push(`${model}: ${String(error?.message || error).slice(0, 200)}`);
+      // Kvoten gäller alla modeller, så det är ingen idé att prova nästa.
+      if (QUOTA.test(failures.at(-1))) break;
     }
   }
   throw new Error(failures.join(' | '));
