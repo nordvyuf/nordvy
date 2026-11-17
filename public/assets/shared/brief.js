@@ -420,7 +420,7 @@ export function draftModel(brief, copy) {
 
 // Nästa fråga när AI:n inte svarar: checklistans fråga för första fältet som saknas.
 // Säljer företaget saker (snarare än tjänster eller tider)? Då passar frågorna om produkter bättre.
-const SELLS = /(säljer|sälja|produkt|webshop|online|bok\b|böcker|kokbok|kockbok|ljus|smycke|kläder|tröj|väsk|tavl|kort\b|uf\b)/i;
+const SELLS = /(säljer|sälja|produkt|webshop|bok\b|böcker|kokbok|kockbok|ljus|smycke|kläder|tröj|väsk|tavl|kort\b|uf\b)/i;
 const ONLINE = /(online|på nätet|internet|webshop|bara digitalt)/i;
 
 // Checklistans fråga, anpassad lite efter det kunden redan sagt. Används när AI:n inte svarar.
