@@ -22,7 +22,7 @@ import {
   slugify,
   parseInstagram,
 } from '../public/assets/shared/brief.js';
-import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, tidyReply } from '../src/interview.js';
+import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, tidyReply, questionFits } from '../src/interview.js';
 import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -323,4 +323,16 @@ test('staden hittas även när svaret börjar med den, och kundens tjänster beh
   );
   assert.deepEqual(m.services.map((s) => s.title), ['Klippning', 'Färg och slingor', 'Bryn och fransar']);
   assert.equal(m.services[1].text, 'Anpassad hårfärgning för varje hårtyp');
+});
+
+test('en fråga som inte handlar om fältet används inte, och inledande "låter"-meningar tas bort', () => {
+  assert.equal(questionFits('stil', 'Ska ni ha en meny som man kan beställa från direkt på sidan?'), false);
+  assert.equal(questionFits('stil', 'Vilken känsla ska sidan ha?'), true);
+  assert.equal(questionFits('oppettider', 'Vilka öppettider har ni?'), true);
+  const ai = { saves: [], reply: 'Ska ni ha en meny som man kan beställa från direkt på sidan?', asked: 'stil' };
+  const r = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'Bageri', ort_omrade: 'Malmö', tjanster_produkter: 'Bröd', mal_med_sidan: 'Se meny' }, asked: ['mal_med_sidan'], askCount: 1, message: 'Se meny' }, ai);
+  assert.deepEqual(r.asked, ['stil']);
+  assert.match(r.reply, /känsla/);
+  assert.equal(tidyReply('Kafé Kajkanten låter som en trevlig plats. Vad gör ni?'), 'Vad gör ni?');
+  assert.equal(tidyReply('Surdegsbageri och kafé, det låter gott. Var ligger kaféet?'), 'Var ligger kaféet?');
 });
