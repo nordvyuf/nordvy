@@ -351,13 +351,14 @@ async function submitAnswer() {
     return showSummary();
   }
   // Följdfråga på samma fält: spara det kunden redan sagt så att det inte tappas.
-  // En fråga till oss (turn.skip) var inget svar: den följer inte med och räknas inte som ett försök.
+  // En fråga till oss (turn.skip) var inget svar: den följer inte med, men räknas som ett försök
+  // så att intervjun går vidare om kunden frågar igen.
   const sameField = turn.asked?.[0] && turn.asked[0] === previousAsked && !hasValue(state.brief, previousAsked);
   if (!turn.skip) {
     state.carry = sameField ? [state.carry, message].filter(Boolean).join(' / ').slice(0, LIMITS.value) : '';
     state.carryField = sameField ? previousAsked : '';
-    state.askCount = sameField ? state.askCount + 1 : 1;
   }
+  state.askCount = sameField ? state.askCount + 1 : 1;
   state.asked = turn.asked || [];
   save();
 
