@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Utkast: tas bort vid lansering så att sidan syns i Google. -->
+<meta name="robots" content="noindex">
+<title>mätochmätt UF – kokboken där kost och recept möts</title>
+<meta name="description" content="mätochmätt är ett UF-företag från Malmö med en kokbok som kombinerar kostkunskap och recept, för dig som vill äta så bra som möjligt.">
+<meta name="theme-color" content="#FBF6EE">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232F6B4A'/%3E%3Cpath d='M9 22V10l7 7 7-7v12' fill='none' stroke='%23FBF6EE' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="/assets/fonts/fraunces-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/*
+  mätochmätt UF – utkast av Nordvy (UF-paketet).
+  Känsla enligt intervjun: trygghet, och att kunden blir sugen att köpa boken.
+  Därför varm gräddvit bakgrund, djup grön för förtroende och en tomatröd accent för aptit.
+  Uppgifter som saknas ligger i <mark class="todo"> och syns tydligt tills de är ifyllda.
+*/
+@font-face{font-family:"Fraunces";font-style:normal;font-weight:100 900;font-display:swap;src:url("/assets/fonts/fraunces-latin-opsz-normal.woff2") format("woff2")}
+@font-face{font-family:"Fraunces";font-style:italic;font-weight:100 900;font-display:swap;src:url("/assets/fonts/fraunces-latin-opsz-italic.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("/assets/fonts/inter-latin-wght-normal.woff2") format("woff2")}
+:root{
+  --cream:#FBF6EE; --paper:#FFFDF8; --ink:#1E2A23; --mut:#5C675F; --line:#E7DED0;
+  --green:#2F6B4A; --green-d:#1F4D34; --green-l:#E3EEE6; --tomato:#D9583B; --tomato-l:#FBE5DD; --gold:#E9B44C;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(76px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--cream);color:var(--ink);font:400 16px/1.65 var(--sans);overflow-x:clip;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.04;margin:0;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0;text-wrap:pretty}
+a{color:var(--green)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--tomato);outline-offset:3px;border-radius:8px}
+.wrap{width:min(1120px,100% - 32px);margin-inline:auto}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--tomato)}
+.mut{color:var(--mut)}
+mark.todo{background:var(--gold);color:var(--ink);border-radius:6px;padding:0 .3em;font-weight:600;font-family:var(--sans);font-size:.9em;letter-spacing:0}
+
+/* Utkastsrad */
+.draft{background:var(--ink);color:#E6EDE8;font-size:13px;text-align:center;padding:8px 16px}
+.draft b{color:#fff}
+
+/* Sidhuvud */
+header{position:sticky;top:0;z-index:20;background:rgba(251,246,238,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:18px;height:68px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:700 23px/1 var(--serif);letter-spacing:-.03em}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:var(--green);display:grid;place-items:center}
+.brand .mark svg{width:16px;height:16px}
+.uf{font:700 11px var(--sans);letter-spacing:.08em;padding:3px 8px;border-radius:999px;border:1px solid var(--green);color:var(--green)}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav a{color:var(--mut);text-decoration:none;font-weight:500;font-size:15px}
+nav a:hover{color:var(--ink)}
+.sp{flex:1}
+@media(max-width:760px){nav{display:none}}
+@media(max-width:420px){.bar{gap:10px}.brand{font-size:20px}.bar .btn-sm{padding:8px 14px}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 22px;border-radius:999px;font-weight:600;border:1px solid transparent;text-decoration:none;white-space:nowrap;transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s,background-color .2s}
+.btn:hover:not(:disabled){transform:translateY(-2px)}
+.btn-p{background:var(--tomato);color:#fff;box-shadow:0 8px 24px rgba(217,88,59,.25)}
+.btn-p:hover:not(:disabled){box-shadow:0 14px 32px rgba(217,88,59,.35)}
+.btn-g{background:transparent;border-color:var(--ink);color:var(--ink)}
+.btn-sm{min-height:40px;padding:8px 16px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;padding:clamp(48px,8vw,104px) 0 clamp(56px,8vw,96px)}
+.hero::before{content:"";position:absolute;right:-12vmax;top:-16vmax;width:62vmax;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,var(--green-l),transparent);pointer-events:none}
+.hgrid{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(32px,6vw,80px);align-items:center}
+@media(max-width:880px){.hgrid{grid-template-columns:1fr}}
+.hero h1{font-size:clamp(44px,7.4vw,86px);margin:16px 0 22px}
+.hero h1 em{font-style:italic;font-weight:400;color:var(--green)}
+.lead{font-size:clamp(17px,1.8vw,20px);color:var(--mut);max-width:34em}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:28px;padding:0;list-style:none;color:var(--mut);font-size:14px;font-weight:500}
+.facts li{display:flex;align-items:center;gap:8px}
+.facts li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+
+/* Boken (ritad tills riktiga bilder kommer) */
+.stage{position:relative;display:grid;place-items:center;min-height:clamp(340px,40vw,480px);perspective:1400px}
+.plate{position:absolute;width:min(420px,88%);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 46%,var(--paper) 47% 62%,#EFE6D6 63% 64%,transparent 65%);box-shadow:0 30px 60px rgba(30,42,35,.1)}
+.book{position:relative;width:min(260px,62%);aspect-ratio:3/4;transform:rotateY(-24deg) rotateX(6deg) rotateZ(-2deg);transform-style:preserve-3d;transition:transform .8s cubic-bezier(.22,1,.36,1);animation:float 7s ease-in-out infinite}
+.stage:hover .book{transform:rotateY(-12deg) rotateX(3deg)}
+@keyframes float{50%{translate:0 -10px}}
+.cover{position:absolute;inset:0;border-radius:4px 14px 14px 4px;background:linear-gradient(150deg,#3C8159,var(--green) 45%,var(--green-d));box-shadow:inset 6px 0 0 rgba(0,0,0,.18),0 30px 50px rgba(30,42,35,.35);color:var(--cream);padding:12% 12% 10% 16%;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.cover::after{content:"";position:absolute;right:-30%;bottom:-18%;width:90%;aspect-ratio:1;border-radius:50%;border:2px solid rgba(251,246,238,.18);box-shadow:0 0 0 18px rgba(251,246,238,.06)}
+.cover small{font:700 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;opacity:.8}
+.cover strong{font:600 clamp(26px,3.4vw,36px)/1 var(--serif);letter-spacing:-.03em}
+.cover strong em{display:block;font-style:italic;font-weight:400;color:var(--gold)}
+.cover span{font-size:12px;opacity:.85}
+.pages{position:absolute;top:2%;bottom:2%;right:-12px;width:14px;border-radius:0 6px 6px 0;background:repeating-linear-gradient(180deg,#fff 0 2px,#EDE5D6 2px 3px);transform:translateZ(-6px);box-shadow:0 10px 20px rgba(30,42,35,.15)}
+.tag{position:absolute;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--paper);box-shadow:0 12px 30px rgba(30,42,35,.14);font-size:13px;font-weight:600}
+.tag i{width:9px;height:9px;border-radius:50%}
+.tag.a{left:2%;top:9%}.tag.a i{background:var(--green)}
+.tag.b{right:0;bottom:5%}.tag.b i{background:var(--tomato)}
+@media(max-width:880px){.tag.a{left:0}.tag.b{right:0}}
+
+section{padding-block:clamp(64px,9vw,112px)}
+.head{display:grid;gap:12px;max-width:44em;margin-bottom:clamp(28px,4vw,44px)}
+.head h2{font-size:clamp(34px,5vw,54px)}
+
+/* Det här får du */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media(max-width:860px){.cards{grid-template-columns:1fr}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:28px;display:grid;gap:10px;align-content:start}
+.card .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--green-l);color:var(--green)}
+.card:nth-child(2) .ic{background:var(--tomato-l);color:var(--tomato)}
+.card .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:24px;margin-top:6px}
+.card p{color:var(--mut)}
+
+/* Produkt */
+.shop{background:var(--paper);border-block:1px solid var(--line)}
+.product{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(28px,6vw,72px);align-items:center}
+@media(max-width:860px){.product{grid-template-columns:1fr}}
+.pimg{position:relative;border-radius:28px;background:linear-gradient(160deg,var(--green-l),#F4EBDD);aspect-ratio:4/3.4;display:grid;place-items:center;overflow:hidden}
+.pimg .book{width:min(220px,48%);animation:none}
+.pimg .note{position:absolute;left:16px;bottom:16px;right:16px;font-size:13px;background:rgba(255,253,248,.92);border-radius:12px;padding:10px 12px}
+.product h2{font-size:clamp(34px,4.6vw,50px);margin:12px 0 14px}
+.price{display:flex;align-items:baseline;gap:12px;margin:22px 0;font:600 40px/1 var(--serif);letter-spacing:-.02em}
+.price small{font:500 14px var(--sans);color:var(--mut);letter-spacing:0}
+.checks{display:grid;gap:10px;padding:0;margin:0 0 28px;list-style:none}
+.checks li{position:relative;padding-left:30px}
+.checks li::before{content:"";position:absolute;left:2px;top:.42em;width:14px;height:8px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+/* Om oss */
+.about{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,6vw,72px);align-items:start}
+@media(max-width:860px){.about{grid-template-columns:1fr}}
+.about p+p{margin-top:14px}
+.quote{background:var(--green);color:var(--cream);border-radius:28px;padding:clamp(28px,4vw,44px);font:400 clamp(22px,2.6vw,30px)/1.3 var(--serif);letter-spacing:-.01em}
+.quote small{display:block;margin-top:18px;font:600 12px var(--sans);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.who{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.who span{background:var(--green-l);color:var(--green-d);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:500}
+
+/* Kontakt */
+.contact{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(28px,6vw,72px);align-items:start}
+@media(max-width:860px){.contact{grid-template-columns:1fr}}
+.links{display:grid;gap:12px;margin-top:24px}
+.links a,.links div{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-decoration:none;color:var(--ink);font-weight:500}
+.links svg{width:22px;height:22px;flex:none;fill:none;stroke:var(--green);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+form{display:grid;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:clamp(20px,3vw,32px)}
+.field{display:grid;gap:6px}
+.field label,.field span.lbl{font-size:13px;font-weight:600;color:var(--mut)}
+.field input,.field textarea{width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--cream);font-size:16px}
+.field textarea{min-height:120px;resize:vertical}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(47,107,74,.12)}
+.err{color:#A3341F;font-size:13px;min-height:1em}
+.status:not(:empty){border-radius:12px;padding:12px 14px;background:var(--green-l);font-size:14px}
+
+/* Beställning */
+dialog{border:0;border-radius:24px;padding:0;width:min(460px,calc(100% - 32px));max-height:calc(100% - 32px);background:var(--paper);color:var(--ink);box-shadow:0 30px 80px rgba(30,42,35,.3)}
+dialog::backdrop{background:rgba(30,42,35,.45)}
+.dlg{padding:24px;display:grid;gap:14px}
+.dh{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.dh h3{font-size:28px}
+.x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:none;font-size:20px;line-height:1;flex:none}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--cream);width:max-content}
+.qty button{width:44px;height:44px;border:0;background:none;font-size:20px}
+.qty output{min-width:40px;text-align:center;font-weight:700}
+.tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:14px;font-weight:600}
+.small{font-size:13px;color:var(--mut);background:var(--cream);border-radius:12px;padding:10px 12px}
+.done{display:grid;gap:10px;justify-items:center;text-align:center;padding:8px 0}
+.tick{width:60px;height:60px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:28px}
+
+footer{background:var(--ink);color:#C9D3CC;padding-block:48px 30px;font-size:14px}
+.fgrid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+footer strong{display:block;color:#fff;font:600 18px var(--serif);margin-bottom:6px}
+footer a{color:#fff}
+.credit{margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+
+.js .rv{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+.js .rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .rv{opacity:1;transform:none}}
+</style>
+<script src="/assets/boot.js"></script>
+<script src="./app.js" defer></script>
+</head>
+<body>
+<div class="draft">Utkast från <b>Nordvy UF</b> · <mark class="todo">gul</mark> = uppgift vi väntar på · inga beställningar skickas än</div>
+
+<header><div class="wrap bar">
+  <!-- LOGGA: byts mot mätochmätts egen logga när den kommit -->
+  <a class="brand" href="#top" aria-label="mätochmätt, till toppen"><span class="mark" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 12V4l5 5 5-5v8" fill="none" stroke="#FBF6EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>mätochmätt</a>
+  <span class="uf">UF</span>
+  <nav aria-label="Huvudmeny"><ul><li><a href="#boken">Boken</a></li><li><a href="#om">Om oss</a></li><li><a href="#kontakt">Kontakt</a></li></ul></nav>
+  <span class="sp"></span>
+  <button class="btn btn-p btn-sm" type="button" data-order>Beställ boken</button>
+</div></header>
+
+<main id="top">
+  <section class="hero"><div class="wrap hgrid">
+    <div class="rv">
+      <p class="eyebrow">UF-företag från Malmö</p>
+      <h1>Kokboken där kost och recept <em>möts.</em></h1>
+      <p class="lead">mätochmätt är en kokbok för dig som är intresserad av mat och vill äta så bra som möjligt. Den kombinerar kunskap om kost med recept att laga hemma.</p>
+      <div class="cta">
+        <button class="btn btn-p" type="button" data-order>Beställ boken</button>
+        <a class="btn btn-g" href="#boken">Läs mer om boken</a>
+      </div>
+      <ul class="facts"><li>Kost och recept i samma bok</li><li>Gjord i Malmö</li><li>Ett UF-företag</li></ul>
+    </div>
+    <div class="stage rv" aria-hidden="true">
+      <div class="plate"></div>
+      <div class="book"><div class="pages"></div><div class="cover"><small>Kokbok</small><strong>mätoch<em>mätt</em></strong><span>Kost och recept för varje dag</span></div></div>
+      <span class="tag a"><i></i>Kostkunskap</span>
+      <span class="tag b"><i></i>Recept att laga hemma</span>
+    </div>
+  </div></section>
+
+  <section id="boken"><div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">Det här får du</p>
+      <h2>Mer än en receptsamling</h2>
+      <p class="mut">Många kokböcker ger dig recept. mätochmätt ger dig också kunskapen om varför maten fungerar.</p>
+    </div>
+    <div class="cards">
+      <article class="card rv"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></span><h3>Kunskap om kost</h3><p>Lär dig vad kroppen behöver, så att du kan välja rätt även utan bok.</p></article>
+      <article class="card rv"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></span><h3>Recept att laga hemma</h3><p>Rätter som passar vardagen och gör det lätt att äta bra.</p></article>
+      <article class="card rv"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M16 2h6v6"/></svg></span><h3>Fokus på bästa möjliga kost</h3><p>Kost och recept hänger ihop, så att varje måltid tar dig närmare dina mål.</p></article>
+    </div>
+  </div></section>
+
+  <section class="shop" id="bestall"><div class="wrap product">
+    <div class="pimg rv" aria-hidden="true">
+      <div class="book"><div class="pages"></div><div class="cover"><small>Kokbok</small><strong>mätoch<em>mätt</em></strong><span>Kost och recept för varje dag</span></div></div>
+      <p class="note"><mark class="todo">Bild</mark> Här kommer era egna bilder på boken.</p>
+    </div>
+    <div class="rv">
+      <p class="eyebrow">Beställ</p>
+      <h2>mätochmätt – kokboken</h2>
+      <p class="mut"><mark class="todo">Text</mark> Två meningar om vad som finns i boken, till exempel antal recept och vilka kapitel den har.</p>
+      <div class="price"><span><mark class="todo">Pris</mark></span><small>inklusive moms enligt UF-reglerna</small></div>
+      <ul class="checks"><li>Kostkunskap och recept i samma bok</li><li>Beställ här, så hör vi av oss om betalning och leverans</li><li><mark class="todo">Leverans</mark> Hämtas i Malmö eller skickas hem</li></ul>
+      <button class="btn btn-p" type="button" data-order>Beställ boken</button>
+    </div>
+  </div></section>
+
+  <section id="om"><div class="wrap about">
+    <div class="rv">
+      <p class="eyebrow">Om oss</p>
+      <h2 style="font-size:clamp(34px,5vw,54px);margin:12px 0 18px">Vi vill att fler ska äta bra, varje dag</h2>
+      <p>mätochmätt är ett nystartat UF-företag i Malmö. Vi gör en kokbok för dig som är intresserad av mat och kost, och som vill ha både kunskapen och recepten på ett ställe.</p>
+      <p class="mut"><mark class="todo">Er text</mark> Här lägger vi in er egen text om företaget och vilka ni är.</p>
+      <div class="who"><span>För matintresserade</span><span>För dig som tänker på kosten</span></div>
+    </div>
+    <blockquote class="quote rv" style="margin:0">Boken kombinerar diet och en receptbok, med fokus på att uppnå bästa möjliga kost.<small>mätochmätt UF</small></blockquote>
+  </div></section>
+
+  <section id="kontakt" style="background:var(--paper);border-top:1px solid var(--line)"><div class="wrap contact">
+    <div class="rv">
+      <p class="eyebrow">Kontakt</p>
+      <h2 style="font-size:clamp(34px,5vw,54px);margin:12px 0 14px">Hör av dig</h2>
+      <p class="mut">Frågor om boken eller en större beställning? Skriv till oss så svarar vi så snart vi kan.</p>
+      <div class="links">
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span><mark class="todo">E-post</mark> er mejladress</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg><span>TikTok <mark class="todo">Länk</mark></span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span>Malmö</span></div>
+      </div>
+    </div>
+    <form id="contact" class="rv" novalidate>
+      <div class="field"><label for="cName">Namn</label><input id="cName" autocomplete="name"><span class="err" id="ecName"></span></div>
+      <div class="field"><label for="cMail">E-post</label><input id="cMail" type="email" autocomplete="email"><span class="err" id="ecMail"></span></div>
+      <div class="field"><label for="cMsg">Meddelande</label><textarea id="cMsg"></textarea><span class="err" id="ecMsg"></span></div>
+      <button class="btn btn-p" type="submit">Skicka</button>
+      <div class="status" id="cStatus" role="status" aria-live="polite"></div>
+    </form>
+  </div></section>
+</main>
+
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><strong>mätochmätt UF</strong>Ett UF-företag inom Ung Företagsamhet i Malmö.</div>
+    <div><strong>Kontakt</strong><mark class="todo">E-post</mark><br>TikTok <mark class="todo">Länk</mark></div>
+    <div><strong>Integritet</strong>Vi använder ditt namn och din e-post bara för att svara på din beställning eller fråga.</div>
+  </div>
+  <div class="credit"><span>© 2026 mätochmätt UF</span><span>Sidan är byggd av <a href="/">Nordvy UF</a></span></div>
+</div></footer>
+
+<dialog id="order" aria-labelledby="oTitle"><div class="dlg" id="oBody"></div></dialog>
+</body>
+</html>
