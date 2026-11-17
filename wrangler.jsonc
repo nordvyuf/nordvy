@@ -1,10 +1,36 @@
 {
-  // Cloudflare Workers med statiska filer. Allt i public/ publiceras som det är.
+  // Nordvy på Cloudflare Workers. Varje commit till main publiceras automatiskt.
   "name": "nordvy",
-  "compatibility_date": "2025-09-01",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+
+  // Hela sajten ligger i public/. Workern körs först så att den kan sätta
+  // säkerhetsrubriker och fylla i sajtens adress i HTML-filerna.
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page"
-  }
+  },
+
+  // Workers AI driver självintervjun. Gratisnivån är 10 000 neuroner per dygn.
+  // Tar de slut fortsätter intervjun med checklistans färdiga frågor.
+  "ai": { "binding": "AI" },
+
+  // Högst 30 anrop per minut och besökare till /api.
+  "ratelimits": [
+    { "name": "RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }
+  ],
+
+  "vars": {
+    // Modellen som ställer frågorna och skriver utkastet.
+    "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    // Google Apps Script som mejlar formulär och underlag till Nordvyuf@gmail.com.
+    "CONTACT_ENDPOINT": "https://script.google.com/macros/s/AKfycbyaHYnnZe3xiOlYQmhCcOokTQEq14nSBq7rZo2KAWSxX_n0oknz774UO0e-Zm9jnpz1/exec",
+    // Fyll i när domänen är kopplad, t.ex. "https://nordvyuf.se". Tom = adressen besökaren använder.
+    "SITE_URL": ""
+  },
+
+  "observability": { "enabled": true }
 }
