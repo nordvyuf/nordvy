@@ -493,7 +493,10 @@ export async function interviewTurn(env, body) {
   let ai = null;
   if (env?.AI) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420);
   const result = applyTurn(state, ai);
-  return { ok: true, ...result, source: ai ? 'ai' : 'fallback' };
+  const out = { ok: true, ...result, source: ai ? 'ai' : 'fallback' };
+  // Felsökning: med debug: true följer AI:ns oredigerade förslag med, så att filtren går att justera.
+  if (body?.debug === true && ai) out.debug = { asked: ai.asked, reply: ai.reply, saves: ai.saves };
+  return out;
 }
 
 export async function draftCopy(env, body) {
