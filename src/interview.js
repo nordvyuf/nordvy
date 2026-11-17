@@ -389,8 +389,10 @@ export function applyTurn(state, ai) {
     return FOLLOW_UPS[field]?.needs(state.carry, state.brief) ? '' : state.carry;
   };
 
-  // Kunden frågar oss om pris eller tid i stället för att svara. Svara kort och ställ samma fråga igen.
-  if (!edit && lastAsked[0] && asksUs(message) && !hasValue(brief, lastAsked[0])) {
+  // Kunden frågar oss om pris eller tid i stället för att svara. Svara kort och ställ samma fråga igen,
+  // en gång. Frågar kunden igen sparas fältet som "saknas" längre ner, så att intervjun inte fastnar.
+  const asksUsAgain = !edit && asksUs(message) && askCount >= 2;
+  if (!edit && lastAsked[0] && asksUs(message) && askCount < 2 && !hasValue(brief, lastAsked[0])) {
     const again = fallbackQuestion(lastAsked[0], 0, brief);
     return { brief, issues, saves, reply: `Det går teamet igenom med dig efter intervjun. ${again}`, asked: [lastAsked[0]], skip: true, done: false, missing: missing(brief) };
   }
@@ -406,6 +408,7 @@ export function applyTurn(state, ai) {
     for (const s of ai.saves.slice(0, 8)) {
       const field = String(s?.field || '');
       if (!ASKABLE.includes(field) || field === vagueField) continue;
+      if (asksUs(message) && lastAsked.includes(field)) continue; // en fråga till oss är inget svar
       let value = cleanText(s?.value);
       if (!value) continue;
       const wasAsked = lastAsked.includes(field);
@@ -428,7 +431,10 @@ export function applyTurn(state, ai) {
       const followUp = ai && ai.asked === field && askCount < 2 && !negative;
       if (followUp) continue;
       if (field !== lastAsked[0] && !negative) continue;
-      if (negative) accept(field, field === 'referens_ok' ? 'Nej' : 'saknas');
+      if (asksUsAgain) {
+        accept(field, 'saknas');
+        issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden frågade "${message.slice(0, 120)}" i stället för att svara om ${FIELD[field].label.toLocaleLowerCase('sv-SE')}.` }]);
+      } else if (negative) accept(field, field === 'referens_ok' ? 'Nej' : 'saknas');
       else {
         const said = cleanText([carryFor(field), message].filter(Boolean).join(' / '));
         if (said) accept(field, field === 'referens_ok' ? yesNo(message) || said : said);
