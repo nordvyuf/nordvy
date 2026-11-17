@@ -42,6 +42,8 @@ SÅ SKRIVER DU
 - Reaktionen på svaret är kort och KONKRET: ta upp något kunden faktiskt sa (en siffra, en plats, ett ord de använde) eller en idé för hemsidan som följer av det. Skippa reaktionen helt om du inte har något konkret att säga. Det är bättre än fyllnad.
 - Börja aldrig med "Det låter", "Låter", "Vad kul", "Vad bra", "Jättebra", "Toppen", "Tack" eller "Okej". Variera hur du börjar.
 - Skriv aldrig "Malmö är en fin stad" eller liknande allmänna kommentarer om platser, namn eller branscher.
+- Upprepa inte kundens ord som inledning ("Tis-fre 10-18, vilka sociala länkar har ni?"). Ställ frågan direkt, eller reagera på något konkret.
+- Du vet inget om domäner, priser, tider eller vad Nordvy kan leverera. Säg aldrig att en webbadress är ledig eller upptagen, och nämn inga priser. Teamet kollar det efteråt.
 - Är något kunden skrivit inte ett svar på frågan, säg det vänligt och ställ frågan igen med andra ord. Aldrig "Det låter inte som…".
 
 BRA OCH DÅLIGT
@@ -191,7 +193,23 @@ export function extractJson(result) {
 const FILLER =
   /^(det (är|var) (okej|bra|helt)|det låter|låter|vad (kul|bra|roligt|trevligt|spännande|fint|gott|härligt)|jättebra|toppen|super|perfekt|tack|okej|ok|bra|härligt|fantastiskt|så fint|vilket|[^.]{0,40} är en fin stad)(?![a-zåäö])/i;
 
-export function tidyReply(raw) {
+// Påståenden som AI:n inte kan veta. Meningen tas bort, så att inget påhitt når kunden.
+const UNKNOWN_CLAIM = /(redan (taget|upptagen|registrerad)|är (ledig|upptagen|tillgänglig)|finns inte|kostar|\d+\s*(kr|kronor)|på \d+ dagar|garanterar|lovar)/i;
+
+const STEM = (w) => w.toLocaleLowerCase('sv-SE').replace(/[^a-zåäö0-9]/g, '').slice(0, 5);
+
+// "Tis-fre 10-18, vilka sociala länkar har ni?" blir "Vilka sociala länkar har ni?" när
+// inledningen bara upprepar vad kunden nyss skrev.
+function stripEcho(text, message) {
+  const m = text.match(/^([^,.?]{3,48}),\s+((?:vilka|vilken|vilket|var|hur|vad|har|finns|får|kan|vill|ska)\b[^]*\?)$/i);
+  if (!m || !message) return text;
+  const said = new Set(message.split(/\s+/).map(STEM).filter(Boolean));
+  const head = m[1].split(/\s+/).map(STEM).filter(Boolean);
+  if (!head.length || head.filter((w) => said.has(w)).length / head.length < 0.6) return text;
+  return m[2].charAt(0).toLocaleUpperCase('sv-SE') + m[2].slice(1);
+}
+
+export function tidyReply(raw, message = '') {
   const text = String(raw || '')
     .replace(/<[^>]*>/g, ' ')
     .replace(/[*_#`]/g, '')
@@ -203,7 +221,15 @@ export function tidyReply(raw) {
   const sentences = text.split(/(?<=[.?])\s+/).filter(Boolean);
   // Behåll minst frågan: ta bara bort inledande meningar som saknar frågetecken.
   while (sentences.length > 1 && !sentences[0].includes('?') && FILLER.test(sentences[0])) sentences.shift();
-  const out = sentences.join(' ').trim();
+  // Ta bort meningar med påståenden som AI:n inte kan veta, men aldrig själva frågan.
+  const safe = sentences.filter((s) => s.includes('?') || !UNKNOWN_CLAIM.test(s));
+  if (safe.length && safe.some((s) => s.includes('?'))) {
+    sentences.length = 0;
+    sentences.push(...safe);
+  }
+  // En fråga som själv gör ett påstående ("är redan taget. Vill ni…") behålls bara om påståendet är en egen mening.
+  if (sentences.length === 1 && UNKNOWN_CLAIM.test(sentences[0])) return '';
+  const out = stripEcho(sentences.join(' ').trim(), message);
   return /^[a-zåäö]/.test(out) ? out.charAt(0).toLocaleUpperCase('sv-SE') + out.slice(1) : out;
 }
 
@@ -317,7 +343,7 @@ export function applyTurn(state, ai) {
   }
   // AI:n får hoppa över något kunden redan har sagt, men inte hoppa långt framåt i checklistan.
   let asked = ai && left.includes(ai.asked) && left.indexOf(ai.asked) <= 1 ? ai.asked : '';
-  let reply = asked ? tidyReply(ai.reply) : '';
+  let reply = asked ? tidyReply(ai.reply, message) : '';
   if (!reply || !reply.includes('?')) {
     asked = left[0];
     reply = fallbackQuestion(asked, NEED.length - left.length);
