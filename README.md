@@ -34,7 +34,7 @@ Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS` i `public/asset
 
 ### Vad det kostar
 
-Workers AI har 10 000 gratis "neuroner" per dygn. En hel intervju drar ungefär 1 000, så det räcker till cirka tio fullständiga intervjuer per dygn. Sedan tar reservfrågorna över tills nästa dygn (kl. 01.00 svensk vintertid). Modellen väljs i `wrangler.jsonc` (`AI_MODEL`).
+Workers AI har 10 000 gratis "neuroner" per dygn, gemensamt för live-sidan och alla förhandsvisningar. En hel intervju drar ungefär 1 000 (de enkla frågorna från kontaktuppgifterna och framåt ställs utan AI, se `needsAi` i `src/interview.js`), så det räcker till cirka tio fullständiga intervjuer per dygn. Sedan tar reservfrågorna över tills nästa dygn (kl. 01.00 svensk vintertid). Med Cloudflares Workers Paid (5 dollar i månaden) fortsätter AI:n efter gratiskvoten, för ungefär 0,011 dollar per 1 000 neuroner. Modellen väljs i `wrangler.jsonc` (`AI_MODEL`), och reservmodellen i `BACKUP_MODEL`. Med `debug: true` i anropet till `/api/interview/turn` syns AI:ns fel, till exempel att kvoten är slut.
 
 ### Mejlen
 
@@ -46,6 +46,14 @@ Formuläret och självintervjun skickar via samma Google Apps Script som mejlar 
 npm test
 npm run preview
 ```
+
+### Testa chattboten med påhittade kunder
+
+```
+node scripts/testa-chattboten.mjs https://<gren>-nordvy.nordvyuf.workers.dev
+```
+
+Skriptet låter sex påhittade kunder (`scripts/testkunder.mjs`) göra hela intervjun och skriver samtalen till `testresultat/`. Där syns varje fråga, vad som sparades, om svaret kom från AI:n eller reservfrågorna, och AI-fel som slut på kvoten. Inga mejl skickas. En hel intervju drar ungefär 1 000 av dagens 10 000 gratis AI-enheter, så kör helst mot en grens förhandsvisning och inte alla kunder flera gånger samma dag.
 
 `npm run preview` startar sajten på `http://localhost:8788`. Där finns ingen AI, så intervjun använder reservfrågorna, och mejlen skrivs ut i terminalen i stället för att skickas.
 

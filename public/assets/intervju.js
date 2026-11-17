@@ -262,7 +262,7 @@ function setupComposer() {
     setHint('Till exempel: "Telefonnumret ska vara 040-12 34 56".');
   } else {
     input.placeholder = chips ? (field.multi ? 'Något mer? (valfritt)' : 'Eller skriv ett eget svar') : 'Skriv ditt svar';
-    setHint(chips && field.multi ? 'Välj en eller flera och tryck på pilen.' : 'Tryck Enter för att skicka.');
+    setHint(chips && field.multi ? 'Välj en eller flera och tryck på pilen.' : touch ? 'Tryck på pilen för att skicka.' : 'Tryck Enter för att skicka.');
   }
   early.hidden = !(state.stage === 'chat' && coreDone(state.brief));
   autosize();
@@ -503,7 +503,9 @@ function showContact() {
   const known = String(state.brief.kontakt || '').match(/[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+/);
   const [l1, name] = field('Ditt namn', { name: 'name', autocomplete: 'name', maxLength: 100 });
   const [l2, email] = field('E-post', { name: 'email', type: 'email', autocomplete: 'email', maxLength: 254, value: known ? known[0] : '' });
-  const [l3, phone] = field('Telefon (valfritt)', { name: 'phone', type: 'tel', autocomplete: 'tel', maxLength: 40 });
+  // Telefonnumret från intervjun fylls i också, så att kunden slipper skriva det två gånger.
+  const knownPhone = String(state.brief.kontakt || '').match(/(?:\+46|0)[\d\s-]{6,14}\d/);
+  const [l3, phone] = field('Telefon (valfritt)', { name: 'phone', type: 'tel', autocomplete: 'tel', maxLength: 40, value: knownPhone ? knownPhone[0].replace(/\s+/g, ' ').trim() : '' });
   const error = node('span', 'err');
   error.setAttribute('role', 'alert');
   const go = node('button', 'btn btn-p btn-lg', 'Skicka till Nordvy');

@@ -79,10 +79,14 @@ function featureBand(m) {
     widget.append(days, times);
     if (f.payments) widget.append(el('div', 'pv-pay', icon('card'), 'Betala med Swish eller kort'));
   } else if (f.shop) {
-    title.append(el('h3', 'pv-h2', 'Handla online'), el('p', '', 'Lägg i varukorgen och betala tryggt direkt på sidan.'));
+    // Betalning visas bara om kunden bett om det. Annars är det en beställning som bekräftas på mejl.
+    title.append(
+      el('h3', 'pv-h2', f.payments ? 'Handla online' : 'Beställ direkt'),
+      el('p', '', f.payments ? 'Lägg i varukorgen och betala tryggt direkt på sidan.' : 'Välj det du vill ha och skicka beställningen direkt från sidan.'),
+    );
     const list = el('div', 'pv-menu');
-    (m.services || []).slice(0, 3).forEach((s) => list.append(el('div', '', s.title, el('small', '', 'Lägg i korg'))));
-    widget.append(list, el('div', 'pv-pay', icon('card'), 'Betala med Swish eller kort'));
+    (m.services || []).slice(0, 3).forEach((s) => list.append(el('div', '', s.title, el('small', '', f.payments ? 'Lägg i korg' : 'Beställ'))));
+    widget.append(list, f.payments ? el('div', 'pv-pay', icon('card'), 'Betala med Swish eller kort') : el('div', 'pv-pay', icon('mail'), 'Bekräftelse på mejl'));
   } else if (f.menu) {
     title.append(el('h3', 'pv-h2', m.industry === 'cafe' ? 'Dagens meny' : 'Priser'), el('p', '', 'Alltid uppdaterad, lätt att läsa i mobilen.'));
     const list = el('div', 'pv-menu');
@@ -100,8 +104,8 @@ function featureBand(m) {
 
 function chips(m) {
   const f = m.features || {};
-  const a = f.booking ? ['calendar', 'Boka online'] : f.shop ? ['bag', 'Handla online'] : f.menu ? ['check', 'Meny och priser'] : ['phone', 'Lätt att nå'];
-  const b = f.payments ? ['card', 'Swish och kort'] : m.city ? ['pin', m.city] : ['check', 'Fungerar i mobilen'];
+  const a = f.booking ? ['calendar', 'Boka online'] : f.shop ? ['bag', f.payments ? 'Handla online' : 'Beställ online'] : f.menu ? ['check', 'Meny och priser'] : ['phone', 'Lätt att nå'];
+  const b = f.payments ? ['card', 'Swish och kort'] : m.city && !m.online ? ['pin', m.city] : ['check', 'Fungerar i mobilen'];
   return [el('span', 'pv-chip a', icon(a[0]), a[1]), el('span', 'pv-chip b', icon(b[0]), b[1])];
 }
 
@@ -216,7 +220,7 @@ export function renderPreview(frame, model, { animate = true } = {}) {
     const grid = el('div', 'pv-infos');
     if (m.contact) grid.append(contactBlock(m));
     if (m.hours) grid.append(hoursBlock(m));
-    const sec = el('div', 'pv-sec', el('h3', 'pv-h2', 'Hitta hit och hör av dig'), grid);
+    const sec = el('div', 'pv-sec', el('h3', 'pv-h2', m.online || !(m.hours || m.contact?.address) ? 'Hör av dig' : 'Hitta hit och hör av dig'), grid);
     root.append(mark(sec, m.contact ? 'contact' : 'hours'));
   }
   root.append(el('div', 'pv-foot', el('span', '', [m.company || 'Ditt företag', m.city].filter(Boolean).join(' · ')), el('span', '', 'Utkast från Nordvys självintervju')));

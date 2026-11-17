@@ -249,6 +249,13 @@ const PRESET = {
   tjanst: { headline: 'Tydlig hjälp när du behöver den', sub: (n, c) => `${n}${c} gör det enkelt att komma igång. Hör av dig så berättar vi mer.`, cta: 'Kontakta oss', text: 'Vi hjälper dig hela vägen.' },
 };
 
+// Företag utan butik eller lokal: inga "hitta hit", "nära dig" eller öppettider i utkastet.
+const ONLINE_PRESET = {
+  headline: 'Utvalt, och lätt att beställa',
+  sub: (n, from) => `${n}${from} säljer online. Se sortimentet och beställ direkt på sidan.`,
+  texts: ['Utvalt med omsorg.', 'Beställ direkt på sidan.', 'Fråga oss, vi hjälper dig välja.'],
+};
+
 // Tre korta texter per bransch, så att tjänsterutorna inte säger samma sak.
 const SERVICE_TEXTS = {
   frisor: ['Anpassat efter ditt hår och din stil.', 'Vi tar oss tid att lyssna först.', 'Produkter som håller hemma också.'],
@@ -365,23 +372,29 @@ export function draftModel(brief, copy) {
   const city = hasAnswer(b, 'ort_omrade') ? detectCity(b.ort_omrade) : '';
   const inCity = city ? ` i ${city}` : '';
 
+  // Säljer bara online, utan lokal att besöka.
+  const online = sellsOnlineOnly(b) && (industry === 'butik' || SELLS.test(`${b.bransch || ''} ${b.tjanster_produkter || ''}`));
+
   m.vibe = (hasAnswer(b, 'stil') && detectVibe(b.stil)) || (industry ? DEFAULT_VIBE[industry] : 'modern');
   if (company) m.company = company;
+  if (online) m.online = true;
   if (industry) {
     m.industry = industry;
-    m.headline = preset.headline;
-    m.sub = preset.sub(company || 'Vi', inCity);
-    m.tagline = `${INDUSTRIES[industry].short}${inCity}`;
+    m.headline = online ? ONLINE_PRESET.headline : preset.headline;
+    m.sub = online ? ONLINE_PRESET.sub(company || 'Vi', city ? ` från ${city}` : '') : preset.sub(company || 'Vi', inCity);
+    m.tagline = online ? `${INDUSTRIES[industry].short}${city ? ` från ${city}` : ''} · online` : `${INDUSTRIES[industry].short}${inCity}`;
   }
   if (city) m.city = city;
   if (hasAnswer(b, 'tjanster_produkter')) {
     const titles = parseServices(b.tjanster_produkter);
-    if (titles.length) m.services = titles.map((title, i) => ({ title, text: (SERVICE_TEXTS[industry || 'tjanst'] || SERVICE_TEXTS.tjanst)[i % 3] }));
+    const texts = online ? ONLINE_PRESET.texts : SERVICE_TEXTS[industry || 'tjanst'] || SERVICE_TEXTS.tjanst;
+    if (titles.length) m.services = titles.map((title, i) => ({ title, text: texts[i % 3] }));
   }
   if (hasValue(b, 'mal_med_sidan')) {
     const wish = wishText(b);
     const booking = wantsBooking(b);
-    const payments = wantsPayments(b);
+    // I utkastet visas betalning bara om kunden faktiskt nämnt det. "Beställa" räcker inte.
+    const payments = hasStem(wish, ['betal', 'swish', 'webshop', 'webbshop', 'kort']);
     m.cta = ctaFor(b, industry || 'tjanst');
     m.features = {
       booking,
@@ -422,6 +435,13 @@ export function draftModel(brief, copy) {
 // Säljer företaget saker (snarare än tjänster eller tider)? Då passar frågorna om produkter bättre.
 const SELLS = /(säljer|sälja|produkt|webshop|bok\b|böcker|kokbok|kockbok|ljus|smycke|kläder|tröj|väsk|tavl|kort\b|uf\b)/i;
 const ONLINE = /(online|på nätet|internet|webshop|bara digitalt)/i;
+
+// Kunden har sagt att de bara säljer online och inte har några tider då man kan komma förbi.
+export function sellsOnlineOnly(b = {}) {
+  const hours = String(b.oppettider || '');
+  if (hours && !isSaknas(hours) && /\d/.test(hours)) return false;
+  return /bara online|endast online|bara på nätet|ingen (butik|lokal|fysisk)/i.test(hours) || (ONLINE.test(`${b.ort_omrade || ''} ${b.bransch || ''}`) && !/\d/.test(hours));
+}
 
 // Checklistans fråga, anpassad lite efter det kunden redan sagt. Används när AI:n inte svarar.
 export function fallbackQuestion(key, seed = 0, brief = {}) {
