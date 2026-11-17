@@ -20,8 +20,9 @@ import {
   briefToText,
   mailParts,
   slugify,
+  parseInstagram,
 } from '../public/assets/shared/brief.js';
-import { applyTurn, extractJson, buildTurnMessages, interviewTurn } from '../src/interview.js';
+import { applyTurn, extractJson, buildTurnMessages, interviewTurn, isVague, tidyReply } from '../src/interview.js';
 import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -113,7 +114,7 @@ test('AI:n får inte spara saknas för något den inte frågat om', () => {
   assert.equal(r.brief.bransch, 'Frisör');
   assert.equal(r.brief.omdomen, undefined);
   assert.deepEqual(r.asked, ['ort_omrade']);
-  assert.equal(r.reply, 'Vad kul! Var finns ni?');
+  assert.equal(r.reply, 'Var finns ni?');
 });
 
 test('AI:n får inte hitta på uppgifter som kunden inte nämnt', () => {
@@ -128,8 +129,57 @@ test('vagt svar: en följdfråga tillåts, sedan sparas det kunden sa', () => {
   const first = applyTurn({ brief: {}, asked: ['tjanster_produkter'], askCount: 1, message: 'Allt möjligt' }, ai);
   assert.equal(first.brief.tjanster_produkter, undefined);
   assert.deepEqual(first.asked, ['tjanster_produkter']);
-  const second = applyTurn({ brief: {}, asked: ['tjanster_produkter'], askCount: 2, carry: 'Allt möjligt', message: 'Lite av varje' }, ai);
+  const second = applyTurn({ brief: {}, asked: ['tjanster_produkter'], askCount: 2, carry: 'Allt möjligt', carryField: 'tjanster_produkter', message: 'Lite av varje' }, ai);
   assert.equal(second.brief.tjanster_produkter, 'Allt möjligt / Lite av varje');
+});
+
+test('vaga svar på tjänster och bransch ger alltid en följdfråga, även om AI:n hoppar över den', () => {
+  const ai = { saves: [{ field: 'tjanster_produkter', value: 'Allt möjligt' }], reply: 'Bra. Vad är målet med sidan?', asked: 'mal_med_sidan' };
+  const r = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'Bygg', ort_omrade: 'Malmö' }, asked: ['tjanster_produkter'], askCount: 1, message: 'Allt möjligt' }, ai);
+  assert.equal(r.brief.tjanster_produkter, undefined);
+  assert.deepEqual(r.asked, ['tjanster_produkter']);
+  assert.match(r.reply, /tre exempel/);
+  // Andra gången sparas det kunden sa, och vi går vidare.
+  const again = applyTurn({ brief: r.brief, asked: ['tjanster_produkter'], askCount: 2, carry: 'Allt möjligt', carryField: 'tjanster_produkter', message: 'Mest kök och badrum' }, { saves: [], reply: 'x', asked: 'mal_med_sidan' });
+  assert.equal(again.brief.tjanster_produkter, 'Allt möjligt / Mest kök och badrum');
+  for (const t of ['Allt möjligt', 'Byggföretag, allt möjligt', 'Lite av varje', 'Hemsidor och sånt']) assert.equal(isVague(t), true, t);
+  for (const t of ['Klippning, färg', 'Kök och badrum', 'Frisörsalong']) assert.equal(isVague(t), false, t);
+});
+
+test('ett svar på en annan fråga följer inte med in i fel fält', () => {
+  const r = applyTurn({ brief: { foretagsnamn: 'A' }, asked: ['bransch'], askCount: 1, carry: 'Malmö med omnejd', carryField: 'ort_omrade', message: 'Snickeri' }, null);
+  assert.equal(r.brief.bransch, 'Snickeri');
+});
+
+test('AI-svar rensas från utropstecken och fyllnad men behåller konkreta reaktioner', () => {
+  assert.equal(tidyReply('Det låter som en trevlig salong! Var är ni verksamma?'), 'Var är ni verksamma?');
+  assert.equal(tidyReply('Jättebra! Malmö är en fin stad! Vilka tjänster erbjuder ni?'), 'Vilka tjänster erbjuder ni?');
+  assert.equal(tidyReply('Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?'), 'Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?');
+  assert.equal(tidyReply('Okej!'), '');
+  assert.ok(!tidyReply('Hej! Vad heter ni?').includes('!'));
+});
+
+test('AI:n får inte hoppa långt fram i checklistan', () => {
+  const ai = { saves: [], reply: 'Får vi visa sidan som exempel?', asked: 'referens_ok' };
+  const r = applyTurn({ brief: { foretagsnamn: 'A' }, asked: ['bransch'], askCount: 1, message: 'Frisör' }, ai);
+  assert.notEqual(r.asked[0], 'referens_ok');
+});
+
+test('utkastet visar kundens egna uppgifter om kontakt, öppettider och erfarenhet', () => {
+  const m = draftModel({ foretagsnamn: 'A', bransch: 'Frisör', kontakt: '040-12 34 56, hej@a.se, Storgatan 1 Malmö', oppettider: 'Tis-fre 10-18, lör 10-15', erfarenhet: 'Sedan 2015', sociala_lankar: 'Instagram @aa' });
+  assert.deepEqual(m.contact, { email: 'hej@a.se', phone: '040-12 34 56', address: 'Storgatan 1 Malmö' });
+  assert.deepEqual(m.hours, ['Tis-fre 10-18', 'lör 10-15']);
+  assert.equal(m.since, 'Sedan 2015');
+  assert.equal(m.instagram, '@aa');
+  assert.equal(draftModel({ foretagsnamn: 'A', kontakt: 'saknas', oppettider: 'saknas' }).contact, undefined);
+  assert.equal(parseInstagram('instagram.com/salong.a'), '@salong.a');
+});
+
+test('rubriker som bara upprepar företagsnamnet slängs', () => {
+  assert.equal(cleanCopy({ headline: 'Salong Linnea', sub: 'Frisörsalong i Malmö' }, 'Salong Linnea'), null);
+  const ok = cleanCopy({ headline: 'Hår du älskar, tid du får tillbaka', sub: 'Tre frisörer som tar sig tid att lyssna. Boka din tid direkt i mobilen.' }, 'Salong Linnea');
+  assert.equal(ok.headline, 'Hår du älskar, tid du får tillbaka');
+  assert.ok(ok.sub);
 });
 
 test('trasigt AI-svar ger ändå en riktig fråga', () => {
