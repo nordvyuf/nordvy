@@ -112,7 +112,8 @@ test('"vet inte" blir saknas, men referens blir Nej', () => {
 test('AI:n får inte spara saknas för något den inte frågat om', () => {
   const ai = { saves: [{ field: 'bransch', value: 'Frisör' }, { field: 'omdomen', value: 'saknas' }], reply: 'Vad kul! Var finns ni?', asked: 'ort_omrade' };
   const r = applyTurn({ brief: { foretagsnamn: 'A' }, asked: ['bransch'], message: 'Vi är frisörer' }, ai);
-  assert.equal(r.brief.bransch, 'Frisör');
+  // Svaret på frågan sparas med kundens egna ord, inte AI:ns förkortning.
+  assert.equal(r.brief.bransch, 'Vi är frisörer');
   assert.equal(r.brief.omdomen, undefined);
   assert.deepEqual(r.asked, ['ort_omrade']);
   assert.equal(r.reply, 'Var finns ni?');
@@ -152,10 +153,10 @@ test('ett svar på en annan fråga följer inte med in i fel fält', () => {
   assert.equal(r.brief.bransch, 'Snickeri');
 });
 
-test('AI-svar rensas från utropstecken och fyllnad men behåller konkreta reaktioner', () => {
+test('AI-svar rensas från utropstecken, fyllnad och reaktioner så att bara frågan blir kvar', () => {
   assert.equal(tidyReply('Det låter som en trevlig salong! Var är ni verksamma?'), 'Var är ni verksamma?');
   assert.equal(tidyReply('Jättebra! Malmö är en fin stad! Vilka tjänster erbjuder ni?'), 'Vilka tjänster erbjuder ni?');
-  assert.equal(tidyReply('Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?'), 'Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?');
+  assert.equal(tidyReply('Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?'), 'Var ligger salongen?');
   assert.equal(tidyReply('Okej!'), '');
   assert.ok(!tidyReply('Hej! Vad heter ni?').includes('!'));
 });
@@ -349,9 +350,8 @@ test('reaktioner som bara återberättar kundens svar tas bort', () => {
   assert.equal(tidyReply('Att tjäna pengar är ett bra mål. Vilken känsla ska sidan förmedla?', 'att tjäna pengar'), 'Vilken känsla ska sidan förmedla?');
   assert.equal(tidyReply('Ni har alltså arbetat med kockboken i 2 månader. Vem är er målgrupp?', '2 månader'), 'Vem är er målgrupp?');
   assert.equal(tidyReply('Diet och receptbok för matintresserade. Har ni en logga?', 'mat och diet intresserade'), 'Har ni en logga?');
-  // En reaktion med en ny tanke om hemsidan får stå kvar.
-  const good = 'Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?';
-  assert.equal(tidyReply(good, 'Frisörsalong med tre frisörer'), good);
+  // Även reaktioner med en egen tanke tas bort: i riktiga körningar var de nästan alltid tomma.
+  assert.equal(tidyReply('Tre frisörer på en plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?', 'Frisörsalong med tre frisörer'), 'Var ligger salongen?');
 });
 
 test('ett mål som "tjäna pengar" ger en följdfråga om vad besökaren ska göra', () => {
@@ -493,4 +493,27 @@ test('vill kunden sälja men saknar bilder blir det en uppföljningspunkt', () =
   const r = applyTurn({ brief, asked: ['bilder'], askCount: 1, message: 'Inte än' }, null);
   assert.equal(r.brief.bilder, 'saknas');
   assert.ok(r.issues.some((i) => /produktbilder/.test(i.text)));
+});
+
+// Från körningen mot riktiga AI:n 18 november.
+test('inledningar och gissningar före frågan tas bort, och obegripliga rester används inte', () => {
+  assert.equal(tidyReply('Lund är en bra plats för en salong, vilka tjänster erbjuder ni?', 'Vi är en frisörsalong i Lund'), 'Vilka tjänster erbjuder ni?');
+  assert.equal(tidyReply('Malmö som bas, vilka produkter eller tjänster erbjuder mätochmätt?', 'malmö sverige'), 'Vilka produkter eller tjänster erbjuder mätochmätt?');
+  assert.equal(tidyReply('September är en bra start. Vem är era vanliga kunder?', 'vi startade i september'), 'Vem är era vanliga kunder?');
+  assert.equal(tidyReply('Er salong har funnits i Lund ett tag, hur länge?', 'x'), '');
+  assert.equal(tidyReply('Tre stolar, det är en stor salong. Var ligger den?', 'x'), '');
+});
+
+test('kundens egna ord sparas för frågan som ställdes, inte AI:ns sammanfattning', () => {
+  const ai = { saves: [{ field: 'bransch', value: 'tillverkning av doftljus' }], reply: 'Vilka produkter har ni?', asked: 'tjanster_produkter' };
+  const r = applyTurn({ brief: { foretagsnamn: 'Lumen UF' }, asked: ['bransch'], askCount: 1, message: 'Vi gör doftljus av sojavax för hand' }, ai);
+  assert.equal(r.brief.bransch, 'Vi gör doftljus av sojavax för hand');
+  // En fråga om webshop eller länk handlar inte om sociala medier.
+  assert.equal(fieldForQuestion('Ska beställningen ske via en webshop eller en länk till en annan sida?', 'sociala_lankar', ['sociala_lankar', 'kontakt']), '');
+  assert.equal(fieldForQuestion('Har ni Instagram eller TikTok?', 'sociala_lankar', ['sociala_lankar']), 'sociala_lankar');
+});
+
+test('AI:ns fråga "Vad gör Salong Vera?" används för branschen', () => {
+  assert.equal(fieldForQuestion('Vad gör Salong Vera?', 'bransch', ['bransch', 'ort_omrade']), 'bransch');
+  assert.equal(fieldForQuestion('Vad gör kockboken annorlunda?', 'varfor_valja_oss', ['bransch', 'varfor_valja_oss']), 'varfor_valja_oss');
 });
