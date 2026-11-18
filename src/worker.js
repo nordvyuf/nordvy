@@ -4,8 +4,10 @@
 //   POST /api/interview/draft   textförslag till utkastet (Workers AI)
 //   POST /api/interview/finish  mejlar underlaget till Nordvy
 //   POST /api/contact           mejlar kontaktformuläret till Nordvy
+//   POST /api/review            mejlar ett omdöme från en besökare till Nordvy (visas först när kunden godkänt)
 
 import { interviewTurn, draftCopy, packageFor } from './interview.js';
+import { readReview, reviewMail } from './reviews.js';
 import {
   PACKAGES,
   cleanText,
@@ -135,6 +137,27 @@ async function handleContact(request, env) {
   return json(result, result.ok ? 200 : result.error === 'not_configured' ? 503 : 502);
 }
 
+// Bara kunder som har en omdomen.json i sin mapp tar emot omdömen. Det är så en kund "slår på" funktionen.
+async function reviewsEnabled(env, url, site) {
+  try {
+    const probe = await env.ASSETS.fetch(new Request(new URL(`/kund/${site}/omdomen.json`, url.origin)));
+    return probe.ok && (probe.headers.get('content-type') || '').includes('json');
+  } catch {
+    return false;
+  }
+}
+
+async function handleReview(request, env, url) {
+  const input = await readJson(request);
+  if (!input) return json({ ok: false, error: 'invalid_request' }, 400);
+  if (cleanText(input.website, 200)) return json({ ok: true }); // dolt fält som bara robotar fyller i
+  const parsed = readReview(input);
+  if (!parsed.ok) return json({ ok: false, error: parsed.error }, 400);
+  if (!(await reviewsEnabled(env, url, parsed.review.site))) return json({ ok: false, error: 'unknown_site' }, 404);
+  const result = await sendMail(env, reviewMail(parsed.review));
+  return json(result, result.ok ? 200 : result.error === 'not_configured' ? 503 : 502);
+}
+
 async function handleFinish(request, env) {
   const input = await readJson(request);
   if (!input) return json({ ok: false, error: 'invalid_request' }, 400);
@@ -178,8 +201,9 @@ async function handleApi(request, env, url) {
   if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
   if (!sameOrigin(request)) return json({ ok: false, error: 'forbidden' }, 403);
 
-  if (path === '/api/contact' || path === '/api/interview/finish') {
+  if (path === '/api/contact' || path === '/api/interview/finish' || path === '/api/review') {
     if (await limited(request, env, 'mail')) return json({ ok: false, error: 'rate_limited' }, 429);
+    if (path === '/api/review') return handleReview(request, env, url);
     return path === '/api/contact' ? handleContact(request, env) : handleFinish(request, env);
   }
   if (path === '/api/interview/turn' || path === '/api/interview/draft') {
