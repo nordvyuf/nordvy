@@ -168,12 +168,15 @@ const NOT_A_CITY = new Set(['Sverige', 'Hela', 'Vi', 'Vår', 'Vårt', 'Våra', '
 
 // Plockar ut orten ur svaret om var företaget finns, t.ex. "Vi finns i Malmö" -> "Malmö".
 export function detectCity(text) {
-  const t = String(text || '').trim();
+  const t = String(text || '').replace(/\b(sverige|sweden)\b/gi, ' ').replace(/\s+/g, ' ').trim();
   if (!t || isSaknas(t)) return '';
   const words = t.split(/[\s,.;:/()]+/).filter(Boolean);
   if (words.length <= 2 && t.length <= 26 && /^[A-Za-zÅÄÖåäöé -]+$/.test(t)) {
     return words.map((w) => capitalize(lower(w))).join(' ');
   }
+  // "Lund, på Bangatan nära stationen": orten står först, gatan efter.
+  const lead = t.match(/^([A-ZÅÄÖ][a-zåäöé]{2,})\s*,/);
+  if (lead && !NOT_A_CITY.has(lead[1])) return lead[1];
   const after = t.match(/(?:^|[\s,(])(?:i|på|utanför|nära|runt|från)\s+([A-ZÅÄÖ][a-zåäöé]+(?:[ -][A-ZÅÄÖ][a-zåäöé]+)?)/);
   if (after && !NOT_A_CITY.has(after[1].split(/[ -]/)[0])) return after[1];
   const cap = words.find((w, i) => /^[A-ZÅÄÖ][a-zåäöé]{2,}$/.test(w) && !NOT_A_CITY.has(w));
@@ -182,12 +185,44 @@ export function detectCity(text) {
 
 export function detectVibe(text) {
   const t = lower(text);
+  if (hasStem(t, ['energi', 'sportig', 'kraftfull', 'peppig'])) return 'modern';
   if (hasStem(t, ['exklusiv', 'lyx', 'premium', 'elegant', 'mörk', 'svart', 'guld'])) return 'exklusiv';
   if (hasStem(t, ['lekfull', 'färgglad', 'rolig', 'glad', 'busig', 'rosa', 'gul'])) return 'lekfull';
   if (hasStem(t, ['natur', 'grön', 'ekolog', 'jordnära', 'lugn', 'hållbar'])) return 'natur';
   if (hasStem(t, ['modern', 'stilren', 'minimal', 'enkel', 'proffsig', 'professionell', 'tydlig', 'ren och', 'blå', 'vit'])) return 'modern';
   if (hasStem(t, ['varm', 'personlig', 'hemtrev', 'mysig', 'familj', 'välkomn', 'beige', 'brun'])) return 'varm';
   return '';
+}
+
+// Färger som kunden själv nämner i svaret om stil. Den första färgen som inte är neutral blir accent.
+const COLORS = [
+  { stems: ['neongrön', 'neon'], acc: '#1fbf6b', ink: '#0d1f14' },
+  { stems: ['mörkblå', 'marinblå', 'navy'], acc: '#1f3a68' },
+  { stems: ['ljusblå'], acc: '#2f6fb3' },
+  { stems: ['blå'], acc: '#2346c9' },
+  { stems: ['mörkgrön', 'skogsgrön'], acc: '#2f5a3c' },
+  { stems: ['grön'], acc: '#3f6e4a' },
+  { stems: ['turkos', 'petrol'], acc: '#126b6b' },
+  { stems: ['vinröd', 'röd'], acc: '#a8322a' },
+  { stems: ['rosa'], acc: '#b0406a' },
+  { stems: ['lila'], acc: '#6236c4' },
+  { stems: ['orange'], acc: '#c2531a' },
+  { stems: ['gul'], acc: '#e3b400', ink: '#1f1a05' },
+  { stems: ['guld'], acc: '#9c7a2e' },
+  { stems: ['brun', 'beige'], acc: '#7a5233', neutral: true },
+  { stems: ['svart'], acc: '#151515', neutral: true },
+];
+
+export function detectAccent(text) {
+  const t = lower(text);
+  const found = [];
+  for (const c of COLORS) {
+    const at = Math.min(...c.stems.map((s) => (t.includes(s) ? t.indexOf(s) : Infinity)));
+    if (at < Infinity) found.push({ ...c, at });
+  }
+  if (!found.length) return null;
+  found.sort((a, b) => (a.neutral === b.neutral ? a.at - b.at : a.neutral ? 1 : -1));
+  return { acc: found[0].acc, ink: found[0].ink || '#ffffff' };
 }
 
 const DEFAULT_VIBE = { frisor: 'varm', cafe: 'varm', hantverk: 'modern', butik: 'lekfull', halsa: 'natur', tjanst: 'modern' };
@@ -244,7 +279,7 @@ export function packageLine(id) {
 /* ------------------------------------------------------------ utkastet */
 
 const PRESET = {
-  frisor: { headline: 'Hår du trivs i, varje dag', sub: (n, c) => `Boka tid hos ${n}${c} när det passar dig. Enkelt och direkt i mobilen.`, cta: 'Boka tid', text: 'Boka en tid som passar dig.' },
+  frisor: { headline: 'Hår du trivs i varje dag', sub: (n, c) => `Boka tid hos ${n}${c} när det passar dig. Enkelt och direkt i mobilen.`, cta: 'Boka tid', text: 'Boka en tid som passar dig.' },
   cafe: { headline: 'Nybakat, nära och gjort med omsorg', sub: (n, c) => `${n}${c}. Se menyn, öppettiderna och hitta hit på några sekunder.`, cta: 'Se menyn', text: 'Gjort på riktiga råvaror.' },
   hantverk: { headline: 'Rätt gjort från början', sub: (n, c) => `${n} hjälper dig${c}, från första samtal till färdigt resultat. Begär offert direkt på sidan.`, cta: 'Begär offert', text: 'Tydlig offert och tidsplan.' },
   butik: { headline: 'Det du letar efter, nära dig', sub: (n, c) => `Välkommen till ${n}${c}. Se sortimentet, öppettiderna och vägen hit.`, cta: 'Se sortimentet', text: 'Finns hos oss just nu.' },
@@ -256,18 +291,8 @@ const PRESET = {
 const ONLINE_PRESET = {
   headline: 'Utvalt, och lätt att beställa',
   sub: (n, from) => `${n}${from} säljer online. Se sortimentet och beställ direkt på sidan.`,
-  texts: ['Utvalt med omsorg.', 'Beställ direkt på sidan.', 'Fråga oss, vi hjälper dig välja.'],
 };
 
-// Tre korta texter per bransch, så att tjänsterutorna inte säger samma sak.
-const SERVICE_TEXTS = {
-  frisor: ['Anpassat efter ditt hår och din stil.', 'Vi tar oss tid att lyssna först.', 'Produkter som håller hemma också.'],
-  cafe: ['Bakat och lagat från grunden.', 'Gott hela dagen, sittande eller som takeaway.', 'Gjort på råvaror vi litar på.'],
-  hantverk: ['Fast pris och tydlig tidsplan.', 'Samma ansvariga från start till slut.', 'Rent och snyggt när vi går.'],
-  butik: ['Utvalt med omsorg.', 'Finns i butiken just nu.', 'Fråga oss, vi hjälper dig välja.'],
-  halsa: ['Anpassat efter dig och dina mål.', 'Vi börjar där du är.', 'Stöd hela vägen, steg för steg.'],
-  tjanst: ['Tydligt och utan krångel.', 'Vi hjälper dig hela vägen.', 'Anpassat efter ditt behov.'],
-};
 
 // Pekar ut företagsnamnet och vanliga fyllnadsord så att en rubrik inte bara upprepar dem.
 const BARE_HEADLINE = /^(välkommen( till)?|hem|startsida|hemsida|vår hemsida|om oss|hej)\b/i;
@@ -335,7 +360,8 @@ export function parseContact(text) {
     .replace(/\b(tel(?:efon)?|mobil|mejl|mail|e-?post|adress|besöksadress)\b\s*:?/gi, ' ')
     .split(/[,;\n]/)
     .map((x) => x.replace(/^[\s\-–:]+|[\s\-–:]+$/g, ''))
-    .filter((x) => x.length > 2);
+    // "Ring … eller mejla …" lämnar bara instruktionsord kvar. De är ingen adress.
+    .filter((x) => x.length > 2 && !(!/\d/.test(x) && /^(ring|ringa|mejla|maila|skriv|kontakta|nummer|numret|eller|och|oss|till|på|via)\b/i.test(x)));
   return { email: email.slice(0, 60), phone: phone.slice(0, 20), address: rest.join(', ').slice(0, 80) };
 }
 
@@ -365,6 +391,23 @@ export function parseInstagram(text) {
  * Fält som inte är besvarade lämnas tomma och ritas som grå väntrader.
  * `copy` är AI:ns textförslag och läggs ovanpå när det finns.
  */
+// Kundens svar som en mening: stor bokstav först och punkt sist.
+const asSentence = (text) => {
+  const t = String(text || '').trim();
+  if (!t) return '';
+  const c = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?…]$/.test(c) ? c : `${c}.`;
+};
+
+// "5 years" blir "5 år" och "vi startade i september" blir "Startade i september".
+function tidySince(text) {
+  const t = String(text || '')
+    .trim()
+    .replace(/^(\d+)\s*years?\b/i, '$1 år')
+    .replace(/^vi\s+(startade|började)\b/i, (_, v) => v);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export function draftModel(brief, copy) {
   const b = brief || {};
   const m = {};
@@ -390,8 +433,8 @@ export function draftModel(brief, copy) {
   if (city) m.city = city;
   if (hasAnswer(b, 'tjanster_produkter')) {
     const titles = parseServices(b.tjanster_produkter);
-    const texts = online ? ONLINE_PRESET.texts : SERVICE_TEXTS[industry || 'tjanst'] || SERVICE_TEXTS.tjanst;
-    if (titles.length) m.services = titles.map((title, i) => ({ title, text: texts[i % 3] }));
+    // Inga påhittade beskrivningar i utkastet. AI:ns text läggs på nedan när den finns.
+    if (titles.length) m.services = titles.map((title) => ({ title, text: '' }));
   }
   if (hasValue(b, 'mal_med_sidan')) {
     const wish = wishText(b);
@@ -408,8 +451,12 @@ export function draftModel(brief, copy) {
       contact: !booking && !payments,
     };
   }
-  if (hasAnswer(b, 'varfor_valja_oss')) m.about = oneLine(b.varfor_valja_oss, 220);
-  if (hasAnswer(b, 'erfarenhet')) m.since = oneLine(b.erfarenhet, 32);
+  if (hasAnswer(b, 'varfor_valja_oss') && !isNegative(b.varfor_valja_oss)) m.about = asSentence(oneLine(b.varfor_valja_oss, 220));
+  if (hasAnswer(b, 'erfarenhet') && !isNegative(b.erfarenhet)) m.since = tidySince(oneLine(b.erfarenhet, 32));
+  if (hasAnswer(b, 'stil')) {
+    const accent = detectAccent(b.stil);
+    if (accent) m.accent = accent;
+  }
   if (hasAnswer(b, 'kontakt')) {
     const c = parseContact(b.kontakt);
     if (c.email || c.phone || c.address) m.contact = c;
