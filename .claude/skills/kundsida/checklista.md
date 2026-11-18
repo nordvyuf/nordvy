@@ -27,7 +27,9 @@ Jämför alltid med paketbeskrivningen i `public/index.html`, som är facit.
 - [ ] Öppettider, eller att de bara finns online.
 - [ ] Adress för kartan.
 - [ ] Domänönskan. Domänen registreras i kundens namn.
-- [ ] Premium: hur bokning och betalning ska fungera (Swish-nummer, vad som ska kunna bokas).
+- [ ] Premium, bokning: vad som ska kunna bokas (tjänst, tid, pris) och kundens Cal.com-länk. Kunden skapar ett gratiskonto på cal.com i sitt eget namn. Vi hjälper till men får aldrig lösenordet.
+- [ ] Premium, betalning: kundens nummer för Swish Företag (inte ett privat nummer), och vad besökaren ska skriva som meddelande.
+- [ ] Premium, omdömen: om kunden vill ta emot omdömen, och riktiga omdömen som får visas från start.
 
 ## Mall för mejlet om det som saknas
 
