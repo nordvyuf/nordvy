@@ -41,13 +41,11 @@ const RULES = `Du är Nordvys intervjuassistent. Du hjälper en företagare att 
 SÅ SKRIVER DU
 - Svenska, i du-form eller ni-form efter hur kunden skriver. Rakt, varmt och avslappnat, som en hjälpsam person i en butik. Aldrig säljigt eller överdrivet.
 - Inga utropstecken, inga emojis, ingen markdown.
-- Reaktionen på svaret är kort och KONKRET: ta upp något kunden faktiskt sa (en siffra, en plats, ett ord de använde) eller en idé för hemsidan som följer av det. Skippa reaktionen helt om du inte har något konkret att säga. Det är bättre än fyllnad.
-- Börja aldrig med "Det låter", "Låter", "Vad kul", "Vad bra", "Jättebra", "Toppen", "Tack" eller "Okej". Variera hur du börjar.
-- Skriv aldrig "Malmö är en fin stad" eller liknande allmänna kommentarer om platser, namn eller branscher.
-- Upprepa inte kundens ord som inledning ("Tis-fre 10-18, vilka sociala länkar har ni?"). Ställ frågan direkt, eller reagera på något konkret.
+- Skriv BARA nästa fråga. Ingen reaktion, ingen kommentar och ingen inledning före frågan: inte "Lund är en bra plats för en salong, …", inte "Tre stolar, det är en stor salong." och inte "Malmö som bas, …".
+- Frågan ska gå att förstå på egen hand. Skriv "Var ligger salongen?", inte "Var ligger den?".
+- Gissa aldrig något om företaget i frågan ("Er salong har funnits ett tag, hur länge?"). Fråga bara.
 - Du vet inget om domäner, priser, tider eller vad Nordvy kan leverera. Säg aldrig att en webbadress är ledig eller upptagen, och nämn inga priser. Teamet kollar det efteråt.
 - Är något kunden skrivit inte ett svar på frågan, säg det vänligt och ställ frågan igen med andra ord. Aldrig "Det låter inte som…".
-- Återberätta aldrig kundens svar ("Malmö är er bas.", "Ni har alltså arbetat i 2 månader.", "Att tjäna pengar är ett bra mål."). Kunden vet vad de nyss skrev. Antingen en ny tanke om hemsidan, eller ingen reaktion alls.
 
 FRÅGORNA SKA BYGGA PÅ DET KUNDEN BERÄTTAT
 - Fråga aldrig om något kunden redan har svarat på, inte ens med andra ord. Täcker ett svar flera fält (t.ex. "vi gör en kockbok" svarar både på vad de gör och vad de säljer), spara alla och gå vidare.
@@ -58,7 +56,7 @@ FRÅGORNA SKA BYGGA PÅ DET KUNDEN BERÄTTAT
 
 BRA OCH DÅLIGT
 Dåligt: "Det låter som en trevlig salong! Var är ni verksamma?"
-Bra: "Tre frisörer på en och samma plats, då behöver bokningen klara flera kalendrar. Var ligger salongen?"
+Bra (kunden har tre frisörer): "Ska kunderna kunna välja vilken frisör de bokar?"
 Dåligt: "Jättebra! Vilka tjänster erbjuder ni?"
 Bra: "Vilka tjänster ska stå först på sidan?"
 Dåligt (kunden har sagt "vi gör en kockbok"): "Vilka produkter har ni?"
@@ -82,9 +80,9 @@ REGLER
 
 SVARSFORMAT
 Svara med ett JSON-objekt:
-- "saves": lista med {"field", "value"} enligt regel 3-5. Tom lista om inget ska sparas.
+- "saves": lista med {"field", "value"} enligt regel 3-5. Skriv värdet med kundens egna ord, förkorta inte. Tom lista om inget ska sparas.
 - "issue": {"topic", "text"} bara om teamet behöver följa upp något, annars utelämnar du fältet. topic är ett av: ${TOPICS.join(', ')}.
-- "reply": det kunden ser. Högst en kort reaktion (se ovan), sedan nästa fråga. Högst 45 ord. Vanlig text.
+- "reply": det kunden ser: bara nästa fråga, högst 30 ord. Vanlig text.
 - "asked": fältnamnet som din fråga gäller. Välj det första fältet under ÅTERSTÅR som fortfarande saknar svar efter dina saves.`;
 
 const TURN_SCHEMA = {
@@ -228,7 +226,7 @@ const ABOUT = {
   funktioner: /funktion|bokning|boka|kontaktformulär|karta|webshop|ska finnas|på sidan|beställa|köpa direkt|betala/i,
   kontakt: /telefon|mejl|e-post|adress|kontakt|nå er|nummer/i,
   oppettider: /öppettid|öppet|öppnar|tider/i,
-  sociala_lankar: /instagram|facebook|tiktok|sociala|länk/i,
+  sociala_lankar: /instagram|insta(?![a-zåäö])|facebook|tiktok|linkedin|youtube|sociala medie|sociala kanal/i,
   logga: /logga|logotyp/i,
   bilder: /bild|foto/i,
   egna_texter: /text/i,
@@ -272,6 +270,13 @@ function stripEcho(text, message) {
   return m[2].charAt(0).toLocaleUpperCase('sv-SE') + m[2].slice(1);
 }
 
+// "Malmö som bas, vilka produkter har ni?" blir "Vilka produkter har ni?".
+const LEAD_IN = /^[^,.?]{2,60},\s+((?:vilka|vilken|vilket|var|vart|hur|vad|vem|när|har|finns|får|kan|vill|ska|skulle|brukar|säljer|erbjuder)(?![a-zåäö])[^]*\?)$/i;
+function stripLeadIn(text) {
+  const m = text.match(LEAD_IN);
+  return m ? m[1].charAt(0).toLocaleUpperCase('sv-SE') + m[1].slice(1) : text;
+}
+
 export function tidyReply(raw, message = '') {
   const text = String(raw || '')
     .replace(/<[^>]*>/g, ' ')
@@ -300,7 +305,13 @@ export function tidyReply(raw, message = '') {
       sentences.push(...kept);
     }
   }
-  const out = stripEcho(sentences.join(' ').trim(), message);
+  // Bara frågan visas: reaktioner före frågan blev oftast tomma ("September är en bra start.").
+  while (sentences.length > 1 && !sentences[0].includes('?')) sentences.shift();
+  let out = stripEcho(sentences.join(' ').trim(), message);
+  out = stripLeadIn(out);
+  // En fråga som inte går att förstå på egen hand ("Hur länge?", "Var ligger den?") används inte.
+  const n = out.split(/\s+/).length;
+  if (n < 3 || (n <= 4 && /\s(den|det|dem|de|dom)\?$/i.test(out))) return '';
   return /^[a-zåäö]/.test(out) ? out.charAt(0).toLocaleUpperCase('sv-SE') + out.slice(1) : out;
 }
 
@@ -426,6 +437,9 @@ export function applyTurn(state, ai) {
         continue; // AI:n får inte lägga till sådant kunden inte sagt
       }
       if (hasValue(state.brief, field) && !wasAsked && !edit) continue; // skriv inte över tidigare svar i förbifarten
+      // Svaret på frågan vi ställde sparas med kundens egna ord längre ner, inte med AI:ns förkortning
+      // ("Vi gör doftljus av sojavax för hand" blev annars "tillverkning av doftljus").
+      if (!edit && field === lastAsked[0] && !isSaknas(value) && field !== 'referens_ok') continue;
       if (field === 'referens_ok') value = yesNo(message) || yesNo(value) || value;
       accept(field, value);
     }
