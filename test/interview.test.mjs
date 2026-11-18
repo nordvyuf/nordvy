@@ -517,3 +517,10 @@ test('AI:ns fråga "Vad gör Salong Vera?" används för branschen', () => {
   assert.equal(fieldForQuestion('Vad gör Salong Vera?', 'bransch', ['bransch', 'ort_omrade']), 'bransch');
   assert.equal(fieldForQuestion('Vad gör kockboken annorlunda?', 'varfor_valja_oss', ['bransch', 'varfor_valja_oss']), 'varfor_valja_oss');
 });
+
+test('ett UF-företag som bara syns som UF i mejlen eller på Instagram får UF-paketet', () => {
+  // Från Njoys riktiga intervju 17 november: de fick Premium som förslag.
+  const njoy = { foretagsnamn: 'Njoy', bransch: 'Alkoholfria mocktails', mal_med_sidan: 'Beställa eller köpa', funktioner: 'Betalning med Swish', kontakt: 'Njoy.uf@gmail.com', sociala_lankar: 'Instagram och TikTok som heter njoy.uf' };
+  assert.equal(recommendPackage(njoy).id, 'uf');
+  assert.notEqual(recommendPackage({ ...njoy, kontakt: 'njoy@gmail.com', sociala_lankar: 'Instagram njoydrinks' }).id, 'uf');
+});

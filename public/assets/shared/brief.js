@@ -218,7 +218,10 @@ export function parseServices(text) {
 const wishText = (b) => lower(`${b.mal_med_sidan || ''} ${b.funktioner || ''}`);
 export const wantsBooking = (b) => hasStem(wishText(b), ['boka', 'bokning', 'tidsbok']);
 export const wantsPayments = (b) => hasStem(wishText(b), ['betal', 'swish', 'webshop', 'webbshop', 'köpa', 'sälj', 'beställ', 'presentkort']);
-export const isUF = (b) => hasWord(lower(`${b.foretagsnamn || ''} ${b.bransch || ''}`), 'uf') || lower(b.bransch).includes('ung företagsamhet');
+// UF-företag syns ofta bara i mejladressen eller på Instagram ("njoy.uf@gmail.com", "@njoy.uf").
+export const isUF = (b) =>
+  hasWord(lower(`${b.foretagsnamn || ''} ${b.bransch || ''} ${b.kontakt || ''} ${b.sociala_lankar || ''} ${b.doman_onskemal || ''}`), 'uf') ||
+  lower(b.bransch).includes('ung företagsamhet');
 
 export function recommendPackage(brief) {
   const b = brief || {};
