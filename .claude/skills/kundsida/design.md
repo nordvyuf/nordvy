@@ -50,7 +50,7 @@ Skriv alltid en reservfont efter, till exempel `font-family: "Young Serif", Geor
 
 ## Mobil
 
-- Bygg för 375 px först. Den viktigaste knappen (beställ, boka, ring) ska synas på första skärmen.
+- Bygg för 375 px först. Den viktigaste knappen (beställ, boka, ring) ska synas på första skärmen, både på mobil och på en vanlig datorskärm (1280 × 720). En stor bild eller rubrik får inte trycka ner den under kanten.
 - Göm inte menyn helt. Med tre eller färre länkar kan de stå kvar och radbrytas. Med fler: en riktig menyknapp (`<button aria-expanded>` som visar och döljer listan) som fungerar med tangentbordet.
 - Telefonnummer är `tel:`-länkar och adresser länkar till kartan.
 

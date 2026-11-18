@@ -32,6 +32,10 @@ Bygg inte en hel sida på gissningar. Ett första utkast med tydligt markerade l
 
 ## 3. Bestäm idén innan du kodar
 
+**Titta på riktiga referenser först.** Har du UXKIN (verktyget `find_ui_materials`), sök efter riktiga sajter i samma bransch och storlek som kunden, till exempel "litet surdegsbageri" eller "frisörsalong med en stol". Välj en eller två referenser och skriv i `DESIGN.md` vad du tar från dem (en färgroll, en typografi, ett sätt att visa priser) och varför. Kopiera aldrig en sajt rakt av. Kundens eget material går alltid före.
+
+Syns inga UXKIN-verktyg, eller kräver UXKIN inloggning: säg till Måns att det kan anslutas genom att skriva `/mcp` i den här chatten. Vänta inte på det, utan fortsätt utan referenser och skriv i `DESIGN.md` att riktningen inte bygger på referenssajter.
+
 Skriv designidén i `kunder/<namn>/DESIGN.md` i repots rot (inte i `public/`, så den publiceras inte som en sida). Inga personuppgifter i den. Några meningar räcker:
 - Vem sidan är för och vad besökaren ska göra (beställa, ringa, boka).
 - **Den bärande idén:** en sak som är kundens egen och styr layouten. Den kan komma från namnet, produkten, platsen eller kundens egna ord (se `design.md`).
@@ -60,10 +64,17 @@ Mejlet är inte skickat förrän besökaren trycker på skicka i sitt mejlprogra
 
 ### Karta (Bas och Premium)
 
-Använd OpenStreetMap, som är tillåten i CSP:n:
-1. Sök upp adressen på openstreetmap.org, välj "Dela" och sedan "HTML" så får du en färdig `<iframe>`-adress.
-2. Lägg in den med `loading="lazy"`, ett beskrivande `title` (till exempel `title="Karta till Bageri Korn & Kaka"`), en fast höjd och `width="100%"`.
-3. Skriv alltid adressen som text bredvid, och en länk "Öppna i kartan" till samma plats.
+Använd OpenStreetMap, som är tillåten i CSP:n.
+
+1. **Koordinater:** ta fram latitud och longitud för kundens företagsadress, till exempel med `https://nominatim.openstreetmap.org/search?q=<adress>&format=json&limit=1`. Svaret innehåller `lat` och `lon`. Sök bara på företagets offentliga adress, aldrig på en privatpersons.
+2. **Kartrutan:** räkna ut ett litet område runt platsen. ±0,004 i longitud och ±0,002 i latitud ger ungefär ett kvarter åt varje håll:
+   ```html
+   <iframe title="Karta till <företag>" loading="lazy" width="100%" height="320" style="border:0"
+     src="https://www.openstreetmap.org/export/embed.html?bbox=<lon-0.004>%2C<lat-0.002>%2C<lon+0.004>%2C<lat+0.002>&amp;layer=mapnik&amp;marker=<lat>%2C<lon>"></iframe>
+   ```
+   Ordningen i `bbox` är väst, syd, öst, nord, alltså lägsta longitud, lägsta latitud, högsta longitud och högsta latitud. Använd punkt som decimaltecken.
+3. **Länk och text:** skriv alltid adressen som text bredvid och en länk "Öppna i kartan": `https://www.openstreetmap.org/?mlat=<lat>&mlon=<lon>#map=17/<lat>/<lon>`.
+4. Saknas gatuadressen: lägg kartan på orten, markera adressen med `<mark class="todo">` och fråga kunden.
 
 Ingen annan kartleverantör fungerar utan att CSP:n i `src/worker.js` ändras, och det gör vi bara om Måns säger till.
 
@@ -85,8 +96,8 @@ Kunden behöver **Swish Företag** via sin bank. Ett privat Swish-nummer får in
 
 ## 5. Testa
 
-1. `npm run preview` och öppna `http://localhost:8788/kund/<namn>/`.
-2. Kontrollera datorbredd och mobil (375 px). Ingen sidledsskroll, inga knappar som bryts på två rader, inga texter som krockar.
+1. `npm run preview` och öppna `http://localhost:8788/kund/<namn>/`. Starta om förhandsvisningen efter `git pull` eller när `src/worker.js` har ändrats. Servern läser in koden och CSP:n bara när den startar, så en gammal server kan blockera till exempel kartan utan att något syns.
+2. Kontrollera datorbredd (1280 px) och mobil (375 px). Ingen sidledsskroll, inga knappar som bryts på två rader, inga texter som krockar. Den viktigaste knappen (beställ, boka, ring) ska synas på första skärmen i båda bredderna.
 3. Prova formulär, beställning och bokning, både tomma och ifyllda.
 4. Kontrollera tillgängligheten enligt `design.md`: tangentbord, fokus, kontrast och minskad rörelse.
 5. Granska sidan mot listan i `design.md`. Ser den ut som en mall, gör om den.
@@ -116,6 +127,7 @@ En provsida testar skillen eller en idé, utan riktig kund.
 - Mappen heter `public/kund/test-<namn>/`. Använd aldrig `test-` för en riktig kund.
 - All information är påhittad: företag, personer, priser, öppettider och omdömen. Använd inga riktiga personuppgifter. Skriv i utkastraden att allt är påhittat, och märk påhittade omdömen med "(påhittat)".
 - Briefen räcker ofta inte till allt. Hitta då på rimliga detaljer, och lista dem i `kunder/test-<namn>/DESIGN.md`.
+- Använd påhittade adresser som slutar på `.example`, till exempel `bestallning@lagan.example` och `https://cal.com/linnea-example/klippning`. Domänen `.example` finns aldrig på riktigt, så inget mejl kan hamna hos någon. Telefonnummer skrivs som `070-000 00 00`.
 - Ladda inte upp provsidor till GitHub och skapa ingen pull request, om inte Måns ber om det. Visa dem lokalt och ta bort mappen när testet är klart.
 
 ## Omdömen från besökare
