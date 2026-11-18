@@ -512,3 +512,8 @@ test('kundens egna ord sparas för frågan som ställdes, inte AI:ns sammanfattn
   assert.equal(fieldForQuestion('Ska beställningen ske via en webshop eller en länk till en annan sida?', 'sociala_lankar', ['sociala_lankar', 'kontakt']), '');
   assert.equal(fieldForQuestion('Har ni Instagram eller TikTok?', 'sociala_lankar', ['sociala_lankar']), 'sociala_lankar');
 });
+
+test('AI:ns fråga "Vad gör Salong Vera?" används för branschen', () => {
+  assert.equal(fieldForQuestion('Vad gör Salong Vera?', 'bransch', ['bransch', 'ort_omrade']), 'bransch');
+  assert.equal(fieldForQuestion('Vad gör kockboken annorlunda?', 'varfor_valja_oss', ['bransch', 'varfor_valja_oss']), 'varfor_valja_oss');
+});
