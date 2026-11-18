@@ -215,7 +215,7 @@ const FILLER =
 // som AI:n säger att den frågar om, skulle kundens svar sparas på fel plats.
 const ABOUT = {
   foretagsnamn: /heter|namn/i,
-  bransch: /gör ni|verksamhet|bransch|vad är ni|beskriv/i,
+  bransch: /gör ni|^vad gör |verksamhet|bransch|vad är ni|beskriv/i,
   ort_omrade: /\bvar\b|\bort\b|område|stad|ligger|finns ni|verksam|online|sverige|hela landet|lokalt/i,
   tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment|fler (böcker|saker|varor)/i,
   mal_med_sidan: /mål|viktigaste|besökare|kunna göra|syfte|sidan ska/i,
