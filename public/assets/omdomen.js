@@ -13,7 +13,9 @@
 //   data-rubrik-niva   rubriknivå 2–4 för rutans rubrik (standard 3), så den passar sidans rubriker.
 //
 // Färgen sätts med CSS-variabeln --nv-accent på sidan, till exempel `--nv-accent: #D9583B`.
-// Texten, typsnittet och bakgrunden ärvs från sidan, så den fungerar i ljust och mörkt.
+// Texten, typsnittet och bakgrunden ärvs från sidan. Rutan byter inte färger efter besökarens mörka
+// läge, eftersom kundsidor har fasta färger. Felmeddelanden är mörkröda: på en mörk sida, sätt
+// till exempel `.nv-om-err { color: #ffb3a6 }` i sidans CSS.
 //
 // Eget utseende: rutans standardstil har noll specificitet (:where), så sidans egen CSS vinner alltid.
 // Klasser att styla: .nv-om (hela rutan), .nv-om-head, .nv-om-title, .nv-om-avg, .nv-om-list,
@@ -59,7 +61,6 @@ const CSS = `
 :where(.nv-om-send:disabled){opacity:.5;cursor:not-allowed}
 :where(.nv-om-err){color:#b3321f;font-size:.88em;min-height:1.2em}
 :where(.nv-om-status:not(:empty)){padding:12px 14px;border:1px solid var(--line);border-radius:12px}
-@media (prefers-color-scheme:dark){:where(.nv-om-err){color:#ff9c8a}}
 .nv-om-form[hidden]{display:none}
 .nv-om-err:empty{display:none}
 .nv-om-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
