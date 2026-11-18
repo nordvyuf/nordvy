@@ -8,10 +8,18 @@
 //
 //   data-site    kundens mappnamn under /kund/. Utan det visas bara omdömena, inget formulär.
 //   data-src     var omdomen.json ligger. Standard: omdomen.json bredvid sidan.
-//   data-demo    visar formuläret men skickar ingenting (för demosidor).
+//   data-demo    visar formuläret men skickar ingenting (för demosidor och utkast).
+//   data-utan-rubrik   visar ingen egen rubrik. Använd när sidan redan har en rubrik ovanför rutan.
+//   data-rubrik-niva   rubriknivå 2–4 för rutans rubrik (standard 3), så den passar sidans rubriker.
 //
 // Färgen sätts med CSS-variabeln --nv-accent på sidan, till exempel `--nv-accent: #D9583B`.
 // Texten, typsnittet och bakgrunden ärvs från sidan, så den fungerar i ljust och mörkt.
+//
+// Eget utseende: rutans standardstil har noll specificitet (:where), så sidans egen CSS vinner alltid.
+// Klasser att styla: .nv-om (hela rutan), .nv-om-head, .nv-om-title, .nv-om-avg, .nv-om-list,
+// .nv-om-card (ett omdöme: figure med .nv-om-stars, blockquote, figcaption), .nv-om-empty, .nv-om-note,
+// .nv-om-open (knappen "Skriv ett omdöme"), .nv-om-form, .nv-om-field, .nv-om-rate, .nv-om-consent,
+// .nv-om-send, .nv-om-err och .nv-om-status.
 //
 // omdomen.json:
 //   { "rubrik": "Det säger kunderna", "notis": "valfri liten text",
@@ -19,42 +27,44 @@
 // Ett omdöme visas först när någon har lagt raden där. Ingenting skickas direkt till sidan.
 
 const STYLE_ID = 'nv-om-style';
+// Allt utseende ligger i :where() så att kundsidans egen CSS alltid går före.
+// Bara det som krävs för att rutan ska fungera (dolda fält, skärmläsartext) har vanlig specificitet.
 const CSS = `
-.nv-om{--a:var(--nv-accent,#2f6b4a);--star:var(--nv-star,#b9852a);--line:rgba(127,127,127,.35);display:grid;gap:18px;max-width:760px;font:inherit;color:inherit}
-.nv-om *{box-sizing:border-box}
-.nv-om-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
-.nv-om-head h3{margin:0}
-.nv-om-avg{opacity:.75;font-size:.95em}
-.nv-om-list{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
-.nv-om-card{margin:0;padding:16px;border:1px solid var(--line);border-radius:14px;display:grid;gap:8px;align-content:start;min-width:0}
-.nv-om-card blockquote{margin:0;overflow-wrap:anywhere}
-.nv-om-card figcaption{font-size:.9em;opacity:.75}
-.nv-om-stars{color:var(--star);letter-spacing:.1em;line-height:1}
-.nv-om-empty,.nv-om-note{margin:0;opacity:.75;font-size:.95em}
-.nv-om-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.nv-om-open{justify-self:start;font:inherit;font-weight:600;padding:11px 20px;border-radius:999px;border:1px solid var(--a);background:transparent;color:var(--a);cursor:pointer}
-.nv-om-open:hover{background:var(--a);color:#fff}
-.nv-om-form{display:grid;gap:14px;padding:18px;border:1px solid var(--line);border-radius:16px}
+:where(.nv-om){--a:var(--nv-accent,#2f6b4a);--star:var(--nv-star,#b9852a);--line:rgba(127,127,127,.35);display:grid;gap:18px;max-width:760px;font:inherit;color:inherit}
+:where(.nv-om) *{box-sizing:border-box}
+:where(.nv-om-head){display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+:where(.nv-om-title){margin:0}
+:where(.nv-om-avg){opacity:.75;font-size:.95em}
+:where(.nv-om-list){display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
+:where(.nv-om-card){margin:0;padding:16px;border:1px solid var(--line);border-radius:14px;display:grid;gap:8px;align-content:start;min-width:0}
+:where(.nv-om-card) blockquote{margin:0;overflow-wrap:anywhere}
+:where(.nv-om-card) figcaption{font-size:.9em;opacity:.75}
+:where(.nv-om-stars){color:var(--star);letter-spacing:.1em;line-height:1}
+:where(.nv-om-empty,.nv-om-note){margin:0;opacity:.75;font-size:.95em}
+:where(.nv-om-open){justify-self:start;font:inherit;font-weight:600;padding:11px 20px;border-radius:999px;border:1px solid var(--a);background:transparent;color:var(--a);cursor:pointer}
+:where(.nv-om-open:hover){background:var(--a);color:#fff}
+:where(.nv-om-form){display:grid;gap:14px;padding:18px;border:1px solid var(--line);border-radius:16px}
+:where(.nv-om-field){display:grid;gap:6px;border:0;margin:0;padding:0;min-width:0}
+:where(.nv-om-field) :where(label,legend){font-size:.9em;font-weight:600;padding:0}
+:where(.nv-om-field) :where(input[type=text],textarea){width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+:where(.nv-om-field) :where(textarea){min-height:110px;resize:vertical}
+:where(.nv-om-field input:focus-visible,.nv-om-field textarea:focus-visible,.nv-om-open:focus-visible,.nv-om-send:focus-visible){outline:2px solid var(--a);outline-offset:2px}
+:where(.nv-om-rate){display:flex;gap:4px}
+:where(.nv-om-rate) :where(label){position:relative;font-size:1.9rem;line-height:1;cursor:pointer;color:var(--line);padding:2px}
+:where(.nv-om-rate label.on){color:var(--star)}
+:where(.nv-om-rate label:has(input:focus-visible)){outline:2px solid var(--a);border-radius:6px}
+:where(.nv-om-consent){display:flex;gap:10px;align-items:flex-start;font-size:.92em}
+:where(.nv-om-consent) :where(input){margin-top:.25em;flex:none}
+:where(.nv-om-send){justify-self:start;font:inherit;font-weight:600;padding:12px 24px;border-radius:999px;border:0;background:var(--a);color:#fff;cursor:pointer}
+:where(.nv-om-send:disabled){opacity:.5;cursor:not-allowed}
+:where(.nv-om-err){color:#b3321f;font-size:.88em;min-height:1.2em}
+:where(.nv-om-status:not(:empty)){padding:12px 14px;border:1px solid var(--line);border-radius:12px}
+@media (prefers-color-scheme:dark){:where(.nv-om-err){color:#ff9c8a}}
 .nv-om-form[hidden]{display:none}
-.nv-om-field{display:grid;gap:6px;border:0;margin:0;padding:0;min-width:0}
-.nv-om-field label,.nv-om-field legend{font-size:.9em;font-weight:600;padding:0}
-.nv-om-field input[type=text],.nv-om-field textarea{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
-.nv-om-field textarea{min-height:110px;resize:vertical}
-.nv-om-field input:focus-visible,.nv-om-field textarea:focus-visible,.nv-om-open:focus-visible,.nv-om-send:focus-visible{outline:2px solid var(--a);outline-offset:2px}
-.nv-om-rate{display:flex;gap:4px}
-.nv-om-rate label{position:relative;font-size:1.9rem;line-height:1;cursor:pointer;color:var(--line);padding:2px}
-.nv-om-rate label.on{color:var(--star)}
-.nv-om-rate input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.nv-om-rate label:has(input:focus-visible){outline:2px solid var(--a);border-radius:6px}
-.nv-om-consent{display:flex;gap:10px;align-items:flex-start;font-size:.92em}
-.nv-om-consent input{margin-top:.25em;flex:none}
-.nv-om-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-.nv-om-send{justify-self:start;font:inherit;font-weight:600;padding:12px 24px;border-radius:999px;border:0;background:var(--a);color:#fff;cursor:pointer}
-.nv-om-send:disabled{opacity:.5;cursor:not-allowed}
-.nv-om-err{color:#b3321f;font-size:.88em;min-height:1.2em}
 .nv-om-err:empty{display:none}
-.nv-om-status:not(:empty){padding:12px 14px;border:1px solid var(--line);border-radius:12px}
-@media (prefers-color-scheme:dark){.nv-om-err{color:#ff9c8a}}
+.nv-om-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.nv-om-rate input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.nv-om-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 `;
 
 let counter = 0;
@@ -99,15 +109,15 @@ function errorText(res, data) {
   return 'Det gick inte att skicka just nu. Försök igen om en stund.';
 }
 
-function renderList(root, data) {
+function renderList(root, data, { heading, level }) {
   const reviews = cleanReviews(data.reviews);
   const head = el('div', 'nv-om-head');
-  head.append(el('h3', '', typeof data.rubrik === 'string' && data.rubrik ? data.rubrik.slice(0, 80) : 'Omdömen'));
+  if (heading) head.append(el(`h${level}`, 'nv-om-title', typeof data.rubrik === 'string' && data.rubrik ? data.rubrik.slice(0, 80) : 'Omdömen'));
   if (reviews.length >= 3) {
     const avg = reviews.reduce((s, r) => s + r.betyg, 0) / reviews.length;
     head.append(el('span', 'nv-om-avg', `Snittbetyg ${sv(avg)} av 5 (${reviews.length} omdömen)`));
   }
-  root.append(head);
+  if (head.childElementCount) root.append(head);
   if (!reviews.length) {
     root.append(el('p', 'nv-om-empty', 'Inga omdömen än. Du kan bli först.'));
     return;
@@ -283,7 +293,8 @@ async function mount(root) {
   const demo = root.hasAttribute('data-demo');
   const site = String(root.dataset.site || '').toLowerCase();
   const data = await load(root.dataset.src || 'omdomen.json');
-  renderList(root, data);
+  const level = Math.min(4, Math.max(2, Number(root.dataset.rubrikNiva) || 3));
+  renderList(root, data, { heading: !root.hasAttribute('data-utan-rubrik'), level });
   if (site || demo) renderForm(root, { site, demo });
 }
 

@@ -1,11 +1,26 @@
 // Bokning via Cal.com. Länkar med data-cal="konto/händelse" öppnar kalendern i en ruta
 // ovanpå sidan. Cal.coms skript hämtas först när någon visar intresse för en bokningsknapp.
 // Går det inte att ladda öppnas den vanliga Cal.com-sidan i stället.
+//
+// På en kundsida (Premium), i kundens app.js:
+//   import { bindBookingLinks } from '/assets/cal.js';
+//   bindBookingLinks(document, { theme: 'light', brand: '#6B4A3A' });
+// och länkar som <a href="https://cal.com/kundens-konto/klippning" data-cal="kundens-konto/klippning">Boka</a>.
+// theme är 'light' eller 'dark' och brand är kundens färg på knappar i kalendern.
 
 export const CAL_ACCOUNT = 'nordvy-zovyfw';
 const SCRIPT = 'https://app.cal.com/embed/embed.js';
 const ORIGIN = 'https://app.cal.com';
 const NS = 'nordvy';
+const HEX = /^#[0-9a-f]{6}$/i;
+
+// Nordvys egna sidor är mörka. Kundsidor väljer eget utseende med bindBookingLinks(root, { theme, brand }).
+const ui = { theme: 'dark', brand: '#5BC0EB' };
+
+function setLook({ theme, brand } = {}) {
+  if (theme === 'light' || theme === 'dark') ui.theme = theme;
+  if (typeof brand === 'string' && HEX.test(brand)) ui.brand = brand;
+}
 
 let loading = null;
 
@@ -42,8 +57,8 @@ function load() {
       };
     w.Cal('init', NS, { origin: ORIGIN });
     w.Cal.ns[NS]('ui', {
-      theme: 'dark',
-      cssVarsPerTheme: { dark: { 'cal-brand': '#5BC0EB' }, light: { 'cal-brand': '#0B1F3A' } },
+      theme: ui.theme,
+      cssVarsPerTheme: { dark: { 'cal-brand': ui.brand }, light: { 'cal-brand': ui.theme === 'light' ? ui.brand : '#0B1F3A' } },
       hideEventTypeDetails: false,
       layout: 'month_view',
     });
@@ -67,7 +82,7 @@ const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new E
  * Returnerar true om rutan öppnades, annars false (då har vi gått till Cal.com direkt).
  */
 export async function openBooking(calLink = CAL_ACCOUNT, prefill = {}) {
-  const config = { layout: 'month_view', theme: 'dark' };
+  const config = { layout: 'month_view', theme: ui.theme };
   for (const key of ['name', 'email', 'notes']) {
     if (prefill[key]) config[key] = String(prefill[key]).slice(0, key === 'notes' ? 1800 : 120);
   }
@@ -84,7 +99,9 @@ export async function openBooking(calLink = CAL_ACCOUNT, prefill = {}) {
 }
 
 // Kopplar alla länkar med data-cal. Utan JavaScript fungerar de som vanliga länkar.
-export function bindBookingLinks(root = document) {
+// look: { theme: 'light' | 'dark', brand: '#rrggbb' } för kundsidor. Utelämnas den gäller Nordvys utseende.
+export function bindBookingLinks(root = document, look) {
+  if (look && !loading) setLook(look);
   const warm = () => load().catch(() => {});
   for (const link of root.querySelectorAll('a[data-cal]')) {
     if (link.dataset.calBound) continue;
