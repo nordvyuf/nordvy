@@ -23,7 +23,7 @@ export const INDUSTRIES = {
 // nivå 1 = obligatorisk, 2 = ska frågas (svar eller "saknas"), 0 = fylls i av appen.
 // Ordningen är den vi frågar i: de sex första räcker för ett första utkast.
 export const FIELDS = [
-  { key: 'foretagsnamn', label: 'Företagsnamn', level: 1, about: 'Namn, och tagline om de har en.', question: 'Vad heter ditt företag?' },
+  { key: 'foretagsnamn', label: 'Företagsnamn', level: 1, about: 'Företagets namn.', question: 'Vad heter ditt företag?' },
   { key: 'bransch', label: 'Bransch', level: 1, about: 'Vad de gör, i en mening.', question: 'Vad gör ni? Beskriv det gärna i en mening.' },
   { key: 'ort_omrade', label: 'Ort / område', level: 1, about: 'Var de verkar och var de vill synas.', question: 'Var finns ni, och i vilket område vill ni synas?' },
   { key: 'tjanster_produkter', label: 'Tjänster / produkter', level: 1, about: 'Lista VARJE tjänst eller produkt separat: namn och kort beskrivning. Pris bara om kunden själv anger det.', question: 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.' },
