@@ -42,4 +42,6 @@ test('omdömesrutans utseende går att skriva över, men det som döljer fält f
     ['.nv-om-form[hidden]', '.nv-om-err:empty', '.nv-om-sr', '.nv-om-rate input', '.nv-om-hp'],
   );
   assert.match(js, /data-utan-rubrik/);
+  // Kundsidor har fasta färger, så rutan får inte byta färg efter besökarens mörka läge.
+  assert.doesNotMatch(css, /prefers-color-scheme/);
 });
