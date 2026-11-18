@@ -14,9 +14,19 @@ test('kontaktuppgifter: instruktionsord som "ring eller mejla" blir ingen adress
   assert.equal(parseContact('mejla oss på hej@x.se').address, '');
 });
 
-test('frisörens rubrik i reservläget har inget felplacerat kommatecken', () => {
-  const m = draftModel({ foretagsnamn: 'Salong Ask', bransch: 'Frisörsalong', ort_omrade: 'Malmö' });
-  assert.equal(m.headline, 'Hår du trivs i varje dag');
+test('reservrubriken byggs av kundens egna uppgifter, så att två kunder inte får samma', () => {
+  // Utan tjänster: branschens reservrubrik, utan felplacerat kommatecken.
+  assert.equal(draftModel({ foretagsnamn: 'Salong Ask', bransch: 'Frisörsalong', ort_omrade: 'Malmö' }).headline, 'Hår du trivs i varje dag');
+  // Med tjänster och ort: första tjänsten och orten.
+  assert.equal(draftModel({ foretagsnamn: 'Salong Ask', bransch: 'Frisörsalong', ort_omrade: 'Malmö', tjanster_produkter: 'Klippning, färg och slingor' }).headline, 'Klippning i Malmö');
+  // Två UF-företag som säljer online får olika rubriker. Vardagsprat och hela meningar hoppas över.
+  const online = (namn, produkter, ort) =>
+    draftModel({ foretagsnamn: namn, bransch: 'UF-företag som säljer produkter', ort_omrade: ort, tjanster_produkter: produkter, oppettider: 'Vi säljer bara online' }).headline;
+  const a = online('Lumen UF', 'Ljus och sånt, doftljus i tre storlekar', 'Helsingborg');
+  const b = online('Kokboken UF', 'Den kombinerar diet och recept', 'Malmö');
+  assert.equal(a, 'Doftljus i tre storlekar från Helsingborg');
+  assert.notEqual(a, b);
+  assert.doesNotMatch(b, /,\s*och/);
 });
 
 test('utkastet använder inga mallmönster som skillen förbjuder', () => {
