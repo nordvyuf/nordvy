@@ -289,9 +289,30 @@ const PRESET = {
 
 // Företag utan butik eller lokal: inga "hitta hit", "nära dig" eller öppettider i utkastet.
 const ONLINE_PRESET = {
-  headline: 'Utvalt, och lätt att beställa',
+  headline: 'Utvalt och lätt att beställa',
   sub: (n, from) => `${n}${from} säljer online. Se sortimentet och beställ direkt på sidan.`,
 };
+
+// En tjänst eller produkt som duger i en rubrik: kort, ett namn och inte en hel mening eller vardagsprat.
+function headlineItem(titles) {
+  for (const t of (titles || []).slice(0, 3)) {
+    const words = t.split(/\s+/);
+    if (t.length > 26 || words.length > 4) continue;
+    if (/^(den|det|vi|jag|man|fokus|att)\b/i.test(t)) continue;
+    if (/\b(sånt|grejer|saker|osv|etc|m\.?m\.?)\b/i.test(t)) continue;
+    return t;
+  }
+  return '';
+}
+
+// Rubriken när AI:n inte svarar. Byggs av kundens egna uppgifter (första tjänsten och orten),
+// så att två kunder inte får samma rubrik. Finns inget att bygga av blir det branschens reservrubrik.
+function fallbackHeadline({ industry, online, titles, city }) {
+  const item = headlineItem(titles);
+  if (item && city) return online ? `${item} från ${city}` : `${item} i ${city}`;
+  if (item) return online ? `${item}, beställ direkt på sidan` : `${item} när det passar dig`;
+  return online ? ONLINE_PRESET.headline : PRESET[industry || 'tjanst'].headline;
+}
 
 
 // Pekar ut företagsnamnet och vanliga fyllnadsord så att en rubrik inte bara upprepar dem.
@@ -424,18 +445,16 @@ export function draftModel(brief, copy) {
   m.vibe = (hasAnswer(b, 'stil') && detectVibe(b.stil)) || (industry ? DEFAULT_VIBE[industry] : 'modern');
   if (company) m.company = company;
   if (online) m.online = true;
+  const titles = hasAnswer(b, 'tjanster_produkter') ? parseServices(b.tjanster_produkter) : [];
   if (industry) {
     m.industry = industry;
-    m.headline = online ? ONLINE_PRESET.headline : preset.headline;
+    m.headline = fallbackHeadline({ industry, online, titles, city });
     m.sub = online ? ONLINE_PRESET.sub(company || 'Vi', city ? ` från ${city}` : '') : preset.sub(company || 'Vi', inCity);
     m.tagline = online ? `${INDUSTRIES[industry].short}${city ? ` från ${city}` : ''} · online` : `${INDUSTRIES[industry].short}${inCity}`;
   }
   if (city) m.city = city;
-  if (hasAnswer(b, 'tjanster_produkter')) {
-    const titles = parseServices(b.tjanster_produkter);
-    // Inga påhittade beskrivningar i utkastet. AI:ns text läggs på nedan när den finns.
-    if (titles.length) m.services = titles.map((title) => ({ title, text: '' }));
-  }
+  // Inga påhittade beskrivningar i utkastet. AI:ns text läggs på nedan när den finns.
+  if (titles.length) m.services = titles.map((title) => ({ title, text: '' }));
   if (hasValue(b, 'mal_med_sidan')) {
     const wish = wishText(b);
     const booking = wantsBooking(b);
