@@ -70,3 +70,21 @@ Först när Måns säger till:
 3. Slå ihop pull requesten och kontrollera den riktiga adressen efter publiceringen.
 
 UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Tills `nordvyuf.se` är kopplad ligger sidan på `nordvy.nordvyuf.workers.dev/kund/<namn>/`. Säg det till kunden.
+
+## Omdömen från besökare
+
+Premium kan visa omdömen och ta emot nya. Det ingår inget databassteg: ett omdöme visas aldrig av sig självt, utan först när kunden har sagt ja.
+
+**Slå på det på en kundsida**
+1. Lägg `public/kund/<namn>/omdomen.json` med `{ "reviews": [] }`. Bara kunder som har den filen tar emot omdömen.
+2. Lägg in rutan där omdömena ska stå: `<div data-nv-omdomen data-site="<namn>" style="--nv-accent:<kundens färg>"></div>` och `<script type="module" src="/assets/omdomen.js"></script>` längst ner. Texten, typsnittet och bakgrunden ärvs från sidan, så den passar in i kundens design.
+3. Är sidan ett utkast kan du lägga `data-demo` på rutan, så skickas inget.
+4. Rutan visar tomt läge och formuläret även när det inte finns några omdömen, och lägger aldrig till något själv. Hitta aldrig på omdömen. Har kunden riktiga omdömen (till exempel i intervjun, där de ligger under "Omdömen") och har sagt att de får visas, lägger du in dem i `omdomen.json` med namn, betyg, text och datum.
+
+**När ett omdöme kommer in**
+Det kommer som ett mejl till Nordvyuf@gmail.com med rubriken "Ny webbplatsförfrågan" och texten "NYTT OMDÖME TILL <namn>". Mejlet slutar med en färdig rad i JSON-format.
+1. Fråga kunden om omdömet får visas.
+2. Säger kunden ja: lägg raden i listan `reviews` i `public/kund/<namn>/omdomen.json` på en gren och skapa en pull request som vanligt. Du kan få raden från Gmail med sökningen `NYTT OMDÖME TILL <namn>`.
+3. Är det skräp, skrivet av någon annan än en kund, eller nekar kunden: gör ingenting. Då visas det aldrig.
+
+Gränser att känna till: Google-skriptet som skickar mejlen tillåter 30 mejl per dag för hela Nordvy, så en spamattack mot omdömesformuläret kan stoppa mejlen från intervjun och kontaktformuläret. Rutan har skydd mot enkla robotar (dolt fält, minsta tid och spärr för länkar), men inte mot riktiga angrepp. Behövs mer skydd: lägg till Cloudflare Turnstile.
