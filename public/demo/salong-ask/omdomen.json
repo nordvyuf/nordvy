@@ -1,0 +1,9 @@
+{
+  "rubrik": "Det säger kunderna",
+  "notis": "Påhittade exempel i demon. På en riktig sida visas bara riktiga omdömen som kunden har godkänt.",
+  "reviews": [
+    { "namn": "Maja", "betyg": 5, "text": "Hon lyssnade på vad jag ville innan hon tog fram saxen. Äntligen en frisyr som funkar en vanlig tisdag.", "datum": "2026-10-28" },
+    { "namn": "Jonas", "betyg": 5, "text": "Lugnt, trevligt och bra kaffe medan jag väntade. Jag bokar om direkt på sidan nästa gång.", "datum": "2026-10-14" },
+    { "namn": "Sara", "betyg": 4, "text": "Jättenöjd med färgen. Önskar bara att det fanns fler tider på lördagar.", "datum": "2026-09-30" }
+  ]
+}

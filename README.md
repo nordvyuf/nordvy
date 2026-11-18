@@ -15,6 +15,8 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 | `CLAUDE.md` | Fakta och regler för Claude när den arbetar i repot. |
 | `src/worker.js` | Servern: säkerhetsrubriker, kontaktformulär och API:et för självintervjun. |
 | `src/interview.js` | Reglerna för intervjun och anropen till Workers AI. |
+| `src/reviews.js` | Kontroll och mejl för omdömen från besökare på kundsidor (`POST /api/review`). |
+| `public/assets/omdomen.js` | Rutan med omdömen och formulär som kundsidor lägger in. Se skillen `kundsida`. |
 | `test/` | Tester. Kör med `npm test`. |
 | `scripts/dev-server.mjs` | Lokal förhandsvisning. Kör med `npm run preview`. |
 

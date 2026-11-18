@@ -213,12 +213,9 @@ footer strong{color:#fff;display:block;margin-bottom:6px;font-weight:600}
     </div>
   </div></section>
 
-  <section class="gut"><div class="wrap">
-    <div class="rev rv">
-      <p class="eyebrow">Omdömen</p>
-      <h3>Här visas era riktiga omdömen</h3>
-      <p class="mut">På en riktig kundsida visar vi omdömen från er Google-profil, eller citat som ni har tillstånd att använda. Nordvy hittar aldrig på omdömen, därför är rutan tom i demon.</p>
-    </div>
+  <section id="omdomen" class="gut"><div class="wrap">
+    <p class="eyebrow" style="margin-bottom:12px">Omdömen</p>
+    <div data-nv-omdomen data-demo data-src="omdomen.json" style="--nv-accent:#3F6B55"></div>
   </div></section>
 
   <section id="hitta" class="band gut"><div class="wrap find">
@@ -425,5 +422,6 @@ function reveal(){
 renderMenu(); stage(); renderHours(); strands(); reveal();
 setInterval(renderHours, 60000);
 </script>
+<script type="module" src="/assets/omdomen.js"></script>
 </body>
 </html>
