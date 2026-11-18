@@ -7,9 +7,12 @@ description: Bygger, gör om eller publicerar en hemsida åt en av Nordvys kunde
 
 Så bygger Nordvy en hemsida åt en kund, från underlag till publicerad sida. Läs `CLAUDE.md` i repots rot först: där står paketen, priserna och reglerna (aldrig slå ihop utan Måns ord, aldrig lösenord, bara mejlutkast).
 
-Två filer hör till skillen:
-- `checklista.md`: vad som måste finnas innan bygget per paket, och mallen för mejlet om det som saknas.
-- `design.md`: hur sidan ska se ut, mönstren som får en sida att se AI-gjord ut, typsnitt, tillgänglighet och mobil.
+Tre filer hör till skillen:
+- `checklista.md`: vad som måste finnas innan bygget per paket, fotoguiden till kunden och mallen för mejlet om det som saknas.
+- `design.md`: hur sidan ska se ut, mönstren som får en sida att se AI-gjord ut, foton, referenser, typsnitt, tillgänglighet och mobil.
+- `granskning.md`: hur en fristående granskare bedömer sidan innan Måns får se den.
+
+Det viktigaste från testerna: **fotona avgör mest**, ett utritat "koncept" ser AI-gjort ut, och en sida blir inte bra på första försöket. Den blir bra genom blind granskning och lagning i flera rundor.
 
 Har du designskills (till exempel `frontend-design`, `web-design-system`, `landing-page` eller `web-review`), använd dem: `web-design-system` för steg 3, `frontend-design` när du bygger och `web-review` när du granskar i steg 5. Reglerna här och i `design.md` går före om de säger emot.
 
@@ -32,13 +35,13 @@ Bygg inte en hel sida på gissningar. Ett första utkast med tydligt markerade l
 
 ## 3. Bestäm idén innan du kodar
 
-**Titta på riktiga referenser först.** Har du UXKIN (verktyget `find_ui_materials`), sök efter riktiga sajter i samma bransch och storlek som kunden, till exempel "litet surdegsbageri" eller "frisörsalong med en stol". Välj en eller två referenser och skriv i `DESIGN.md` vad du tar från dem (en färgroll, en typografi, ett sätt att visa priser) och varför. Kopiera aldrig en sajt rakt av. Kundens eget material går alltid före.
+**Titta på riktiga referenser först.** Använd webbläsaren och följ avsnittet "Referenser utan UXKIN" i `design.md`: tre till fem riktiga sajter i samma bransch, med skärmbilder. Skriv i `DESIGN.md` vad du tar från var och en och varför. Kopiera aldrig en sajt rakt av. Kundens eget material går alltid före. (Nordvy använder inte UXKIN, så påminn inte om det.)
 
-Syns inga UXKIN-verktyg, eller kräver UXKIN inloggning: säg till Måns att det kan anslutas genom att skriva `/mcp` i den här chatten. Vänta inte på det, utan fortsätt utan referenser och skriv i `DESIGN.md` att riktningen inte bygger på referenssajter.
+**Planera sedan enligt `frontend-design`:** färger med namn och roller, typsnitt och deras roller, en enkel skiss i text (ASCII) av varje sektion, och det enda djärva draget. Jämför planen med listan över AI-standardval i `design.md`. Hamnar en del av planen där, byt ut den och skriv vad du bytte och varför.
 
 Skriv designidén i `kunder/<namn>/DESIGN.md` i repots rot (inte i `public/`, så den publiceras inte som en sida). Inga personuppgifter i den. Några meningar räcker:
 - Vem sidan är för och vad besökaren ska göra (beställa, ringa, boka).
-- **Den bärande idén:** en sak som är kundens egen och styr layouten. Den kan komma från namnet, produkten, platsen eller kundens egna ord (se `design.md`).
+- **Det enda djärva draget:** en riktig sak som bara den här kunden har, till exempel en funktion, ett foto, kundens egna ord eller produkten nära. Aldrig en metafor som ritas ut med CSS (se `design.md`).
 - Färger och typsnitt, hämtade från kundens logga och bilder. Typsnitten väljs ur listan i `design.md`.
 - Sektionernas ordning, och varför den passar just den här kunden.
 - Vilka av kundens bilder som ska användas var.
@@ -53,6 +56,8 @@ Visa idén för Måns och vänta på hans svar innan du bygger. Undantag: en pro
 - **Typsnitt:** länka `/assets/fonts/kund/typsnitt.css` och välj ur listan i `design.md`. Fraunces och Inter är Nordvys egna och används inte på kundsidor. Har kunden ett eget typsnitt med en licens som tillåter webben, lägg det i kundens mapp med licensfilen bredvid.
 - **Bilder:** konvertera till WebP, högst cirka 1600 px breda och helst under 200 kB styck. Ange `width`, `height` och `alt`, och `loading="lazy"` för bilder längre ner på sidan.
 - **Bilder som saknas i ett utkast:** en ruta i bildens riktiga form (`aspect-ratio`), med tunn streckad kant och texten "Foto kommer: <vad bilden ska visa>". Rita aldrig en påhittad produktbild eller en illustration som ser färdig ut.
+- **Lånade foton för att kunna bedöma sidan:** på provsidor bygger du med lånade foton från Unsplash, så att sidan kan bedömas på riktigt, och lägger in testläget `?utan-foton` som visar platshållarna. För en riktig kund kan du göra likadant lokalt, men det som visas för kunden har kundens egna foton eller platshållare. Lånade foton får aldrig se ut som kundens produkter, lokal eller personer. Fler regler står i `design.md`. Bilder från Unsplash får länkas direkt (`https://images.unsplash.com/photo-…?auto=format&fit=crop&w=1200&q=70`), och CSP:n tillåter det.
+- **CSS som inte krockar:** ge varje del av sidan egna klassnamn och återanvänd inte ett allmänt namn för två olika saker. I testet hette både statusraden i hero och formulärets svarsruta `.status`, så statusraden fick formulärets vita ruta och blev oläsbar. Ser något konstigt ut, kontrollera den beräknade stilen med `getComputedStyle()` i stället för att gissa.
 - **Utkastläge:** så länge sidan inte är godkänd har den `<meta name="robots" content="noindex">`, en tydlig utkastrad överst, och formulär som inte skickar något (`DRAFT = true`).
 - Bara det kunden har sagt får stå som fakta. Hitta aldrig på priser, öppettider, betyg, antal kunder, recensioner eller påståenden om moms. Saknas en uppgift: markera den med `<mark class="todo">` i utkastet och fråga i mejlet.
 
@@ -98,10 +103,13 @@ Kunden behöver **Swish Företag** via sin bank. Ett privat Swish-nummer får in
 
 1. `npm run preview` och öppna `http://localhost:8788/kund/<namn>/`. Starta om förhandsvisningen efter `git pull` eller när `src/worker.js` har ändrats. Servern läser in koden och CSP:n bara när den startar, så en gammal server kan blockera till exempel kartan utan att något syns.
 2. Kontrollera datorbredd (1280 px) och mobil (375 px). Ingen sidledsskroll, inga knappar som bryts på två rader, inga texter som krockar. Den viktigaste knappen (beställ, boka, ring) ska synas på första skärmen i båda bredderna.
+   - **Mät på mobil, lita inte på ögat:** `overflow-x: clip` eller `hidden` på `body` döljer innehåll som sticker ut, så att priser och fält klipps av utan att det syns. Stäng av det tillfälligt och leta upp alla element vars högerkant ligger utanför 375 px. I testet gjorde en bildruta med både `aspect-ratio` och `min-height` sidan 688 px bred, och ett 12-kolumnsrutnät med 48 px mellanrum fick inte plats på mobil.
+   - **Formulär:** felmeddelandet försvinner när fältet blir rätt, fel e-post får ett eget meddelande ("Adressen ser inte rätt ut"), och varje fel är kopplat till sitt fält med `aria-describedby`.
 3. Prova formulär, beställning och bokning, både tomma och ifyllda.
 4. Kontrollera tillgängligheten enligt `design.md`: tangentbord, fokus, kontrast och minskad rörelse.
-5. Granska sidan mot listan i `design.md`. Ser den ut som en mall, gör om den.
-6. Kör `npm test`.
+5. Granska sidan själv mot listan i `design.md`, och mät vänsterkanter och mellanrum med `getBoundingClientRect()`.
+6. **Blind granskning:** följ `granskning.md`. En fristående subagent bedömer sidan med en poäng från 1 till 10. Laga och granska igen med en ny subagent tills sidan får minst 8 med foton, eller högst tre rundor. Poängen och det som återstår står i rapporten till Måns.
+7. Kör `npm test`.
 
 ## 6. Publicera förhandsvisning
 

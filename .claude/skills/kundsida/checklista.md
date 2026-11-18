@@ -31,6 +31,21 @@ Jämför alltid med paketbeskrivningen i `public/index.html`, som är facit.
 - [ ] Premium, betalning: kundens nummer för Swish Företag (inte ett privat nummer), och vad besökaren ska skriva som meddelande.
 - [ ] Premium, omdömen: om kunden vill ta emot omdömen, och riktiga omdömen som får visas från start.
 
+## Fotoguide till kunden
+
+Fotona avgör mer än något annat hur sidan ser ut. Skicka med det här i mejlet när bilder saknas, anpassat efter kunden:
+
+> **Så tar ni bilderna med mobilen**
+> - Fota i dagsljus, nära ett fönster. Stäng av blixten.
+> - Ta bilder på riktiga saker i riktig miljö: händerna i arbete, lokalen, produkterna där de brukar stå.
+> - Undvik skyltar, prislappar och text i bilden.
+> - Ta varje motiv både liggande och stående.
+> - Skicka bilderna i originalstorlek, gärna via Google Drive eller WeTransfer, så att de inte blir suddiga.
+>
+> Det här behöver vi: [lista per kund, till exempel "3–4 bilder på bröden i disken", "en bild på er som bakar", "en bild på lokalen utifrån"].
+
+Har kunden inga bra bilder kan Nordvy erbjuda att komma och fota. Det är ett beslut för Måns, så föreslå det bara i mejlet om Måns har sagt ja.
+
 ## Mall för mejlet om det som saknas
 
 Skapa det som ett utkast i Nordvys Gmail. Skicka det aldrig själv.

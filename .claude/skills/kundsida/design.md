@@ -17,19 +17,61 @@ Undvik de här mönstren. Ett av dem går bra om det finns en anledning, men fle
 - En ritad eller påhittad produktbild i stället för kundens foto.
 - Reklamtext som kunden aldrig sagt: "Mer än en receptsamling", "Vi vill att fler ska äta bra, varje dag", "Kvalitet i varje detalj".
 - Samma typsnitt och färgpalett som på alla andra Nordvy-sidor.
+- **En metafor som ritas ut bokstavligt.** En "hylla" av CSS-plankor, prislappar formade som bagagelappar, en "fasad" med guldskylt, ett "brev" med signatur. Granskaren kallade det "a typical AI move": det ser ut som att sidan låtsas i stället för att visa. Testet med Korn & Kaka gick från 4 till 6 av 10 när sådant togs bort och ersattes med foton.
+
+Designskillen `frontend-design` beskriver dessutom de standardval som AI-sidor hamnar i, oavsett ämne. Undvik dem om inte kunden själv har bett om just det:
+- Krämvit bakgrund (runt #F4F1EA) med en kontrastrik serifrubrik och en terrakotta eller lerröd accent (runt #D97757).
+- Nästan svart bakgrund med en enda knallgrön eller knallröd accent.
+- Tidningslayout med hårfina linjer, inga rundade hörn och täta spalter.
+- Allt i likadana rundade kort med samma skugga, och färgtoningar som dekoration.
+- Etiketter i versaler ovanför varje rubrik, rader som "A · B · C", monospace för små etiketter och en pil "→" efter knapptext.
+- Ett ord i rubriken med annan färg eller kursiv.
+- Numrerade steg (01, 02, 03) när innehållet inte är en riktig ordning.
+- Inglidande animationer på varje sektion.
 
 ## Det som gör den äkta
 
-1. **Kundens eget material styr.** Loggan ger färger och känsla. Kundens bilder är huvudsaken, inte dekoration. Saknas bilder, vänta eller be om dem, i stället för att rita en platshållare som ser färdig ut. I ett utkast får bilderna vara streckade rutor med texten "Foto kommer: …" (se `SKILL.md`). Tänk på att de rutorna tar stor plats, så bedöm inte den färdiga känslan förrän riktiga bilder finns.
-2. **En bärande idé per sida.** Välj en sak som bara passar den här kunden och låt den forma layouten:
-   - **Namnet:** "mät och mätt" kan ge en sida byggd som ett receptkort, med mått, ingredienslistor och linjal.
-   - **Produkten:** en kokbok visar ett riktigt uppslag och ett recept ur boken. Ett smycke visas stort och nära.
-   - **Platsen:** ett café i Malmö kan använda gatan, utsikten eller lokalen.
+1. **Fotona är det viktigaste.** I testet (18/11) bedömde fristående granskare Korn & Kaka så här:
+
+   | Version | Poäng |
+   |---|---|
+   | Utritade metaforer, inga foton | 4 av 10 |
+   | Samma sida med lånade foton | 6 av 10 |
+   | Efter två granskningsrundor | 6–6,5 av 10 |
+   | Samma sida utan foton | 4,5 av 10 |
+
+   Granskaren sade rakt ut att lånade foton och ingen logga gör att en sida inte kommer över ungefär 7 av 10, oavsett hur bra koden är. **Riktiga foton, kundens logga och kundens egna ord är vägen till 9.** Bra foton är kundens egna: människorna, händerna, lokalen och produkterna i riktigt ljus. Se avsnittet om foton nedan.
+2. **Det minnesvärda är en riktig sak, inte en utritad idé.** Lägg sidans enda djärva drag på något som är sant och användbart för just den här kunden:
+   - **En funktion:** bageriet visar under rubriken en levande rad, "Stängt nu. Vi öppnar i morgon klockan 7.", uträknad i realtid, och vid de bröd som brukar ta slut står "Brukar vara slut vid lunch". En frisörs första skärm är prislistan med tider. Låt inte funktionen bli själva rubriken: "Stängt nu." som största text kallade granskaren en gimmick som inte säger något om bageriet.
+   - **Ett foto:** bagarens händer i degen klockan tre på natten, inte en bild av "ett bröd".
    - **Kundens ord:** en mening de faktiskt sa kan bära hela första skärmen.
+   - **Produkten nära:** en kokbok visar ett riktigt uppslag, ett smycke visas stort.
+
+   Allt annat på sidan är lugnt och disciplinerat. Ett djärvt drag, inte fem.
 3. **Riktigt innehåll säljer.** Visa det besökaren vill se innan de köper: ett recept, en meny, priser, ett före och efter, ett foto på dem som driver företaget.
 4. **Kundens röst.** Skriv som kunden pratar. Ett UF-företag med gymnasieelever ska låta som dem, inte som en reklambyrå. Använd deras egna formuleringar från intervjun och mejlen, och gärna från deras TikTok eller Instagram.
 5. **Färre, större saker.** Hellre en stark bild och en tydlig knapp än sex sektioner med lika mycket vikt.
-6. **Variera layouten.** Asymmetri, bilder som går ut till kanten, en sektion som bryter mönstret. Inte varje sektion som ett centrerat block.
+6. **Variera layouten.** Asymmetri, bilder som går ut till kanten, en sektion som bryter mönstret. Inte varje sektion som ett centrerat block, och inte samma uppdelning (till exempel bild till vänster och text till höger) i mer än två sektioner. Den sista testversionen hade samma 5/7-uppdelning fyra gånger, och granskaren kallade det "a generated section stack". Ge varje sektion en form som passar innehållet: en meny kan vara en bred prislista, ett citat stor text, ett formulär smalt och centrerat.
+   - **Visa inte samma sak två gånger.** Tre fotokort med bröd och pris direkt ovanför en lista med samma bröd och priser är ett tydligt mallmönster.
+   - **Ordmärke när loggan saknas:** sätt inte bara namnet i rubriktypsnittet. Ge det en egen form, till exempel ett eget &-tecken, annan vikt eller annat teckenavstånd, och fråga kunden efter loggan.
+   - **Utan foton behövs en typografisk reserv**, inte bara tomma rutor: större text, menyn i full bredd eller en färgyta. Sidan ska gå att visa för kunden även innan bilderna har kommit.
+7. **Ett rutnät och en vänsterkant.** All text och alla bilder börjar på samma vänsterkant, med samma behållare (`max-width` och `padding`) i varje sektion, och samma mellanrum (`gap`) överallt i ett bildrutnät. Bilder i samma rad har samma höjd. Granskaren mätte vänsterkanter på 58, 113 och 170 px i samma sida och mellanrum på 79 och 14 px i samma rutnät, och det räckte för att sidan skulle kännas "auto-generated, not composed". Mät själv med `getBoundingClientRect()` innan granskningen.
+
+## Foton
+
+- **Kundens egna foton går alltid först.** Be om dem tidigt. Skicka med fotoguiden i `checklista.md`, så att kunden vet vad som behövs.
+- **Ett bra foto för en kundsida:** riktigt dagsljus, inga skyltar eller texter som syns, människor eller händer i arbete, och samma ljus och färgton i alla bilder. Både liggande och stående bilder.
+- **Text på foton:** lägg aldrig en rubrik direkt över en rörig del av bilden. Välj ett lugnt område eller beskär, och lägg en mörk toning (`linear-gradient`) under texten så att kontrasten räcker.
+- **Lånade foton (Unsplash):** bara på provsidor, och då märkta i utkastraden. Kontrollera att de inte visar text, priser eller skyltar på andra språk (testet hade en prislapp i thailändska baht), och att de visar det som står i `alt`. På en riktig kundsida får lånade foton aldrig se ut som kundens egna produkter, lokal eller personer.
+- **Utan foton:** sidan ska ändå fungera med platshållare. Lägg in ett testläge (till exempel `?utan-foton`) som byter fotona mot platshållarna, och titta på båda.
+
+## Referenser utan UXKIN
+
+Titta på riktiga sajter innan du bestämmer något. Det kostar inget, och det fungerar med webbläsaren:
+- **Gallerier:** siteinspire.com och land-book.com, som båda gick att öppna i testet. Sök på branschen, till exempel "bakery", "hair salon" eller "candle".
+- **Riktiga företag i samma bransch:** de bästa lokala eller internationella, till exempel ett känt bageri för ett bageri.
+- Ta skärmbilder av tre till fem sajter och skriv i `DESIGN.md` vad du tar från var och en: hur stora rubrikerna är, hur fotona används, hur menyn eller prislistan är uppställd och hur mycket luft det finns. Kopiera aldrig en sajt rakt av.
+- Tackar du nej till kakor på en sajt, välj alltid det alternativ som delar minst.
 
 ## Typsnitt
 
