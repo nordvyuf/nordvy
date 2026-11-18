@@ -1,6 +1,6 @@
 ---
 name: kundsida
-description: Bygger, gör om eller publicerar en hemsida åt en av Nordvys kunder, utifrån kundens intervjuunderlag och mejl i Nordvyuf@gmail.com. Använd när någon vill bygga en kundsida, göra en kunds sida klar, se vad som saknas från en kund, ta hand om ett nytt underlag eller en kunds logga och bilder, eller publicera en kunds sida.
+description: Bygger, gör om eller publicerar en hemsida åt en av Nordvys kunder, utifrån kundens intervjuunderlag och mejl i Nordvyuf@gmail.com. Använd när någon vill bygga en kundsida, göra en kunds sida klar, se vad som saknas från en kund, ta hand om ett nytt underlag eller en kunds logga och bilder, publicera en kunds sida, eller bygga en provsida för att testa.
 ---
 
 # Kundsida
@@ -9,7 +9,9 @@ Så bygger Nordvy en hemsida åt en kund, från underlag till publicerad sida. L
 
 Två filer hör till skillen:
 - `checklista.md`: vad som måste finnas innan bygget per paket, och mallen för mejlet om det som saknas.
-- `design.md`: hur sidan ska se ut, och mönstren som får en sida att se AI-gjord ut.
+- `design.md`: hur sidan ska se ut, mönstren som får en sida att se AI-gjord ut, typsnitt, tillgänglighet och mobil.
+
+Har du designskills (till exempel `frontend-design`, `web-design-system`, `landing-page` eller `web-review`), använd dem: `web-design-system` för steg 3, `frontend-design` när du bygger och `web-review` när du granskar i steg 5. Reglerna här och i `design.md` går före om de säger emot.
 
 ## 1. Samla underlaget
 
@@ -30,28 +32,65 @@ Bygg inte en hel sida på gissningar. Ett första utkast med tydligt markerade l
 
 ## 3. Bestäm idén innan du kodar
 
-Skriv en kort designidé och visa den för Måns innan du bygger, några meningar:
+Skriv designidén i `kunder/<namn>/DESIGN.md` i repots rot (inte i `public/`, så den publiceras inte som en sida). Inga personuppgifter i den. Några meningar räcker:
 - Vem sidan är för och vad besökaren ska göra (beställa, ringa, boka).
 - **Den bärande idén:** en sak som är kundens egen och styr layouten. Den kan komma från namnet, produkten, platsen eller kundens egna ord (se `design.md`).
-- Färger och typsnitt, hämtade från kundens logga och bilder.
+- Färger och typsnitt, hämtade från kundens logga och bilder. Typsnitten väljs ur listan i `design.md`.
+- Sektionernas ordning, och varför den passar just den här kunden.
 - Vilka av kundens bilder som ska användas var.
+
+Visa idén för Måns och vänta på hans svar innan du bygger. Undantag: en provsida (se nedan), eller när Måns redan har sagt att du ska bygga direkt. Skriv då idén i `DESIGN.md` och fortsätt.
 
 ## 4. Bygg
 
 - Sidan ligger i `public/kund/<namn>/`, med `<namn>` i små bokstäver utan å, ä, ö och mellanslag, till exempel `matochmatt`. Den nås på `/kund/<namn>/`.
 - Filer: `index.html`, ett eget skript (`app.js`) om sidan behöver JavaScript, och bilder i `public/kund/<namn>/bilder/`.
-- **CSP:** inga inbäddade `<script>`-taggar och inga typsnitt från Google Fonts. Använd typsnitten i `public/assets/fonts/` eller lägg kundens typsnitt (med licens som tillåter det) i kundens mapp. Inbäddad CSS och `style=""` fungerar.
+- **CSP:** inga inbäddade `<script>`-taggar och inga typsnitt eller skript från andra sajter än de som är tillåtna (egen domän, Cal.com och kartor från OpenStreetMap). Inbäddad CSS och `style=""` fungerar.
+- **Typsnitt:** länka `/assets/fonts/kund/typsnitt.css` och välj ur listan i `design.md`. Fraunces och Inter är Nordvys egna och används inte på kundsidor. Har kunden ett eget typsnitt med en licens som tillåter webben, lägg det i kundens mapp med licensfilen bredvid.
 - **Bilder:** konvertera till WebP, högst cirka 1600 px breda och helst under 200 kB styck. Ange `width`, `height` och `alt`, och `loading="lazy"` för bilder längre ner på sidan.
+- **Bilder som saknas i ett utkast:** en ruta i bildens riktiga form (`aspect-ratio`), med tunn streckad kant och texten "Foto kommer: <vad bilden ska visa>". Rita aldrig en påhittad produktbild eller en illustration som ser färdig ut.
 - **Utkastläge:** så länge sidan inte är godkänd har den `<meta name="robots" content="noindex">`, en tydlig utkastrad överst, och formulär som inte skickar något (`DRAFT = true`).
-- **Beställning (UF-paketet):** knappen öppnar en ruta med antal, namn och e-post. På den skarpa sidan öppnas ett färdigskrivet mejl till UF-företagets adress. Det finns ett fungerande exempel i `public/kund/matochmatt/app.js` (tekniken går att återanvända, inte designen).
-- Bara det kunden har sagt får stå som fakta. Hitta aldrig på priser, öppettider, betyg, antal kunder, recensioner eller påståenden om moms.
+- Bara det kunden har sagt får stå som fakta. Hitta aldrig på priser, öppettider, betyg, antal kunder, recensioner eller påståenden om moms. Saknas en uppgift: markera den med `<mark class="todo">` i utkastet och fråga i mejlet.
+
+### Beställning (UF-paketet)
+
+Knappen öppnar en ruta med antal, namn och e-post. På den skarpa sidan öppnas ett färdigskrivet mejl (`mailto:`) till UF-företagets adress. Ett fungerande exempel finns i `public/kund/matochmatt/app.js` på grenen `kund-matochmatt` (PR #2) tills den är ihopslagen. Återanvänd tekniken, inte designen.
+
+Mejlet är inte skickat förrän besökaren trycker på skicka i sitt mejlprogram. Skriv därför aldrig "Tack för din beställning" när rutan stängs. Skriv till exempel: "Nu öppnas ett mejl med din beställning. Skicka det, så är beställningen klar. Öppnades inget mejl? Skriv till <adress>." Visa alltid adressen, så att det fungerar även utan mejlprogram.
+
+### Karta (Bas och Premium)
+
+Använd OpenStreetMap, som är tillåten i CSP:n:
+1. Sök upp adressen på openstreetmap.org, välj "Dela" och sedan "HTML" så får du en färdig `<iframe>`-adress.
+2. Lägg in den med `loading="lazy"`, ett beskrivande `title` (till exempel `title="Karta till Bageri Korn & Kaka"`), en fast höjd och `width="100%"`.
+3. Skriv alltid adressen som text bredvid, och en länk "Öppna i kartan" till samma plats.
+
+Ingen annan kartleverantör fungerar utan att CSP:n i `src/worker.js` ändras, och det gör vi bara om Måns säger till.
+
+### Bokning (Premium)
+
+Bokningen går via Cal.com, på kundens **eget** gratiskonto. Kunden skapar kontot själv i sitt namn och lägger in en händelse per tjänst. Vi får bara länkarna, aldrig lösenordet.
+
+- En boka-länk per tjänst: `<a href="https://cal.com/<konto>/<händelse>" data-cal="<konto>/<händelse>">Boka</a>`. Utan JavaScript fungerar den som en vanlig länk.
+- I kundens `app.js`: `import { bindBookingLinks } from '/assets/cal.js';` och `bindBookingLinks(document, { theme: 'light', brand: '#rrggbb' })` med kundens färg, så att kalendern får kundens utseende och inte Nordvys.
+- **I ett utkast utan Cal.com-konto:** koppla inte länkarna. Låt dem öppna en liten ruta som säger "Här öppnas kundens bokningskalender när den är kopplad." Använd aldrig Nordvys egen kalender som platshållare.
+
+### Betalning med Swish (Premium)
+
+Kunden behöver **Swish Företag** via sin bank. Ett privat Swish-nummer får inte användas för ett företag. Pengarna går direkt till kunden, aldrig via oss.
+
+- Visa Swish-numret, beloppet och vad besökaren ska skriva som meddelande (till exempel bokningens datum eller ordernummer).
+- På mobil kan en knapp öppna Swish med allt ifyllt: `https://app.swish.nu/1/p/sw/?sw=<nummer>&amt=<belopp>&cur=SEK&msg=<meddelande>&src=qr`. Testa länken på en riktig telefon innan sidan blir skarp. Fungerar den inte: visa bara numret, beloppet och meddelandet.
+- Skriv aldrig att betalningen är klar. Sidan kan inte se om någon har betalat, så skriv till exempel: "När vi har sett betalningen bekräftar vi din bokning."
 
 ## 5. Testa
 
 1. `npm run preview` och öppna `http://localhost:8788/kund/<namn>/`.
 2. Kontrollera datorbredd och mobil (375 px). Ingen sidledsskroll, inga knappar som bryts på två rader, inga texter som krockar.
-3. Prova formulär och beställning, både tomma och ifyllda.
-4. Granska sidan mot listan i `design.md`. Ser den ut som en mall, gör om den.
+3. Prova formulär, beställning och bokning, både tomma och ifyllda.
+4. Kontrollera tillgängligheten enligt `design.md`: tangentbord, fokus, kontrast och minskad rörelse.
+5. Granska sidan mot listan i `design.md`. Ser den ut som en mall, gör om den.
+6. Kör `npm test`.
 
 ## 6. Publicera förhandsvisning
 
@@ -65,11 +104,19 @@ Skriv en kort designidé och visa den för Måns innan du bygger, några meninga
 ## 7. Göra sidan skarp
 
 Först när Måns säger till:
-1. Ta bort `noindex` och utkastraden, sätt `DRAFT = false` och fyll i kundens riktiga e-post för beställningar.
+1. Ta bort `noindex` och utkastraden, sätt `DRAFT = false` och fyll i kundens riktiga e-post för beställningar, Cal.com-länkar och Swish-nummer.
 2. Kontrollera allt en gång till på förhandsvisningen.
 3. Slå ihop pull requesten och kontrollera den riktiga adressen efter publiceringen.
 
 UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Tills `nordvyuf.se` är kopplad ligger sidan på `nordvy.nordvyuf.workers.dev/kund/<namn>/`. Säg det till kunden.
+
+## Provsidor
+
+En provsida testar skillen eller en idé, utan riktig kund.
+- Mappen heter `public/kund/test-<namn>/`. Använd aldrig `test-` för en riktig kund.
+- All information är påhittad: företag, personer, priser, öppettider och omdömen. Använd inga riktiga personuppgifter. Skriv i utkastraden att allt är påhittat, och märk påhittade omdömen med "(påhittat)".
+- Briefen räcker ofta inte till allt. Hitta då på rimliga detaljer, och lista dem i `kunder/test-<namn>/DESIGN.md`.
+- Ladda inte upp provsidor till GitHub och skapa ingen pull request, om inte Måns ber om det. Visa dem lokalt och ta bort mappen när testet är klart.
 
 ## Omdömen från besökare
 
@@ -77,9 +124,12 @@ Premium kan visa omdömen och ta emot nya. Det ingår inget databassteg: ett omd
 
 **Slå på det på en kundsida**
 1. Lägg `public/kund/<namn>/omdomen.json` med `{ "reviews": [] }`. Bara kunder som har den filen tar emot omdömen.
-2. Lägg in rutan där omdömena ska stå: `<div data-nv-omdomen data-site="<namn>" style="--nv-accent:<kundens färg>"></div>` och `<script type="module" src="/assets/omdomen.js"></script>` längst ner. Texten, typsnittet och bakgrunden ärvs från sidan, så den passar in i kundens design.
-3. Är sidan ett utkast kan du lägga `data-demo` på rutan, så skickas inget.
-4. Rutan visar tomt läge och formuläret även när det inte finns några omdömen, och lägger aldrig till något själv. Hitta aldrig på omdömen. Har kunden riktiga omdömen (till exempel i intervjun, där de ligger under "Omdömen") och har sagt att de får visas, lägger du in dem i `omdomen.json` med namn, betyg, text och datum.
+2. Lägg in rutan där omdömena ska stå: `<div data-nv-omdomen data-site="<namn>" style="--nv-accent:<kundens färg>"></div>` och `<script type="module" src="/assets/omdomen.js"></script>` längst ner. Texten, typsnittet och bakgrunden ärvs från sidan.
+3. Har sidan redan en rubrik ovanför rutan: lägg till `data-utan-rubrik`. Annars styr `data-rubrik-niva="2"` (2–4) rubrikens nivå, så att den passar sidans rubriker.
+4. Rutans eget utseende ligger i `:where()`, så kundsidans CSS vinner alltid. Styla klasserna `.nv-om-card`, `.nv-om-open`, `.nv-om-form`, `.nv-om-send` med flera (listan står överst i `public/assets/omdomen.js`), så att rutan följer sidans design i stället för standardkorten.
+5. Är sidan ett utkast kan du lägga `data-demo` på rutan, så skickas inget.
+6. Använd `notis` i `omdomen.json` bara när det behövs, till exempel för att märka påhittade exempel. Upprepa inte sidans egen text.
+7. Rutan visar tomt läge och formuläret även när det inte finns några omdömen, och lägger aldrig till något själv. Hitta aldrig på omdömen. Har kunden riktiga omdömen (till exempel i intervjun, där de ligger under "Omdömen") och har sagt att de får visas, lägger du in dem i `omdomen.json` med namn, betyg, text och datum.
 
 **När ett omdöme kommer in**
 Det kommer som ett mejl till Nordvyuf@gmail.com med rubriken "Ny webbplatsförfrågan" och texten "NYTT OMDÖME TILL <namn>". Mejlet slutar med en färdig rad i JSON-format.

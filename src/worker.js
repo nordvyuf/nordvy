@@ -32,7 +32,8 @@ const CSP = [
   "img-src 'self' data: https:",
   "font-src 'self' data:",
   "connect-src 'self' https://app.cal.com https://cal.com",
-  "frame-src 'self' https://app.cal.com https://cal.com",
+  // OpenStreetMap för kartan på kundsidor (Bas och Premium). Gratis och utan konto.
+  "frame-src 'self' https://app.cal.com https://cal.com https://www.openstreetmap.org",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
