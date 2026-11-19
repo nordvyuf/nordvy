@@ -255,6 +255,11 @@ async function handleAsset(request, env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // www.nordvyuf.se skickas vidare till nordvyuf.se, med samma sökväg.
+    if (url.hostname === 'www.nordvyuf.se') {
+      url.hostname = 'nordvyuf.se';
+      return Response.redirect(url.toString(), 301);
+    }
     try {
       if (url.pathname.startsWith('/api/')) return await handleApi(request, env, url);
       if (url.pathname === '/robots.txt') return secure(robots(siteOrigin(request, env)));
