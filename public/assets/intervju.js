@@ -437,7 +437,7 @@ function showStart() {
   const text = node('span');
   text.append(
     node('b', '', 'Jag godkänner att mina svar behandlas. '),
-    'Svaren tolkas av en AI-tjänst (Google Gemini eller Cloudflare Workers AI) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n, men Google kan använda resten av texten för att förbättra sina tjänster. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter.',
+    'Svaren tolkas av en AI-tjänst (Groq, Google Gemini eller Cloudflare Workers AI) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n, men Google kan använda resten av texten för att förbättra sina tjänster. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter.',
   );
   consent.append(box, text);
   const error = node('span', 'err');

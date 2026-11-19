@@ -14,7 +14,7 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 | `public/kund/…` | Kundernas sidor, en mapp per kund. Byggs enligt `.claude/skills/kundsida/`. |
 | `CLAUDE.md` | Fakta och regler för Claude när den arbetar i repot. |
 | `src/worker.js` | Servern: säkerhetsrubriker, kontaktformulär och API:et för självintervjun. |
-| `src/interview.js` | Reglerna för intervjun och anropen till Gemini och Workers AI. |
+| `src/interview.js` | Reglerna för intervjun och anropen till Groq, Gemini och Workers AI. |
 | `src/reviews.js` | Kontroll och mejl för omdömen från besökare på kundsidor (`POST /api/review`). |
 | `public/assets/omdomen.js` | Rutan med omdömen och formulär som kundsidor lägger in. Se skillen `kundsida`. |
 | `test/` | Tester. Kör med `npm test`. |
@@ -38,14 +38,20 @@ Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS`, `SKIP` och `VI
 
 ### AI-modellen
 
-Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-3.8-flash`; finns den inte eller är den överbelastad provas `gemini-flash-latest` och `gemini-flash-lite-latest`, högst 9 sekunder totalt; kan ändras med variabeln `GEMINI_MODEL`). `gemini-2.5-flash` finns inte för nya konton. Med `debug: true` visar `provider` vilken AI som svarade. Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
+Intervjun provar AI-tjänsterna i tur och ordning, högst 7 sekunder totalt (`PROVIDERS` i `src/interview.js`):
 
-Så lägger du in nyckeln (bara den som har kontot kan göra det):
-1. Gå till https://aistudio.google.com/apikey, logga in och klicka **Create API key**. Det är gratis.
-2. I Cloudflare: Workers & Pages → **nordvy** → Settings → **Runtime variables and secrets** (inte den under Builds) → **Add variable**. Välj typen **Secret**, namnet `GEMINI_API_KEY` och klistra in nyckeln. Spara.
-3. Kontrollera att `https://nordvyuf.se/api/health` visar `"gemini": true`.
+1. **Groq** (`GROQ_API_KEY`): `openai/gpt-oss-120b` och sedan `llama-3.3-70b-versatile`. Gratis utan betalkort och mycket snabb. Varje modell har en egen dygnskvot.
+2. **Google Gemini** (`GEMINI_API_KEY`): `gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-3.8-flash` (`GEMINI_MODEL` kan lägga till en egen först). Gratisnivån var i november 2026 ofta överbelastad (503) eller slut (429). `gemini-2.5-flash` finns inte för nya konton.
+3. **Workers AI**, som alltid finns, och sist checklistans färdiga frågor.
 
-Googles gratisnivå får använda det som skickas för att förbättra Googles tjänster. Därför tas kontaktuppgifterna bort, och samtyckestexten i intervjun säger det.
+En tjänst används bara när dess nyckel finns. Svarar en modell 429 (kvoten slut) eller 503 (överbelastad) pausas den i 5–15 minuter, så att kunderna inte väntar på den vid varje fråga. `/api/health` visar `groq` och `gemini`, och med `debug: true` i anropet till `/api/interview/turn` visar `provider` vilken AI som svarade och `errors` varför de före inte gjorde det.
+
+Så lägger du in en nyckel (bara den som har kontot kan göra det):
+1. **Groq:** gå till https://console.groq.com/keys, logga in och klicka **Create API Key**. **Gemini:** https://aistudio.google.com/apikey → **Create API key**. Båda är gratis.
+2. I Cloudflare: Workers & Pages → **nordvy** → Settings → **Runtime variables and secrets** (inte den under Builds) → **Add variable**. Välj typen **Secret** (inte Text, då försvinner den vid nästa publicering), namnet `GROQ_API_KEY` eller `GEMINI_API_KEY`, och klistra in nyckeln. Klicka **Deploy**.
+3. Kontrollera att `https://nordvyuf.se/api/health` visar `"groq": true` eller `"gemini": true`.
+
+Telefonnummer och mejladresser tas bort innan något skickas till någon AI. Googles gratisnivå får använda resten av texten för att förbättra Googles tjänster, och samtyckestexten i intervjun säger det.
 
 ### Vad det kostar
 

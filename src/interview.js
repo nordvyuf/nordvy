@@ -624,16 +624,45 @@ async function runModel(env, payload) {
 // Dagens gratiskvot för Workers AI är slut. Då är det ingen idé att försöka igen förrän nästa dygn.
 const QUOTA = /4006|daily free allocation|neurons/i;
 
-// Google Gemini via deras OpenAI-kompatibla adress. Används först när GEMINI_API_KEY finns
-// (en hemlighet i Cloudflare). Svarar Gemini inte, till exempel när dagens gratiskvot är slut,
-// tar Workers AI över.
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-// gemini-2.5-flash finns inte för nya konton (Google svarade 404 i november 2026 och föreslog 3.8).
-// Finns inte den första modellen provas nästa. "gemini-flash-latest" är Googles alias för den senaste Flash.
-// Är en modell överbelastad (503, vanligt på gratisnivån) provas också nästa. Lite är lättare och oftare ledig.
-export const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest'];
-// Så länge får Gemini hålla på totalt innan Workers AI tar över, så att kunden inte väntar för länge.
-const GEMINI_BUDGET_MS = 9000;
+// Externa AI-tjänster med OpenAI-kompatibla adresser, i den ordning de provas. Var och en används bara
+// när dess nyckel finns som hemlighet (Secret) i Cloudflare. Svarar ingen av dem tar Workers AI över,
+// och sist checklistans färdiga frågor.
+// - Groq först: gratis utan betalkort och mycket snabb. Varje modell har en egen dygnskvot.
+// - Gemini sedan: gratisnivån är ofta överbelastad (503) eller slut (429), men fungerar ibland.
+//   gemini-2.5-flash finns inte för nya konton (404 i november 2026).
+// thinks: modellen har en tankeprocess, så svaret behöver mer plats och en låg nivå på tänkandet.
+export const PROVIDERS = [
+  {
+    id: 'groq',
+    key: 'GROQ_API_KEY',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    models: [
+      { model: 'openai/gpt-oss-120b', thinks: true, efforts: ['low'] },
+      { model: 'llama-3.3-70b-versatile', efforts: [null] },
+    ],
+  },
+  {
+    id: 'gemini',
+    key: 'GEMINI_API_KEY',
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    models: [
+      { model: 'gemini-flash-lite-latest', thinks: true, efforts: ['none', 'low', null] },
+      { model: 'gemini-flash-latest', thinks: true, efforts: ['none', 'low', null] },
+      { model: 'gemini-3.8-flash', thinks: true, efforts: ['none', 'low', null] },
+    ],
+  },
+];
+// Så länge får de externa tjänsterna hålla på totalt, och varje anrop högst, innan nästa tar över.
+const EXTERNAL_BUDGET_MS = 7000;
+const CALL_MS = 4500;
+
+// En modell som just svarat "kvoten slut" eller "överbelastad" pausas en stund, så att kunden inte
+// väntar på den vid varje fråga. Pausen gäller den instans av workern som fick felet.
+const paused = new Map();
+const PAUSE_MS = { 429: 15 * 60000, 503: 5 * 60000, 500: 5 * 60000, timeout: 5 * 60000, 401: 60 * 60000, 403: 60 * 60000, 404: 24 * 60 * 60000 };
+export const resetPauses = () => paused.clear();
+const isPaused = (id) => (paused.get(id) || 0) > Date.now();
+const pause = (id, reason) => paused.set(id, Date.now() + (PAUSE_MS[reason] || 60000));
 
 // Telefonnummer och mejladresser skickas aldrig till AI:n. Koden sparar dem direkt ur kundens svar.
 export function redact(text) {
@@ -644,65 +673,72 @@ export function redact(text) {
 const REDACTED = /\[(mejl|telefon)\]/;
 const redactMessages = (messages) => messages.map((m) => ({ ...m, content: redact(m.content) }));
 
-// Så lite "tankeprocess" som möjligt: den gör svaren långsamma. Alla modeller tar inte emot alla nivåer,
-// så vid fel 400 provas nästa nivå, och sist utan inställning.
-const EFFORTS = ['none', 'low', null];
-
-async function callGemini(env, model, payload, effort, ms) {
+function callExternal(provider, env, entry, payload, { effort, json }, ms) {
   const body = {
-    model,
+    model: entry.model,
     messages: payload.messages,
-    // Plats för modellens tankeprocess utöver själva svaret.
-    max_tokens: payload.max_tokens + 1500,
+    max_tokens: payload.max_tokens + (entry.thinks ? 1500 : 0),
     temperature: payload.temperature,
-    response_format: { type: 'json_object' },
+    ...(json ? { response_format: { type: 'json_object' } } : {}),
     ...(effort ? { reasoning_effort: effort } : {}),
   };
-  return fetch(GEMINI_URL, {
+  return fetch(provider.url, {
     method: 'POST',
-    headers: { authorization: `Bearer ${env.GEMINI_API_KEY}`, 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${env[provider.key]}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(ms),
   });
 }
 
-export async function runGemini(env, payload, meta = {}) {
-  const models = [env.GEMINI_MODEL, ...GEMINI_MODELS].filter((m, i, list) => m && list.indexOf(m) === i);
-  const deadline = Date.now() + GEMINI_BUDGET_MS;
-  let last = '';
-  for (const model of models) {
-    for (const effort of EFFORTS) {
-      const left = deadline - Date.now();
-      if (left < 1500) throw new Error(`${last || 'gemini'} (tiden slut)`);
-      const response = await callGemini(env, model, payload, effort, left);
-      if (response.ok) {
-        meta.provider = `gemini:${model}`;
-        return response.json();
+// Provar tjänsterna och modellerna i tur och ordning. Ger JSON-svaret, eller null när ingen svarade.
+export async function runExternal(env, payload, meta = {}, errors = []) {
+  const deadline = Date.now() + EXTERNAL_BUDGET_MS;
+  for (const provider of PROVIDERS) {
+    if (!env?.[provider.key]) continue;
+    const own = provider.id === 'gemini' && env.GEMINI_MODEL ? [{ model: env.GEMINI_MODEL, thinks: true, efforts: ['none', 'low', null] }] : [];
+    for (const entry of [...own, ...provider.models]) {
+      const id = `${provider.id}:${entry.model}`;
+      if (isPaused(id)) continue;
+      // Varje nivå på tänkandet med JSON-läge, och sist utan JSON-läge, om modellen inte stöder något av det (fel 400).
+      const attempts = [...entry.efforts.map((effort) => ({ effort, json: true })), { effort: null, json: false }];
+      for (const attempt of attempts) {
+        const left = deadline - Date.now();
+        if (left < 1200) {
+          errors.push(`${id}: tiden slut`);
+          return null;
+        }
+        let response;
+        try {
+          response = await callExternal(provider, env, entry, payload, attempt, Math.min(left, CALL_MS));
+        } catch (error) {
+          errors.push(`${id}: ${String(error?.message || error).slice(0, 120)}`);
+          pause(id, 'timeout');
+          break;
+        }
+        if (response.ok) {
+          const json = extractJson(await response.json().catch(() => null));
+          if (json && typeof json === 'object') {
+            meta.provider = id;
+            return json;
+          }
+          errors.push(`${id}: inget json i svaret`);
+          break;
+        }
+        errors.push(`${id} ${response.status}: ${(await response.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140)}`);
+        if (response.status === 400) continue;
+        pause(id, response.status);
+        break;
       }
-      last = `gemini ${model} ${response.status}: ${(await response.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160)}`;
-      if (response.status === 400) continue; // nivån på tankeprocessen stöds inte, prova nästa
-      break;
     }
-    // 404: modellen finns inte. 503: modellen är överbelastad. Båda: prova nästa modell.
-    // 429 (kvoten slut) eller 401/403 (fel nyckel): ingen idé att prova fler.
-    if (!/ (404|500|503):/.test(last)) break;
   }
-  throw new Error(last || 'gemini: ingen modell');
+  return null;
 }
 
 async function askJson(env, rawMessages, schema, maxTokens, errors = [], meta = {}) {
   const messages = redactMessages(rawMessages);
-  if (env?.GEMINI_API_KEY) {
-    try {
-      const json = extractJson(await runGemini(env, { messages, max_tokens: maxTokens, temperature: 0.4 }, meta));
-      if (json && typeof json === 'object') return json;
-      errors.push('gemini: inget json i svaret');
-    } catch (error) {
-      const message = String(error?.message || error).slice(0, 300);
-      errors.push(message);
-      console.warn('gemini call failed', message);
-    }
-  }
+  const external = await runExternal(env, { messages, max_tokens: maxTokens, temperature: 0.4 }, meta, errors);
+  if (external) return external;
+  if (errors.length) console.warn('external ai failed', errors.join(' | ').slice(0, 600));
   if (!env?.AI) return null;
   const attempts = [
     { messages, max_tokens: maxTokens, temperature: 0.4, response_format: { type: 'json_schema', json_schema: schema } },
@@ -744,7 +780,7 @@ function readState(body) {
 // Enkla fält där checklistans fråga räcker och svaret sparas som det är. Mellan två sådana
 // frågor behövs ingen AI, vilket ungefär halverar vad en intervju drar av dagens AI-kvot.
 const PLAIN = new Set(['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok', 'befintlig_sida', 'sprak']);
-const hasModel = (env) => Boolean(env?.AI || env?.GEMINI_API_KEY);
+const hasModel = (env) => Boolean(env?.AI || PROVIDERS.some((p) => env?.[p.key]));
 
 export function needsAi(state) {
   if (state.edit) return true;

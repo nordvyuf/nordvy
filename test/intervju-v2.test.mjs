@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { plan, profileOf, questionFor, missing, recommendPackage, briefToText } from '../public/assets/shared/brief.js';
-import { applyTurn, buildTurnMessages, interviewTurn, redact } from '../src/interview.js';
+import { applyTurn, buildTurnMessages, interviewTurn, redact, runExternal, resetPauses } from '../src/interview.js';
 
 test('typen av företag: kundens eget val först, sedan det de berättat', () => {
   assert.equal(profileOf({ foretagstyp: 'UF-företag' }), 'uf');
@@ -77,6 +77,7 @@ test('telefonnummer och mejladresser tas bort innan något skickas till AI:n', (
 });
 
 test('med GEMINI_API_KEY frågas Gemini först, utan kontaktuppgifter; svarar Gemini inte tar Workers AI över', async () => {
+  resetPauses();
   const realFetch = globalThis.fetch;
   const sent = [];
   try {
@@ -135,48 +136,65 @@ test('ett kort exempel efter AI:ns fråga får vara kvar', () => {
   assert.equal(long.reply, 'Vad kostar doftljusen?');
 });
 
-test('finns inte Gemini-modellen provas nästa, och en tankenivå som inte stöds byts', async () => {
-  const { runGemini } = await import('../src/interview.js');
+const ok = (content) => new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 });
+const fail = (status) => new Response(JSON.stringify({ error: { code: status } }), { status });
+const payload = { messages: [], max_tokens: 10, temperature: 0 };
+async function withFetch(fake, run) {
   const realFetch = globalThis.fetch;
-  const tried = [];
+  globalThis.fetch = fake;
   try {
-    globalThis.fetch = async (url, init) => {
-      const body = JSON.parse(init.body);
-      tried.push(`${body.model}/${body.reasoning_effort ?? '-'}`);
-      if (body.model === 'gemini-3.8-flash') return new Response('{"error":{"code":404}}', { status: 404 });
-      if (body.reasoning_effort === 'none') return new Response('{"error":{"code":400}}', { status: 400 });
-      return new Response(JSON.stringify({ choices: [{ message: { content: '{"ok":1}' } }] }), { status: 200 });
-    };
-    const meta = {};
-    await runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }, meta);
-    assert.deepEqual(tried, ['gemini-3.8-flash/none', 'gemini-flash-latest/none', 'gemini-flash-latest/low']);
-    assert.equal(meta.provider, 'gemini:gemini-flash-latest');
-    // Kvoten slut (429): inga fler modeller provas.
-    tried.length = 0;
-    globalThis.fetch = async (url, init) => { tried.push(JSON.parse(init.body).model); return new Response('quota', { status: 429 }); };
-    await assert.rejects(runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }), /429/);
-    assert.deepEqual(tried, ['gemini-3.8-flash']);
+    return await run();
   } finally {
     globalThis.fetch = realFetch;
   }
+}
+
+test('Groq frågas först, sedan Gemini; bara tjänster med nyckel används', async () => {
+  resetPauses();
+  const tried = [];
+  const meta = {};
+  const json = await withFetch(async (url, init) => {
+    tried.push(`${new URL(url).host} ${JSON.parse(init.body).model}`);
+    return ok('{"reply":"x"}');
+  }, () => runExternal({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm' }, payload, meta));
+  assert.deepEqual(json, { reply: 'x' });
+  assert.deepEqual(tried, ['api.groq.com openai/gpt-oss-120b']);
+  assert.equal(meta.provider, 'groq:openai/gpt-oss-120b');
+  // Utan Groq-nyckel används Gemini direkt.
+  tried.length = 0;
+  await withFetch(async (url, init) => { tried.push(JSON.parse(init.body).model); return ok('{"a":1}'); }, () => runExternal({ GEMINI_API_KEY: 'm' }, payload));
+  assert.deepEqual(tried, ['gemini-flash-lite-latest']);
 });
 
-test('är en Gemini-modell överbelastad (503) provas nästa', async () => {
-  const { runGemini } = await import('../src/interview.js');
-  const realFetch = globalThis.fetch;
+test('slut kvot (429) eller överbelastad (503) ger nästa modell, och modellen pausas till nästa fråga', async () => {
+  resetPauses();
   const tried = [];
-  try {
-    globalThis.fetch = async (url, init) => {
-      const model = JSON.parse(init.body).model;
-      tried.push(model);
-      if (model !== 'gemini-flash-lite-latest') return new Response('{"error":{"code":503,"message":"high demand"}}', { status: 503 });
-      return new Response(JSON.stringify({ choices: [{ message: { content: '{"ok":1}' } }] }), { status: 200 });
-    };
-    const meta = {};
-    await runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }, meta);
-    assert.deepEqual(tried, ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']);
-    assert.equal(meta.provider, 'gemini:gemini-flash-lite-latest');
-  } finally {
-    globalThis.fetch = realFetch;
-  }
+  const fake = async (url, init) => {
+    const model = JSON.parse(init.body).model;
+    tried.push(model);
+    if (model === 'openai/gpt-oss-120b') return fail(429);
+    if (model === 'llama-3.3-70b-versatile') return fail(503);
+    return ok('{"a":1}');
+  };
+  const meta = {};
+  await withFetch(fake, () => runExternal({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm' }, payload, meta));
+  assert.deepEqual(tried, ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'gemini-flash-lite-latest']);
+  assert.equal(meta.provider, 'gemini:gemini-flash-lite-latest');
+  // Nästa fråga: de pausade modellerna hoppas över, så kunden väntar inte på dem.
+  tried.length = 0;
+  await withFetch(fake, () => runExternal({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm' }, payload));
+  assert.deepEqual(tried, ['gemini-flash-lite-latest']);
+});
+
+test('en nivå på tänkandet eller JSON-läge som inte stöds (400) byts, och ingen tjänst ger null', async () => {
+  resetPauses();
+  const tried = [];
+  const json = await withFetch(async (url, init) => {
+    const b = JSON.parse(init.body);
+    tried.push(`${b.reasoning_effort ?? '-'}/${b.response_format ? 'json' : 'text'}`);
+    return b.response_format ? fail(400) : ok('Svar: {"a":2}');
+  }, () => runExternal({ GEMINI_API_KEY: 'm' }, payload));
+  assert.deepEqual(json, { a: 2 });
+  assert.deepEqual(tried, ['none/json', 'low/json', '-/json', '-/text']);
+  assert.equal(await runExternal({}, payload), null);
 });
