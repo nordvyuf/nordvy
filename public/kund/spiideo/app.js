@@ -86,9 +86,13 @@ if (DRAFT) {
 const form = $('#offert');
 const result = $('#fResult');
 
+// Startar om en rörelse från rörelsepaketet (/assets/kund/rorelse.css), till exempel skakningen vid varje nytt försök.
+function nudge(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
 function setError(id, input, text) {
   $(`#${id}`).textContent = text;
   if (input) input.setAttribute('aria-invalid', 'true');
+  nudge(input || $(`#${id}`).previousElementSibling, 'r-fel');
 }
 function clearError(id, input) {
   $(`#${id}`).textContent = '';
@@ -138,8 +142,10 @@ form.addEventListener('submit', (e) => {
   ];
   if (DRAFT) {
     result.textContent = `Utkast: inget skickades. På den färdiga sidan öppnas ett färdigt mejl till ${EMAIL}.`;
+    nudge(result, 'r-klar');
     return;
   }
   location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(`Offertförfrågan: ${$('#fOrg').value.trim()}`)}&body=${encodeURIComponent(lines.join('\n'))}`;
   result.textContent = `Nu öppnas ett mejl med er förfrågan. Skicka det, så hör vi av oss. Öppnades inget mejl? Skriv till ${EMAIL}.`;
+  nudge(result, 'r-klar');
 });
