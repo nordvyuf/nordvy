@@ -339,7 +339,8 @@ test('frågan knyts till rätt fält, och inledande "låter"-meningar tas bort',
   const r = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'Bageri', ort_omrade: 'Malmö', tjanster_produkter: 'Bröd', mal_med_sidan: 'Se meny' }, asked: ['mal_med_sidan'], askCount: 1, message: 'Se meny' }, ai);
   // Frågan handlar om funktioner, så svaret ska sparas där och inte under stil.
   assert.deepEqual(r.asked, ['funktioner']);
-  assert.equal(r.reply, 'Ska ni ha en meny som man kan beställa från direkt på sidan?');
+  // Funktioner har svarsknappar, så checklistans fråga används och passar knapparna.
+  assert.equal(r.reply, 'Vad ska gå att göra på sidan? Välj det som passar.');
   assert.equal(tidyReply('Kafé Kajkanten låter som en trevlig plats. Vad gör ni?'), 'Vad gör ni?');
   assert.equal(tidyReply('Surdegsbageri och kafé, det låter gott. Var ligger kaféet?'), 'Var ligger kaféet?');
 });
@@ -405,7 +406,9 @@ test('"Inga priser på sidan" sparas som vad kunden vill undvika, inte som ett n
   const r = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'Inga priser på sidan' }, null);
   assert.equal(r.brief.undvik, 'Inga priser på sidan');
   const r2 = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'inget särskilt' }, null);
-  assert.equal(r2.brief.undvik, 'saknas');
+  assert.equal(r2.brief.undvik, 'Inget särskilt');
+  const r2b = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'vet inte' }, null);
+  assert.equal(r2b.brief.undvik, 'saknas');
   const r3 = applyTurn({ brief: { ...brief, undvik: 'x' }, asked: ['referens_ok'], askCount: 1, message: 'Hellre inte' }, null);
   assert.equal(r3.brief.referens_ok, 'Nej');
   assert.equal(isNegative('Det vet jag inte'), true);
