@@ -125,3 +125,12 @@ test('AI:ns egna fråga om kundens priser stoppas inte, men gissningar om domän
   assert.equal(tidyReply('Det kostar 499 kr. Vill ni boka?'), 'Vill ni boka?');
   assert.equal(fieldForQuestion('Vad är det bästa med era doftljus?', 'varfor_valja_oss', ['varfor_valja_oss']), 'varfor_valja_oss');
 });
+
+test('ett kort exempel efter AI:ns fråga får vara kvar', () => {
+  const brief = { foretagsnamn: 'Lågan UF', bransch: 'Doftljus', ort_omrade: 'Lund', tjanster_produkter: 'Doftljus' };
+  const ai = { saves: [], reply: 'Vad kostar doftljusen? Till exempel Doftljus 149 kr.', asked: 'priser' };
+  const r = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus' }, ai);
+  assert.equal(r.reply, 'Vad kostar doftljusen? Till exempel Doftljus 149 kr.');
+  const long = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus' }, { ...ai, reply: 'Vad kostar doftljusen? Det är viktigt för kunderna att se det direkt.' });
+  assert.equal(long.reply, 'Vad kostar doftljusen?');
+});
