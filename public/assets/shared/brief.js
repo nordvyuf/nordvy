@@ -232,7 +232,8 @@ export function parseServices(text) {
   const listed = String(text || '').replace(/\b\d+[.)]\s*/g, '\n');
   // Finns det kommatecken eller radbrytningar är det de som skiljer tjänsterna åt.
   // Då får "färg och slingor" vara kvar som en tjänst.
-  const strong = listed.split(/\n|,|;|•|·/).filter((x) => x.trim());
+  // " / " skiljer två svar på samma fråga ("Perform, Play / Media streaming").
+  const strong = listed.split(/\n|,|;|•|·|\s\/\s/).filter((x) => x.trim());
   const raw = (strong.length >= 2 ? strong : listed.split(/\n|,|;|•|·|\/|\s+och\s+|\s+samt\s+|\s+&\s+/i))
     .map((s) => s.replace(/\s*[:(–—-]\s+.*$/, '').replace(/\(.*$/, ''))
     .map((s) => s.replace(/^[\s\-–—*]+|[\s.!]+$/g, ''))
@@ -307,12 +308,28 @@ function headlineItem(titles) {
 
 // Rubriken när AI:n inte svarar. Byggs av kundens egna uppgifter (första tjänsten och orten),
 // så att två kunder inte får samma rubrik. Finns inget att bygga av blir det branschens reservrubrik.
-function fallbackHeadline({ industry, online, titles, city }) {
+function fallbackHeadline({ industry, online, titles, city, audience }) {
   const item = headlineItem(titles);
   if (item && city) return online ? `${item} från ${city}` : `${item} i ${city}`;
-  if (item) return online ? `${item}, beställ direkt på sidan` : `${item} när det passar dig`;
+  if (item && online) return `${item}, beställ direkt på sidan`;
+  // Utan ort: säg vem det är till. "Perform när det passar dig" lät som en frisörs rubrik.
+  if (item && audience) return `${item} för ${audience}`;
+  if (item && industry !== 'tjanst') return `${item} när det passar dig`;
   return online ? ONLINE_PRESET.headline : PRESET[industry || 'tjanst'].headline;
 }
+
+// Målgruppen som den kan stå i en rubrik: kort och utan "vi riktar oss till".
+function audienceOf(b) {
+  if (!hasAnswer(b, 'malgrupp') || isNegative(b.malgrupp)) return '';
+  const t = oneLine(b.malgrupp, 60)
+    .replace(/^(vi riktar oss (till|mot)|våra kunder är|det är|främst|mest|till exempel)\s+/i, '')
+    .replace(/[.!]+$/, '');
+  return t.length >= 4 && t.length <= 40 ? lower(t) : '';
+}
+
+// Kunderna är organisationer, inte privatpersoner. Då bokar man ett möte, inte en tid.
+const B2B = /(företag|klubb|förening|förbund|federation|liga|ligor|kommun|organisation|skolor|myndighet|b2b|bolag)/i;
+const isB2B = (b) => B2B.test(String(b.malgrupp || '')) && !/privat|familj|alla\b/i.test(String(b.malgrupp || ''));
 
 
 // Pekar ut företagsnamnet och vanliga fyllnadsord så att en rubrik inte bara upprepar dem.
@@ -320,7 +337,7 @@ const BARE_HEADLINE = /^(välkommen( till)?|hem|startsida|hemsida|vår hemsida|o
 
 function ctaFor(b, industry) {
   const wish = wishText(b);
-  if (wantsBooking(b)) return industry === 'cafe' ? 'Boka bord' : 'Boka tid';
+  if (wantsBooking(b)) return industry === 'cafe' ? 'Boka bord' : isB2B(b) ? 'Boka ett möte' : 'Boka tid';
   if (hasStem(wish, ['köpa', 'beställ', 'webshop', 'sälj'])) return 'Beställ nu';
   if (hasStem(wish, ['arbeten', 'portfolio', 'galleri'])) return 'Se våra arbeten';
   if (hasStem(wish, ['ring', 'mejl', 'kontakt', 'offert'])) return industry === 'hantverk' ? 'Begär offert' : 'Kontakta oss';
@@ -448,7 +465,7 @@ export function draftModel(brief, copy) {
   const titles = hasAnswer(b, 'tjanster_produkter') ? parseServices(b.tjanster_produkter) : [];
   if (industry) {
     m.industry = industry;
-    m.headline = fallbackHeadline({ industry, online, titles, city });
+    m.headline = fallbackHeadline({ industry, online, titles, city, audience: audienceOf(b) });
     m.sub = online ? ONLINE_PRESET.sub(company || 'Vi', city ? ` från ${city}` : '') : preset.sub(company || 'Vi', inCity);
     m.tagline = online ? `${INDUSTRIES[industry].short}${city ? ` från ${city}` : ''} · online` : `${INDUSTRIES[industry].short}${inCity}`;
   }
@@ -466,7 +483,8 @@ export function draftModel(brief, copy) {
       payments,
       shop: hasStem(wish, ['köpa', 'beställ', 'webshop', 'sälj']),
       menu: industry === 'cafe' || hasStem(wish, ['meny', 'pris']),
-      map: hasStem(wish, ['karta', 'hitta']),
+      // "Hitta information" är ingen vägbeskrivning. Och den som bara finns online har ingen adress att visa.
+      map: (hasStem(wish, ['karta']) || /hitta (hit|till oss|vägen)/.test(wish)) && !sellsOnlineOnly(b),
       contact: !booking && !payments,
     };
   }
@@ -531,6 +549,8 @@ export function briefToText(brief, issues = [], contact = null) {
   if (contact?.name) lines.push(`Kontaktperson: ${contact.name}, ${contact.email}${contact.phone ? `, ${contact.phone}` : ''}`, '');
   for (const f of FIELDS) {
     if (!hasValue(b, f.key)) continue;
+    // "Logga: saknas" räcker. Statusraden behövs bara när kunden har en logga.
+    if (f.key === 'logga_status' && isSaknas(b.logga)) continue;
     lines.push(`${f.label}: ${b[f.key]}`);
   }
   const left = missing(b);
