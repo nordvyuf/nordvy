@@ -308,7 +308,8 @@ export function tidyReply(raw, message = '') {
   // Behåll minst frågan: ta bara bort inledande meningar som saknar frågetecken.
   while (sentences.length > 1 && !sentences[0].includes('?') && FILLER.test(sentences[0])) sentences.shift();
   // Ta bort meningar med påståenden som AI:n inte kan veta, men aldrig själva frågan.
-  const safe = sentences.filter((s) => s.includes('?') || !UNKNOWN_CLAIM.test(s));
+  // Ett exempel på hur kunden kan svara ("Till exempel Doftljus 149 kr.") är ingen gissning.
+  const safe = sentences.filter((s) => s.includes('?') || /^till exempel\s/i.test(s) || !UNKNOWN_CLAIM.test(s));
   if (safe.length && safe.some((s) => s.includes('?'))) {
     sentences.length = 0;
     sentences.push(...safe);
@@ -319,7 +320,7 @@ export function tidyReply(raw, message = '') {
   if (sentences.length === 1 && claim.test(sentences[0])) return '';
   // Reaktioner som bara återberättar kundens svar tas bort ("Malmö är er bas.").
   if (message) {
-    const kept = sentences.filter((s) => s.includes('?') || !restates(s, message));
+    const kept = sentences.filter((s) => s.includes('?') || /^till exempel\s/i.test(s) || !restates(s, message));
     if (kept.some((s) => s.includes('?'))) {
       sentences.length = 0;
       sentences.push(...kept);
@@ -583,14 +584,19 @@ export function applyTurn(state, ai) {
   // AI:ns fråga används om den handlar om något som fortfarande saknas. Fältet bestäms av vad frågan
   // faktiskt frågar om, så att kundens svar sparas på rätt plats.
   let reply = ai ? tidyReply(ai.reply, message) : '';
-  let asked = reply ? fieldForQuestion(reply.slice(reply.lastIndexOf('.') + 1), ai.asked, left) : '';
+  // Själva frågan är meningen som slutar med frågetecken, inte ett exempel efter den.
+  const question = reply.slice(0, reply.lastIndexOf('?') + 1);
+  let asked = question ? fieldForQuestion(question.slice(question.lastIndexOf('.') + 1), ai.asked, left) : '';
   if (!asked) reply = '';
   // Frågan måste handla om fältet den gäller. Annars används checklistans fråga.
   if (!reply || !reply.includes('?')) {
     asked = left[0];
     reply = fallbackQuestion(asked, NEED.length - left.length, brief);
   } else {
-    reply = reply.slice(0, reply.lastIndexOf('?') + 1);
+    // Ett kort exempel efter frågan får vara kvar ("Till exempel ’Doftljus 149 kr’."), annat tas bort.
+    const end = reply.lastIndexOf('?') + 1;
+    const tail = reply.slice(end).trim();
+    reply = reply.slice(0, end) + (/^(till exempel|t\.ex\.|som)\s/i.test(tail) && tail.length <= 70 ? ` ${tail}` : '');
   }
   // Fält där knapparna är själva valen får checklistans fråga, så att frågan passar knapparna.
   // AI:n frågade annars "Ska kunderna kunna boka tid?" medan knapparna gällde alla funktioner.
