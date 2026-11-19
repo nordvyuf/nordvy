@@ -27,7 +27,7 @@ Designskillen `frontend-design` beskriver dessutom de standardval som AI-sidor h
 - Etiketter i versaler ovanför varje rubrik, rader som "A · B · C", monospace för små etiketter och en pil "→" efter knapptext.
 - Ett ord i rubriken med annan färg eller kursiv.
 - Numrerade steg (01, 02, 03) när innehållet inte är en riktig ordning.
-- Inglidande animationer på varje sektion.
+- Inglidande animationer på varje sektion. Rörelse är bra, men på rätt ställen: se `rorelse.md`.
 
 ## Det som gör den äkta
 
@@ -89,6 +89,10 @@ Länka `/assets/fonts/kund/typsnitt.css`. Välj ett eller två typsnitt per sida
 | IBM Plex Mono | skrivmaskin | prislistor, kvitton, mått, etiketter |
 
 Skriv alltid en reservfont efter, till exempel `font-family: "Young Serif", Georgia, serif;`. Fraunces och Inter är Nordvys egna och ska inte användas på kundsidor.
+
+## Rörelse
+
+Varje kundsida länkar rörelsepaketet `/assets/kund/rorelse.css` och `/assets/kund/rorelse.js`, med en genomtänkt start på första skärmen, lugna avtäckningar av fotona och svar på klick och formulär. Hur och var står i `rorelse.md`. En sida som står helt still ser billig ut, och en där allt glider in ser ut som en mall.
 
 ## Mobil
 

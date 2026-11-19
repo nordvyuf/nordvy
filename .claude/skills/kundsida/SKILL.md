@@ -7,9 +7,10 @@ description: Bygger, gör om eller publicerar en hemsida åt en av Nordvys kunde
 
 Så bygger Nordvy en hemsida åt en kund, från underlag till publicerad sida. Läs `CLAUDE.md` i repots rot först: där står paketen, priserna och reglerna (aldrig slå ihop utan Måns ord, aldrig lösenord, bara mejlutkast).
 
-Tre filer hör till skillen:
+Fyra filer hör till skillen:
 - `checklista.md`: vad som måste finnas innan bygget per paket, fotoguiden till kunden och mallen för mejlet om det som saknas.
 - `design.md`: hur sidan ska se ut, mönstren som får en sida att se AI-gjord ut, foton, referenser, typsnitt, tillgänglighet och mobil.
+- `rorelse.md`: rörelsepaketet `/assets/kund/rorelse.css` och `rorelse.js`, var rörelse hör hemma och var den inte gör det.
 - `granskning.md`: hur en fristående granskare bedömer sidan innan Måns får se den.
 
 Det viktigaste från testerna: **fotona avgör mest**, ett utritat "koncept" ser AI-gjort ut, och en sida blir inte bra på första försöket. Den blir bra genom blind granskning och lagning i flera rundor.
@@ -54,6 +55,7 @@ Visa idén för Måns och vänta på hans svar innan du bygger. Undantag: en pro
 - Filer: `index.html`, ett eget skript (`app.js`) om sidan behöver JavaScript, och bilder i `public/kund/<namn>/bilder/`.
 - **CSP:** inga inbäddade `<script>`-taggar och inga typsnitt eller skript från andra sajter än de som är tillåtna (egen domän, Cal.com och kartor från OpenStreetMap). Inbäddad CSS och `style=""` fungerar.
 - **Typsnitt:** länka `/assets/fonts/kund/typsnitt.css` och välj ur listan i `design.md`. Fraunces och Inter är Nordvys egna och används inte på kundsidor. Har kunden ett eget typsnitt med en licens som tillåter webben, lägg det i kundens mapp med licensfilen bredvid.
+- **Rörelse:** länka `/assets/kund/rorelse.css` och `/assets/kund/rorelse.js` och följ `rorelse.md`: en genomtänkt start på första skärmen (`data-r="intro"`), fotona avtäcks (`data-r="bild"`), knappar och formulär svarar på klick. Exemplet finns i `public/kund/exempel-rorelse/`.
 - **Bilder:** konvertera till WebP, högst cirka 1600 px breda och helst under 200 kB styck. Ange `width`, `height` och `alt`, och `loading="lazy"` för bilder längre ner på sidan.
 - **Bilder som saknas i ett utkast:** en ruta i bildens riktiga form (`aspect-ratio`), med tunn streckad kant och texten "Foto kommer: <vad bilden ska visa>". Rita aldrig en påhittad produktbild eller en illustration som ser färdig ut.
 - **Lånade foton för att kunna bedöma sidan:** på provsidor bygger du med lånade foton från Unsplash, så att sidan kan bedömas på riktigt, och lägger in testläget `?utan-foton` som visar platshållarna. För en riktig kund kan du göra likadant lokalt, men det som visas för kunden har kundens egna foton eller platshållare. Lånade foton får aldrig se ut som kundens produkter, lokal eller personer. Fler regler står i `design.md`. Bilder från Unsplash får länkas direkt (`https://images.unsplash.com/photo-…?auto=format&fit=crop&w=1200&q=70`), och CSP:n tillåter det.
@@ -106,7 +108,7 @@ Kunden behöver **Swish Företag** via sin bank. Ett privat Swish-nummer får in
    - **Mät på mobil, lita inte på ögat:** `overflow-x: clip` eller `hidden` på `body` döljer innehåll som sticker ut, så att priser och fält klipps av utan att det syns. Stäng av det tillfälligt och leta upp alla element vars högerkant ligger utanför 375 px. I testet gjorde en bildruta med både `aspect-ratio` och `min-height` sidan 688 px bred, och ett 12-kolumnsrutnät med 48 px mellanrum fick inte plats på mobil.
    - **Formulär:** felmeddelandet försvinner när fältet blir rätt, fel e-post får ett eget meddelande ("Adressen ser inte rätt ut"), och varje fel är kopplat till sitt fält med `aria-describedby`.
 3. Prova formulär, beställning och bokning, både tomma och ifyllda.
-4. Kontrollera tillgängligheten enligt `design.md`: tangentbord, fokus, kontrast och minskad rörelse.
+4. Kontrollera tillgängligheten enligt `design.md`: tangentbord, fokus, kontrast och minskad rörelse. Gå igenom kontrollen i `rorelse.md`, även med `?utan-rorelse`.
 5. Granska sidan själv mot listan i `design.md`, och mät vänsterkanter och mellanrum med `getBoundingClientRect()`.
 6. **Blind granskning:** följ `granskning.md`. En fristående subagent bedömer sidan med en poäng från 1 till 10. Laga och granska igen med en ny subagent tills sidan får minst 8 med foton, eller högst tre rundor. Poängen och det som återstår står i rapporten till Måns.
 7. Kör `npm test`.

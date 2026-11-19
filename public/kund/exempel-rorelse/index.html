@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Korn &amp; Kaka – surdegsbageri på Möllan</title>
+<meta name="description" content="Litet surdegsbageri på Möllan i Malmö. Öppet tisdag till lördag 7–15.">
+<link rel="stylesheet" href="/assets/fonts/kund/typsnitt.css">
+<link rel="stylesheet" href="/assets/kund/rorelse.css">
+<style>
+/* Exempel på rörelsepaketet (/assets/kund/rorelse.css och rorelse.js) på provsidan Korn & Kaka. Regler: .claude/skills/kundsida/rorelse.md. */
+/* Provsida v3: fotot bär sidan, "öppet nu" är rubriken, ett rutnät och en vänsterkant. */
+:root{
+  --paper:#FFFFFF; --ink:#1C1A17; --soft:#5F5850; --stone:#EFEBE4; --line:#E3DDD3; --green:#1F4D3A; --green-2:#173B2C; --err:#A1301C;
+  --serif:"Young Serif",Georgia,serif; --sans:"Work Sans",system-ui,sans-serif;
+  --max:1160px; --pad:max(16px,4vw); --g:16px; --col:48px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--sans);overflow-x:clip}
+h1,h2,h3{font-family:var(--serif);font-weight:400;margin:0;line-height:1.05;text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+img{display:block;max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+.hero :focus-visible{outline-color:#fff}
+.draft{background:var(--ink);color:#E9E4DC;font-size:13px;text-align:center;padding:7px 16px}
+mark.todo{background:#F6E3A1;color:var(--ink);padding:0 4px}
+
+/* En behållare och en vänsterkant för hela sidan */
+.wrap{width:100%;max-width:calc(var(--max) + 2 * var(--pad));margin-inline:auto;padding-inline:var(--pad)}
+
+/* Hero */
+.hero{position:relative;color:#fff;background:#2a2119;display:grid;grid-template-rows:auto 1fr;min-height:min(86vh,800px)}
+.hero{overflow:hidden}
+.hero>img{position:absolute;left:0;top:-60px;width:100%;height:calc(100% + 120px);object-fit:cover;object-position:60% 50%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,11,8,.78) 0%,rgba(15,11,8,.45) 45%,rgba(15,11,8,.05) 75%),linear-gradient(0deg,rgba(15,11,8,.5) 0%,rgba(15,11,8,0) 40%)}
+.top{position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 24px;padding-block:8px}
+.mark{font:400 1.4rem/1 var(--serif);text-decoration:none}
+.top ul{display:flex;flex-wrap:wrap;gap:6px 22px;list-style:none;margin:0;padding:0}
+.top ul a{display:inline-block;padding-block:12px;text-decoration:none;font-weight:500}
+.hero .in{position:relative;z-index:1;align-self:end;padding-block:0 clamp(32px,7vh,72px)}
+.hero h1{font-size:clamp(2.8rem,7.4vw,6rem);max-width:13ch}
+.nowline{display:flex;align-items:baseline;gap:10px;margin-top:18px;font-weight:600;font-size:clamp(1.05rem,1.8vw,1.2rem)}
+.nowline::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:#D9A441;transform:translateY(-1px)}
+.nowline[data-open=true]::before{background:#7BC79A}
+.hero .sub{margin-top:8px;font-size:clamp(1.05rem,1.8vw,1.2rem);max-width:38ch;color:#F2EEE8}
+.acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.btn{display:inline-block;padding:13px 22px;border-radius:2px;font-weight:600;text-decoration:none;border:2px solid transparent;cursor:pointer;white-space:nowrap}
+.btn-white{background:#fff;color:var(--ink)}
+.btn-white:hover{background:var(--stone)}
+.btn-line{border-color:rgba(255,255,255,.8);color:#fff}
+.btn-line:hover{background:rgba(255,255,255,.12)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-2)}
+@media (max-width:560px){.acts .btn{flex:1 1 0;text-align:center}.hero{min-height:74vh}.hero::after{background:linear-gradient(0deg,rgba(15,11,8,.85) 0%,rgba(15,11,8,.55) 55%,rgba(15,11,8,.35) 100%)}}
+
+/* Ett rutnät: 12 kolumner, 5 + 7 i alla delade sektioner */
+.split{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);row-gap:32px}
+.split>.l{grid-column:span 5}
+.split>.r{grid-column:span 7}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.l,.split>.r{grid-column:auto}}
+
+/* I disken */
+.counter{padding-block:clamp(64px,9vw,112px) clamp(48px,6vw,72px)}
+.counter h2{font-size:clamp(2.2rem,5vw,3.5rem)}
+.lede{margin-top:12px;color:var(--soft);max-width:46ch}
+.counter .split{margin-top:40px;align-items:start}
+.counter figure{margin:0}
+.counter .l .ph{aspect-ratio:4/5;position:relative;overflow:hidden;background:var(--stone)}
+@media (max-width:860px){.counter .l .ph{aspect-ratio:16/10}}
+.counter .l img{width:100%;height:100%;object-fit:cover}
+.counter .l figcaption{margin-top:10px;color:var(--soft);font-size:15px}
+.menu{display:grid;gap:40px}
+.menu h3{font-size:1.5rem;margin-bottom:8px}
+.menu ul{list-style:none;margin:0;padding:0}
+.menu li{display:grid;grid-template-columns:1fr auto;column-gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.menu li b{font-weight:600}
+.menu li span{color:var(--soft);font-size:15.5px}
+.menu li em{grid-column:1 / -1;font-style:normal;font-size:14.5px;font-weight:600;color:#85561C}
+.menu li i{grid-column:2;grid-row:1;font-style:normal;font-variant-numeric:tabular-nums;font-weight:600}
+
+/* Bagarna */
+.who{padding-block:0 clamp(64px,9vw,112px)}
+.who .split{align-items:center}
+.who .ph{aspect-ratio:1/1;position:relative;overflow:hidden;background:var(--stone)}
+.who img{width:100%;height:100%;object-fit:cover}
+.who blockquote{margin:0;font:400 clamp(1.5rem,3vw,2.2rem)/1.25 var(--serif);max-width:24ch}
+.who p{margin-top:16px;color:var(--soft);max-width:44ch}
+
+/* Tårta */
+.cake{background-color:var(--stone);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");padding-block:clamp(56px,8vw,96px)}
+.cake .split{align-items:stretch}
+.cake .ph{position:relative;overflow:hidden;background:#E2DCD2;min-height:420px}
+@media (max-width:860px){.cake .ph{aspect-ratio:16/10;min-height:0}}
+.cake img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cake h2{font-size:clamp(2rem,4.4vw,3.1rem)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 28px;margin-top:14px;font-weight:600}
+.cake .intro{margin-top:10px;color:var(--soft);max-width:46ch}
+form{display:grid;gap:16px;margin-top:28px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--g);align-items:start}
+@media (max-width:520px){.pair{grid-template-columns:1fr}}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-weight:600;font-size:15.5px}
+.field .hint{font-size:14.5px;color:var(--soft)}
+.field input,.field select,.field textarea{width:100%;min-width:0;background:#fff;border:1px solid #CBC3B7;border-radius:2px;padding:11px 12px}
+.field textarea{min-height:100px;resize:vertical}
+.field input,.field select{height:48px}
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{outline:3px solid var(--green);outline-offset:1px}
+.field [aria-invalid=true]{border-color:var(--err)}
+.err{color:var(--err);font-size:15px}
+.err:empty{display:none}
+.status:not(:empty){padding:12px 14px;background:#fff;border-left:4px solid var(--green)}
+
+/* Hitta hit */
+.visit{padding-block:clamp(56px,8vw,96px) clamp(40px,5vw,64px)}
+.visit h2{font-size:clamp(2rem,4.4vw,3.1rem)}
+.visit address{font-style:normal;margin-top:16px;font-size:1.15rem}
+.visit .maplink{display:inline-block;padding-block:10px;margin-top:2px;color:var(--green);font-weight:600;text-underline-offset:4px}
+.hours{margin-top:24px;width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.hours th{text-align:left;font-weight:400;padding:6px 0;border-top:1px solid var(--line)}
+.hours td{text-align:right;padding:6px 0;font-weight:600;border-top:1px solid var(--line)}
+.hours .off th,.hours .off td{color:var(--soft);font-weight:400}
+.map{width:100%;height:380px;border:0;background:var(--stone)}
+
+footer .row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:20px 36px;border-top:1px solid var(--line);color:var(--soft);font-size:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Testläge: ?utan-foton visar platshållare */
+.nophoto .ph img,.nophoto .hero>img{visibility:hidden}
+.nophoto .ph{outline:1.5px dashed #A79E92;outline-offset:-1.5px}
+.nophoto .ph::before{content:attr(data-foto);position:absolute;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:var(--soft);font-size:15px}
+.nophoto .hero{background:#3A2F26}
+.nophoto .hero::before{content:attr(data-foto);position:absolute;right:max(var(--pad),calc((100% - var(--max)) / 2));top:96px;color:#D8CFC3;font-size:15px;max-width:24ch;text-align:right;z-index:1}
+@media (max-width:860px){.nophoto .hero::before{display:none}}
+</style>
+</head>
+<body>
+<div class="draft">Exempel på rörelse från Nordvy UF. Korn &amp; Kaka finns inte: meny, priser, personer och adress är påhittade och fotona är lånade från Unsplash. Ingenting skickas.</div>
+
+<header class="hero" data-foto="Foto kommer: bagarens händer och degen, tidigt på morgonen">
+  <img data-r="intro-bild parallax" src="https://images.unsplash.com/photo-1537734796389-e1fc293cf856?auto=format&amp;fit=crop&amp;w=2000&amp;q=70" alt="Händer som formar en surdeg på ett mjöligt bord" width="2000" height="1333" fetchpriority="high">
+  <div class="wrap top">
+    <a class="mark" href="#">Korn &amp; Kaka</a>
+    <nav aria-label="Meny"><ul><li><a class="r-lank" href="#disken">I disken</a></li><li><a class="r-lank" href="#tarta">Tårta</a></li><li><a class="r-lank" href="#hitta">Hitta hit</a></li></ul></nav>
+  </div>
+  <div class="wrap in">
+    <h1 data-r="intro">Surdeg från Möllan, bakad i natt.</h1>
+    <p class="nowline" id="status" data-r="intro" style="--i:2"><span><span id="nu">Öppet tisdag till lördag.</span> <span id="nuNar">Klockan 7–15.</span></span></p>
+    <p class="sub" data-r="intro" style="--i:3">Vi sätter degen på kvällen, bakar från klockan tre och säljer tills det tar slut.</p>
+    <div class="acts" data-r="intro" style="--i:4">
+      <a class="btn btn-white r-knapp" href="#disken">Se brödet</a>
+      <a class="btn btn-line r-knapp" href="#tarta">Beställ tårta</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="counter" id="disken" aria-labelledby="h-disken">
+    <div class="wrap">
+      <h2 id="h-disken">I disken</h2>
+      <p class="lede">Det här bakar vi varje dag. Det som brukar ta slut tidigt står utmärkt.</p>
+      <div class="split">
+      <figure class="l"><div class="ph" data-r="bild" data-foto="Foto kommer: rågsurdegen, uppskuren"><img src="https://images.unsplash.com/photo-1590301157172-7ba48dd1c2b2?auto=format&amp;fit=crop&amp;w=1000&amp;h=1250&amp;q=70" alt="Ett uppskuret surdegsbröd med luftig inkråm" width="1000" height="1250" loading="lazy"></div><figcaption>Rågsurdegen, med hela rågkorn</figcaption></figure>
+      <div class="menu r">
+        <div>
+          <h3>Bröd</h3>
+          <ul data-r="lista">
+            <li><b>Rågsurdeg</b><i>72 kr</i><span>Mörk och saftig, med hela rågkorn</span><em>Brukar vara slut vid lunch</em></li>
+            <li><b>Lantbröd</b><i>68 kr</i><span>Vete och lite dinkel, krispig skorpa</span></li>
+            <li><b>Valnötsbröd</b><i>78 kr</i><span>Lantbrödet med rostade valnötter</span></li>
+            <li><b>Fröknäcke</b><i>55 kr</i><span>En påse, ungefär tio bitar</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Bullar och kakor</h3>
+          <ul data-r="lista">
+            <li><b>Kardemummabulle</b><i>38 kr</i><span>Knuten för hand</span><em>Brukar vara slut vid tio på lördagar</em></li>
+            <li><b>Kanelbulle</b><i>36 kr</i><span>Med pärlsocker</span></li>
+            <li><b>Chokladbiskvi</b><i>34 kr</i><span>Mandelbotten och mörk choklad</span></li>
+            <li><b>Havrekaka</b><i>22 kr</i><span>Smörig och seg i mitten</span></li>
+          </ul>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="who" aria-label="Om bageriet">
+    <div class="wrap split">
+      <div class="ph l" data-r="bild" data-foto="Foto kommer: Sara och Ali bakom disken"><img src="https://images.unsplash.com/photo-1554643895-20d00c6cdeda?auto=format&amp;fit=crop&amp;w=900&amp;h=900&amp;q=70" alt="Två bagare som formar bullar vid ett bord" width="900" height="900" loading="lazy"></div>
+      <div class="r">
+        <blockquote>”Vi började baka här för att Möllan saknade ett riktigt rågbröd.”</blockquote>
+        <p>Sara och Ali driver bageriet sedan 2019. Degen sätts kvällen innan och bakas från klockan tre, så det som ligger i disken på morgonen är några timmar gammalt.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cake" id="tarta" aria-labelledby="h-tarta">
+    <div class="wrap split">
+      <div class="ph l" data-r="bild" data-foto="Foto kommer: en tårta från bageriet"><img src="https://images.unsplash.com/photo-1559553156-2e97137af16f?auto=format&amp;fit=crop&amp;w=900&amp;h=1125&amp;q=70" alt="En hembakad tårta med bär på toppen" width="900" height="1125" loading="lazy"></div>
+      <div class="r">
+        <h2 id="h-tarta">Tårta till kalaset</h2>
+        <p class="facts"><span>Från 395 kr för 8 bitar</span><span>Beställ två dagar innan</span><span>Hämtas i butiken</span></p>
+        <p class="intro">Skriv vad du vill ha, så mejlar vi och bekräftar pris och dag innan vi börjar baka.</p>
+        <form id="contact" novalidate>
+          <div class="pair">
+            <div class="field"><label for="cName">Namn</label><input id="cName" aria-describedby="ecName" autocomplete="name"><span class="err" id="ecName"></span></div>
+            <div class="field"><label for="cMail">E-post</label><input id="cMail" aria-describedby="ecMail" type="email" autocomplete="email"><span class="err" id="ecMail"></span></div>
+          </div>
+          <div class="pair">
+            <div class="field"><label for="cDate">Hämtas</label><input id="cDate" aria-describedby="ecDate" type="date"><span class="err" id="ecDate"></span></div>
+            <div class="field"><label for="cSize">Storlek</label>
+              <select id="cSize"><option>8 bitar</option><option>12 bitar</option><option>16 bitar</option><option>Fler, skriv nedan</option></select>
+            </div>
+          </div>
+          <div class="field"><label for="cMsg">Vad vill du ha?</label><span class="hint" id="hMsg">Smak, text på tårtan och allergier</span><textarea id="cMsg" aria-describedby="hMsg ecMsg"></textarea><span class="err" id="ecMsg"></span></div>
+          <div><button class="btn btn-green r-knapp" type="submit">Skicka beställningen</button></div>
+          <p class="status" id="cStatus" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="visit" id="hitta" aria-labelledby="h-hitta">
+    <div class="wrap split">
+      <div class="l">
+        <h2 id="h-hitta">Hitta hit</h2>
+        <address>Vid Möllevångstorget<br>Malmö</address>
+        <a class="maplink r-lank" href="https://www.openstreetmap.org/?mlat=55.5915&amp;mlon=13.0089#map=17/55.5915/13.0089">Öppna i kartan</a>
+        <table class="hours">
+          <caption class="sr">Öppettider</caption>
+          <tbody>
+            <tr><th scope="row">Tisdag–lördag</th><td>7–15</td></tr>
+            <tr class="off"><th scope="row">Söndag och måndag</th><td>Stängt</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <iframe class="map r" title="Karta till Korn &amp; Kaka på Möllan" loading="lazy" width="100%" height="380"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=13.0049%2C55.5895%2C13.0129%2C55.5935&amp;layer=mapnik&amp;marker=55.5915%2C13.0089"></iframe>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap"><div class="row"><span>Korn &amp; Kaka, Möllan, Malmö</span><span>Sidan är gjord av Nordvy UF</span></div></div>
+</footer>
+
+<script src="/assets/kund/rorelse.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
