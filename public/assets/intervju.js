@@ -297,7 +297,7 @@ function offlineTurn(message) {
   const brief = { ...state.brief };
   const field = state.asked[0];
   if (field && !hasValue(brief, field)) {
-    brief[field] = isNegative(message) ? (field === 'referens_ok' ? 'Nej' : 'saknas') : message.slice(0, LIMITS.value);
+    brief[field] = isNegative(message) ? (field === 'referens_ok' ? 'Nej' : field === 'undvik' && /^\s*(nej|nä|inget|ingenting)(?![a-zåäö])(?!.*vet inte)/i.test(message) ? 'Inget särskilt' : 'saknas') : message.slice(0, LIMITS.value);
     if (field === 'logga') brief.logga_status = isSaknas(brief.logga) ? 'saknas' : 'ej verifierad';
   }
   const left = missing(brief);
@@ -322,6 +322,11 @@ async function submitAnswer() {
   userSays(message);
   sendBtn.disabled = true;
   hideComposer();
+  // "Nej" på "Vad vill du ändra?" betyder att allt stämmer. Det är ingen ändring att notera.
+  if (editing && isNegative(message)) {
+    await guideSays('Okej, då låter vi allt vara som det är.');
+    return showSummary();
+  }
   const typing = showTyping();
   const started = Date.now();
 
