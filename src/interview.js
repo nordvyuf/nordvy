@@ -630,7 +630,10 @@ const QUOTA = /4006|daily free allocation|neurons/i;
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 // gemini-2.5-flash finns inte för nya konton (Google svarade 404 i november 2026 och föreslog 3.8).
 // Finns inte den första modellen provas nästa. "gemini-flash-latest" är Googles alias för den senaste Flash.
-export const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+// Är en modell överbelastad (503, vanligt på gratisnivån) provas också nästa. Lite är lättare och oftare ledig.
+export const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest'];
+// Så länge får Gemini hålla på totalt innan Workers AI tar över, så att kunden inte väntar för länge.
+const GEMINI_BUDGET_MS = 9000;
 
 // Telefonnummer och mejladresser skickas aldrig till AI:n. Koden sparar dem direkt ur kundens svar.
 export function redact(text) {
@@ -645,7 +648,7 @@ const redactMessages = (messages) => messages.map((m) => ({ ...m, content: redac
 // så vid fel 400 provas nästa nivå, och sist utan inställning.
 const EFFORTS = ['none', 'low', null];
 
-async function callGemini(env, model, payload, effort) {
+async function callGemini(env, model, payload, effort, ms) {
   const body = {
     model,
     messages: payload.messages,
@@ -659,25 +662,30 @@ async function callGemini(env, model, payload, effort) {
     method: 'POST',
     headers: { authorization: `Bearer ${env.GEMINI_API_KEY}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(14000),
+    signal: AbortSignal.timeout(ms),
   });
 }
 
 export async function runGemini(env, payload, meta = {}) {
   const models = [env.GEMINI_MODEL, ...GEMINI_MODELS].filter((m, i, list) => m && list.indexOf(m) === i);
+  const deadline = Date.now() + GEMINI_BUDGET_MS;
   let last = '';
   for (const model of models) {
     for (const effort of EFFORTS) {
-      const response = await callGemini(env, model, payload, effort);
+      const left = deadline - Date.now();
+      if (left < 1500) throw new Error(`${last || 'gemini'} (tiden slut)`);
+      const response = await callGemini(env, model, payload, effort, left);
       if (response.ok) {
         meta.provider = `gemini:${model}`;
         return response.json();
       }
-      last = `gemini ${model} ${response.status}: ${(await response.text().catch(() => '')).slice(0, 160)}`;
+      last = `gemini ${model} ${response.status}: ${(await response.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160)}`;
       if (response.status === 400) continue; // nivån på tankeprocessen stöds inte, prova nästa
-      break; // 404: modellen finns inte, prova nästa modell. Annat fel: samma sak.
+      break;
     }
-    if (!/ 404:/.test(last)) break; // kvoten slut eller fel nyckel: ingen idé att prova fler modeller
+    // 404: modellen finns inte. 503: modellen är överbelastad. Båda: prova nästa modell.
+    // 429 (kvoten slut) eller 401/403 (fel nyckel): ingen idé att prova fler.
+    if (!/ (404|500|503):/.test(last)) break;
   }
   throw new Error(last || 'gemini: ingen modell');
 }
