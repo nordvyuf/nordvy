@@ -236,7 +236,7 @@ const ABOUT = {
   tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment|fler (böcker|saker|varor)/i,
   mal_med_sidan: /mål|viktigaste|besökare|kunna göra|syfte|sidan ska/i,
   stil: /stil|känsla|känn|färg|utseende|ser ut|design|ton\b|uttryck/i,
-  varfor_valja_oss: /varför|unik|bättre|skiljer|väljer|speciell|särskil|annorlunda|sticker ut/i,
+  varfor_valja_oss: /varför|unik|bättre|bästa|skiljer|väljer|speciell|särskil|annorlunda|sticker ut/i,
   erfarenhet: /hur länge|sedan när|funnits|erfarenhet|år\b|startade|verksamma|hur gammal/i,
   malgrupp: /målgrupp|vilka är era kunder|vem är|kunder är|vilka kunder|vem vänder|vem köper|vilka köper|nå ut till|riktar/i,
   funktioner: /funktion|bokning|boka|kontaktformulär|karta|webshop|ska finnas|på sidan|beställa|köpa direkt|betala/i,
@@ -272,6 +272,8 @@ export function questionFits(field, question) {
 
 // Påståenden som AI:n inte kan veta. Meningen tas bort, så att inget påhitt når kunden.
 const UNKNOWN_CLAIM = /(redan (taget|upptagen|registrerad)|är (ledig|upptagen|tillgänglig)|finns inte|kostar|\d+\s*(kr|kronor)|på \d+ dagar|garanterar|lovar)/i;
+// I en fråga är bara påståenden om domäner, tider och löften fel. Priser får AI:n fråga om.
+const UNKNOWN_FACT = /(redan (taget|upptagen|registrerad)|är (ledig|upptagen|tillgänglig)|finns inte|på \d+ dagar|garanterar|lovar)/i;
 
 const STEM = (w) => w.toLocaleLowerCase('sv-SE').replace(/[^a-zåäö0-9]/g, '').slice(0, 5);
 
@@ -312,7 +314,9 @@ export function tidyReply(raw, message = '') {
     sentences.push(...safe);
   }
   // En fråga som själv gör ett påstående ("är redan taget. Vill ni…") behålls bara om påståendet är en egen mening.
-  if (sentences.length === 1 && UNKNOWN_CLAIM.test(sentences[0])) return '';
+  // En fråga om kundens egna priser ("Vad kostar doftljusen?") är ingen gissning och får vara kvar.
+  const claim = /\?\s*$/.test(sentences[0] || '') ? UNKNOWN_FACT : UNKNOWN_CLAIM;
+  if (sentences.length === 1 && claim.test(sentences[0])) return '';
   // Reaktioner som bara återberättar kundens svar tas bort ("Malmö är er bas.").
   if (message) {
     const kept = sentences.filter((s) => s.includes('?') || !restates(s, message));
