@@ -127,7 +127,7 @@ Först när Måns säger till:
 2. Kontrollera allt en gång till på förhandsvisningen.
 3. Slå ihop pull requesten och kontrollera den riktiga adressen efter publiceringen.
 
-UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Tills `nordvyuf.se` är kopplad ligger sidan på `nordvy.nordvyuf.workers.dev/kund/<namn>/`. Säg det till kunden.
+UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Den adressen fungerar inte än. Tills den gör det ligger sidan på `nordvyuf.se/kund/<namn>/`. Säg det till kunden.
 
 ## Provsidor
 

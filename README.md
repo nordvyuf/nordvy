@@ -73,7 +73,6 @@ Efter en publicering: öppna `/api/health`. Den ska svara `"ai": true, "mail": t
 
 ## Kvar att göra
 
-- Koppla domänen `nordvyuf.se` under Settings → Domains & Routes i Cloudflare. Fyll sedan i `SITE_URL` i `wrangler.jsonc`.
 - Lägg till företagets telefonnummer i `index.html` när det finns.
 - Bilduppladdning i självintervjun och en adminsida med alla underlag finns inte än. Underlagen kommer i dag bara som mejl.
 

@@ -28,8 +28,9 @@
     "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     // Google Apps Script som mejlar formulär och underlag till Nordvyuf@gmail.com.
     "CONTACT_ENDPOINT": "https://script.google.com/macros/s/AKfycbyaHYnnZe3xiOlYQmhCcOokTQEq14nSBq7rZo2KAWSxX_n0oknz774UO0e-Zm9jnpz1/exec",
-    // Fyll i när domänen är kopplad, t.ex. "https://nordvyuf.se". Tom = adressen besökaren använder.
-    "SITE_URL": ""
+    // Den riktiga adressen, som används i delningsbilder, canonical, robots.txt och sitemap.
+    // Tom = adressen besökaren använder (så är det på förhandsvisningarna).
+    "SITE_URL": "https://nordvyuf.se"
   },
 
   // Förhandsvisningar (en per förfrågan på GitHub) byggs med "wrangler preview",
