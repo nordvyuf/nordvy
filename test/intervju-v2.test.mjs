@@ -160,3 +160,23 @@ test('finns inte Gemini-modellen provas nästa, och en tankenivå som inte stöd
     globalThis.fetch = realFetch;
   }
 });
+
+test('är en Gemini-modell överbelastad (503) provas nästa', async () => {
+  const { runGemini } = await import('../src/interview.js');
+  const realFetch = globalThis.fetch;
+  const tried = [];
+  try {
+    globalThis.fetch = async (url, init) => {
+      const model = JSON.parse(init.body).model;
+      tried.push(model);
+      if (model !== 'gemini-flash-lite-latest') return new Response('{"error":{"code":503,"message":"high demand"}}', { status: 503 });
+      return new Response(JSON.stringify({ choices: [{ message: { content: '{"ok":1}' } }] }), { status: 200 });
+    };
+    const meta = {};
+    await runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }, meta);
+    assert.deepEqual(tried, ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']);
+    assert.equal(meta.provider, 'gemini:gemini-flash-lite-latest');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
