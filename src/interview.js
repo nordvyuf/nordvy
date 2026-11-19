@@ -28,6 +28,9 @@ import {
   recommendPackage,
   packageLine,
   sellsOnlineOnly,
+  profileOf,
+  questionFor,
+  PROFILES,
 } from '../public/assets/shared/brief.js';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -48,6 +51,8 @@ SÅ SKRIVER DU
 - Är något kunden skrivit inte ett svar på frågan, säg det vänligt och ställ frågan igen med andra ord. Aldrig "Det låter inte som…".
 
 FRÅGORNA SKA BYGGA PÅ DET KUNDEN BERÄTTAT
+- Anpassa frågan efter FÖRETAGSTYP. Ett UF-företag drivs av gymnasieelever: korta, enkla frågor med ett exempel, aldrig något som kräver att man kan webb eller företagsekonomi. Ett företag som säljer till andra företag tål mer precisa frågor.
+- Varje fält under ÅTERSTÅR har ett förslag på fråga. Utgå från förslaget, men gör det personligt med det du vet om företaget (vad de säljer, till vem och var). Byt aldrig ämne från fältet.
 - Fråga aldrig om något kunden redan har svarat på, inte ens med andra ord. Täcker ett svar flera fält (t.ex. "vi gör en kockbok" svarar både på vad de gör och vad de säljer), spara alla och gå vidare.
 - Gör frågan specifik för just det här företaget. Använd det du vet: vad de säljer, till vem och var. Allmänna frågor är sista utvägen.
 - Passar ett fält dåligt för verksamheten, formulera frågan så att kunden lätt kan säga nej. Exempel för någon som säljer en bok: "Säljer ni bara online, eller har ni en butik med öppettider?"
@@ -145,14 +150,20 @@ const short = (v, n = 110) => {
 
 export function buildTurnMessages({ brief, history, asked, message, edit }) {
   const left = missing(brief);
+  const profile = profileOf(brief);
   const saved = KEYS.filter((k) => hasValue(brief, k) && FIELD[k].level > 0).map((k) => `- ${k}: «${short(brief[k])}»`);
-  const todo = left.map((k) => `- ${k}: ${FIELD[k].about}`);
+  // Varje fält får checklistans fråga för just den här typen av företag som förslag. AI:n får formulera om den.
+  // Bara de närmaste fälten följer med: frågan gäller alltid det första, och kortare prompt kostar mindre.
+  const todo = left.slice(0, 5).map((k) => `- ${k}: ${FIELD[k].about} Förslag: "${questionFor(k, brief).question}"`);
+  if (left.length > 5) todo.push(`- (och ${left.length - 5} fält till efter de här)`);
+  const who = PROFILES[profile].hint ? `FÖRETAGSTYP: ${PROFILES[profile].label}. ${PROFILES[profile].hint}` : 'FÖRETAGSTYP: inte klar än.';
   // De senaste fyra frågorna och svaren räcker för att inte upprepa sig. Det som sparats står ovanför.
   const talk = history.slice(-8).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 220)}`);
   const task = edit
     ? `Kunden vill rätta något i det som redan är sparat. Lägg de ändrade fälten i "saves" med de nya värdena. Sätt "reply" till en kort bekräftelse utan fråga och "asked" till en tom sträng.`
     : `Du frågade senast om: ${asked.length ? asked.join(', ') : '(inget)'}.`;
   const content = [
+    who,
     `SPARAT HITTILLS\n${saved.join('\n') || '- (inget ännu)'}`,
     `ÅTERSTÅR (i den ordning du ska fråga)\n${todo.join('\n') || '- (inget)'}`,
     `SENASTE SAMTALET\n${talk.join('\n') || '(samtalet har just börjat)'}`,
@@ -215,6 +226,11 @@ const FILLER =
 // som AI:n säger att den frågar om, skulle kundens svar sparas på fel plats.
 const ABOUT = {
   foretagsnamn: /heter|namn/i,
+  foretagstyp: /typ av företag|vilket av|passar bäst|vilken sorts/i,
+  priser: /pris|kostar|kostnad|timpris/i,
+  befintlig_sida: /hemsida i dag|hemsida idag|befintlig|nuvarande (hemsida|sida)|redan en (hemsida|sida)/i,
+  sprak: /språk|engelska|svenska/i,
+  bestallning: /beställer|betalar|betala|swish|leverans|frakt|hämta/i,
   bransch: /gör ni|^vad gör |verksamhet|bransch|vad är ni|beskriv/i,
   ort_omrade: /\bvar\b|\bort\b|område|stad|ligger|finns ni|verksam|online|sverige|hela landet|lokalt/i,
   tjanster_produkter: /tjänst|produkt|erbjud|behandling|sälj|meny|bakar|lagar|sortiment|fler (böcker|saker|varor)/i,
@@ -359,15 +375,35 @@ const FOLLOW_UPS = {
   },
   kontakt: {
     // Kunden har bara sagt hur man når dem ("nummer och mejl"), inte själva uppgifterna.
-    needs: (t) => !/\d{3}|@/.test(String(t || '')),
-    question: 'Vilket telefonnummer och vilken mejladress ska stå på sidan? Skriv dem gärna här, så kommer de med direkt.',
+    // Har företaget en lokal behövs också adressen, så att kunderna hittar dit.
+    needs: (t, brief) => !/\d{3}|@/.test(String(t || '')) || (profileOf(brief) === 'lokal' && !hasStreet(t)),
+    // Ett första svar med telefon eller mejl följer med när kunden sedan skriver adressen.
+    keep: (t) => /\d{3}|@/.test(String(t || '')),
+    question: (t) =>
+      /\d{3}|@/.test(String(t || ''))
+        ? 'Vilken adress ska stå på sidan, så att kunderna hittar er?'
+        : 'Vilket telefonnummer och vilken mejladress ska stå på sidan? Skriv dem gärna här, så kommer de med direkt.',
   },
   sociala_lankar: {
     // "Vi har allt" säger inte vilka konton det gäller.
     needs: (t) => !/@|https?:|www\.|\.(com|se|nu)\b|insta|facebook|\bfb\b|linkedin|tiktok|youtube|twitter|\bx\b|snapchat|pinterest/i.test(String(t || '')),
     question: 'Vilka konton har ni? Skriv namnen eller länkarna, till exempel @företaget på Instagram, så kommer de med på sidan.',
   },
+  priser: {
+    // Den som säljer något behöver priser på sidan. Utan siffror frågar vi en gång till.
+    needs: (t, brief) => ['uf', 'webshop', 'lokal'].includes(profileOf(brief)) && !/\d/.test(String(t || '')) && !NO_PRICES.test(String(t || '')),
+    question: 'Skriv gärna några priser, till exempel "Doftljus 149 kr". Vill ni inte visa priser går det också bra.',
+  },
+  oppettider: {
+    // En lokal behöver tider på sidan, inte bara "vanliga tider".
+    needs: (t, brief) => profileOf(brief) === 'lokal' && !/\d/.test(String(t || '')) && !/online|inga fasta|bokning|efter överenskommelse/i.test(String(t || '')),
+    question: 'Vilka dagar och tider har ni öppet? Till exempel "tis–fre 10–18, lör 10–14".',
+  },
 };
+
+const NO_PRICES = /inte (visa|ha|skriva)|inga priser|offert|varierar|olika|efter överenskommelse|gratis/i;
+// Gatuadress: ett ord följt av ett nummer, till exempel "Bangatan 4".
+const hasStreet = (t) => /[a-zåäö]{3,}\s+\d{1,4}[a-z]?\b/i.test(String(t || ''));
 
 // "Nej, inget särskilt" på frågan om vad de vill undvika är ett svar, inte något som saknas.
 // "Vet inte" är fortfarande "saknas".
@@ -375,8 +411,14 @@ const NOTHING = /^\s*(nej|nä|inget|ingenting)(?![a-zåäö])(?!.*vet inte)/i;
 
 // Webbadress i ett svar, till exempel "www.spiideo.com" eller "spiideo.se".
 const DOMAIN = /\b(?:www\.)?[a-z0-9-]{2,}\.(?:se|com|nu|net|org|io|eu|info|biz|co)\b/i;
-// Företaget verkar utanför Sverige. Då kan sidan behöva finnas på engelska.
-const INTERNATIONAL = /(hela världen|världen över|internationell|globalt|global\b|europa|norden|utomlands|worldwide|international)/i;
+
+// "www.Spiideo.com" och "spiideo.com" är samma adress.
+const lowerDomain = (v) => (String(v || '').match(DOMAIN)?.[0] || '').toLowerCase().replace(/^www\./, '');
+
+const followQuestion = (field, message, brief) => {
+  const q = FOLLOW_UPS[field].question;
+  return typeof q === 'function' ? q(message, brief) : q;
+};
 
 const words = (s) => new Set(String(s).toLocaleLowerCase('sv-SE').split(/[^a-zåäöé0-9@.]+/).filter((w) => w.length >= 3));
 
@@ -418,7 +460,8 @@ export function applyTurn(state, ai) {
   // Ett vagt första svar ("allt möjligt", "att tjäna pengar") följer inte med när kunden har gett ett bättre.
   const carryFor = (field) => {
     if (state.carryField !== field || !state.carry) return '';
-    return FOLLOW_UPS[field]?.needs(state.carry, state.brief) ? '' : state.carry;
+    const rule = FOLLOW_UPS[field];
+    return rule?.needs(state.carry, state.brief) && !rule.keep?.(state.carry) ? '' : state.carry;
   };
 
   // Kunden frågar oss om pris eller tid i stället för att svara. Svara kort och ställ samma fråga igen,
@@ -498,12 +541,14 @@ export function applyTurn(state, ai) {
   for (const s of saves) {
     if (s.field === 'logga' && !isSaknas(s.value)) addIssue('logga', 'Kunden har en logga och mejlar den. Kontrollera att den kommit in.');
     if (s.field === 'bilder' && !isSaknas(s.value)) addIssue('bilder', 'Kunden har bilder och mejlar dem. Kontrollera att de kommit in.');
-    if (s.field === 'doman_onskemal' && DOMAIN.test(s.value)) {
+    // Samma adress som hemsidan de redan har är redan uppföljd.
+    const sameAsSite = (v) => lowerDomain(v) && lowerDomain(v) === lowerDomain(brief.befintlig_sida);
+    if (s.field === 'doman_onskemal' && DOMAIN.test(s.value) && !sameAsSite(s.value)) {
       const domain = s.value.match(DOMAIN)[0];
       addIssue('annat', `Kunden nämner ${domain}. Kolla om de redan har en sida där, och vad som ska hända med den och domänen.`);
     }
-    if (s.field === 'ort_omrade' && INTERNATIONAL.test(s.value)) {
-      addIssue('annat', `Kunden verkar utanför Sverige ("${s.value.slice(0, 40)}"). Fråga om sidan ska finnas på engelska.`);
+    if (s.field === 'befintlig_sida' && DOMAIN.test(s.value)) {
+      addIssue('annat', `Kunden har en hemsida i dag: ${s.value.match(DOMAIN)[0]}. Titta på den innan ni bygger, och fråga vad som ska hända med den.`);
     }
   }
   // Egna texter och omdömen finns, men de har inte skickats. Be kunden mejla dem.
@@ -529,7 +574,7 @@ export function applyTurn(state, ai) {
   if (!left.length) return { brief, issues, saves, reply: null, asked: [], done: true, missing: left };
 
   if (vagueField) {
-    return { brief, issues, saves, reply: FOLLOW_UPS[vagueField].question, asked: [vagueField], done: false, missing: left };
+    return { brief, issues, saves, reply: followQuestion(vagueField, message, state.brief), asked: [vagueField], done: false, missing: left };
   }
   // AI:ns fråga används om den handlar om något som fortfarande saknas. Fältet bestäms av vad frågan
   // faktiskt frågar om, så att kundens svar sparas på rätt plats.
@@ -543,9 +588,9 @@ export function applyTurn(state, ai) {
   } else {
     reply = reply.slice(0, reply.lastIndexOf('?') + 1);
   }
-  // Fält med svarsknappar får checklistans fråga, så att frågan passar knapparna.
+  // Fält där knapparna är själva valen får checklistans fråga, så att frågan passar knapparna.
   // AI:n frågade annars "Ska kunderna kunna boka tid?" medan knapparna gällde alla funktioner.
-  if (FIELD[asked]?.chips) reply = fallbackQuestion(asked, NEED.length - left.length, brief);
+  if (questionFor(asked, brief)?.pick) reply = fallbackQuestion(asked, NEED.length - left.length, brief);
   return { brief, issues, saves, reply, asked: [asked], done: false, missing: left };
 }
 
@@ -569,7 +614,56 @@ async function runModel(env, payload) {
 // Dagens gratiskvot för Workers AI är slut. Då är det ingen idé att försöka igen förrän nästa dygn.
 const QUOTA = /4006|daily free allocation|neurons/i;
 
-async function askJson(env, messages, schema, maxTokens, errors = []) {
+// Google Gemini via deras OpenAI-kompatibla adress. Används först när GEMINI_API_KEY finns
+// (en hemlighet i Cloudflare). Svarar Gemini inte, till exempel när dagens gratiskvot är slut,
+// tar Workers AI över.
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+export const GEMINI_MODEL = 'gemini-2.5-flash';
+
+// Telefonnummer och mejladresser skickas aldrig till AI:n. Koden sparar dem direkt ur kundens svar.
+export function redact(text) {
+  return String(text ?? '')
+    .replace(/[^\s@,;:<>()«»"]+@[^\s@,;:<>()«»"]+\.[a-z]{2,}/gi, '[mejl]')
+    .replace(/(?:\+46|(?<![\d])0)[\d\s-]{6,14}\d/g, '[telefon]');
+}
+const REDACTED = /\[(mejl|telefon)\]/;
+const redactMessages = (messages) => messages.map((m) => ({ ...m, content: redact(m.content) }));
+
+async function runGemini(env, payload, withoutThinking = true) {
+  const body = {
+    model: env.GEMINI_MODEL || GEMINI_MODEL,
+    messages: payload.messages,
+    max_tokens: payload.max_tokens,
+    temperature: payload.temperature,
+    response_format: { type: 'json_object' },
+    // Ingen "tankeprocess": den gör svaren långsamma och drar mer av kvoten.
+    ...(withoutThinking ? { reasoning_effort: 'none' } : {}),
+  };
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.GEMINI_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (response.status === 400 && withoutThinking) return runGemini(env, payload, false);
+  if (!response.ok) throw new Error(`gemini ${response.status}: ${(await response.text().catch(() => '')).slice(0, 200)}`);
+  return response.json();
+}
+
+async function askJson(env, rawMessages, schema, maxTokens, errors = []) {
+  const messages = redactMessages(rawMessages);
+  if (env?.GEMINI_API_KEY) {
+    try {
+      const json = extractJson(await runGemini(env, { messages, max_tokens: maxTokens, temperature: 0.4 }));
+      if (json && typeof json === 'object') return json;
+      errors.push('gemini: inget json i svaret');
+    } catch (error) {
+      const message = String(error?.message || error).slice(0, 300);
+      errors.push(message);
+      console.warn('gemini call failed', message);
+    }
+  }
+  if (!env?.AI) return null;
   const attempts = [
     { messages, max_tokens: maxTokens, temperature: 0.4, response_format: { type: 'json_schema', json_schema: schema } },
     { messages, max_tokens: maxTokens, temperature: 0.4 },
@@ -606,7 +700,8 @@ function readState(body) {
 
 // Enkla fält där checklistans fråga räcker och svaret sparas som det är. Mellan två sådana
 // frågor behövs ingen AI, vilket ungefär halverar vad en intervju drar av dagens AI-kvot.
-const PLAIN = new Set(['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok']);
+const PLAIN = new Set(['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok', 'befintlig_sida', 'sprak']);
+const hasModel = (env) => Boolean(env?.AI || env?.GEMINI_API_KEY);
 
 export function needsAi(state) {
   if (state.edit) return true;
@@ -621,10 +716,12 @@ export async function interviewTurn(env, body) {
   if (!state.message) return { ok: false, error: 'empty_message' };
   let ai = null;
   const errors = [];
-  const useAi = Boolean(env?.AI) && needsAi(state);
+  const useAi = hasModel(env) && needsAi(state);
   if (useAi) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors);
+  // Ett värde där AI:n bara ser "[mejl]" eller "[telefon]" sparas inte. Koden sparar det kunden skrev.
+  if (ai && Array.isArray(ai.saves)) ai.saves = ai.saves.filter((s) => !REDACTED.test(String(s?.value || '')));
   const result = applyTurn(state, ai);
-  const out = { ok: true, ...result, source: ai ? 'ai' : useAi || !env?.AI ? 'fallback' : 'app' };
+  const out = { ok: true, ...result, source: ai ? 'ai' : useAi || !hasModel(env) ? 'fallback' : 'app' };
   // Felsökning: med debug: true följer AI:ns oredigerade förslag med (eller felet), så att filtren går att justera.
   if (body?.debug === true) out.debug = ai ? { asked: ai.asked, reply: ai.reply, saves: ai.saves } : { errors };
   return out;
@@ -632,7 +729,7 @@ export async function interviewTurn(env, body) {
 
 export async function draftCopy(env, body) {
   const brief = cleanBrief(body?.brief);
-  if (!env?.AI || !hasAnswer(brief, 'bransch')) return { ok: true, copy: null, source: 'fallback' };
+  if (!hasModel(env) || !hasAnswer(brief, 'bransch')) return { ok: true, copy: null, source: 'fallback' };
   const copy = cleanCopy(await askJson(env, buildCopyMessages(brief), COPY_SCHEMA, 520), brief.foretagsnamn);
   return { ok: true, copy, source: copy ? 'ai' : 'fallback' };
 }
