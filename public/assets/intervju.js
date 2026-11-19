@@ -24,6 +24,8 @@ import {
   fallbackQuestion,
   recommendPackage,
   briefToText,
+  plan,
+  questionFor,
 } from './shared/brief.js';
 import { renderPreview, createWindow } from './preview.js';
 import { openBooking, CAL_ACCOUNT } from './cal.js';
@@ -198,16 +200,20 @@ function updatePreview(animate = true) {
 }
 
 function renderChecklist() {
+  // Antalet punkter beror på typen av företag: ett UF-företag får färre och enklare frågor.
+  const asks = plan(state.brief);
   const left = missing(state.brief);
-  const done = NEED.length - left.length;
-  bar.style.setProperty('--p', (done / NEED.length).toFixed(3));
+  const done = asks.length - left.length;
+  bar.style.setProperty('--p', (done / asks.length).toFixed(3));
   bar.setAttribute('aria-valuenow', String(done));
-  stepLabel.textContent = state.stage === 'done' ? 'Underlaget är skickat' : `${done} av ${NEED.length} punkter`;
+  bar.setAttribute('aria-valuemax', String(asks.length));
+  stepLabel.textContent = state.stage === 'done' ? 'Underlaget är skickat' : `${done} av ${asks.length} punkter`;
 
   const dl = $('#fields');
   dl.replaceChildren();
   for (const f of FIELDS) {
     if (f.level === 0 && !hasValue(state.brief, f.key)) continue;
+    if (f.level > 0 && !asks.includes(f.key)) continue;
     const v = String(state.brief[f.key] || '').trim();
     const row = node('div', `f${v ? (isSaknas(v) ? ' gap' : ' has') : ''}${f.level === 1 ? ' req' : ''}`);
     row.append(node('i'), node('dt', '', f.label), node('dd', v ? '' : 'none', v ? (isSaknas(v) ? 'Saknas' : v) : 'Inte frågat än'));
@@ -233,7 +239,8 @@ function hideComposer() {
 }
 
 function setupComposer() {
-  const field = FIELD[state.asked[0]];
+  // Svarsknapparna beror på typen av företag (ett UF-företag får andra val än en salong).
+  const field = questionFor(state.asked[0], state.brief);
   composer.hidden = false;
   legal.hidden = false;
   input.value = '';
@@ -430,7 +437,7 @@ function showStart() {
   const text = node('span');
   text.append(
     node('b', '', 'Jag godkänner att mina svar behandlas. '),
-    'Svaren tolkas av en AI-tjänst hos Cloudflare och mejlas till Nordvy när du skickar in dem. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter.',
+    'Svaren tolkas av en AI-tjänst (Google Gemini eller Cloudflare Workers AI) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n, men Google kan använda resten av texten för att förbättra sina tjänster. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter.',
   );
   consent.append(box, text);
   const error = node('span', 'err');
