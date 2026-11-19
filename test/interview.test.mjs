@@ -28,10 +28,10 @@ import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
 
-test('checklistan: 20 punkter ska frågas, 6 räcker för ett utkast', () => {
-  assert.equal(NEED.length, 20);
+test('checklistan: 25 möjliga punkter, 23 innan typen är känd, 6 räcker för ett utkast', () => {
+  assert.equal(NEED.length, 25);
   assert.equal(CORE.length, 6);
-  assert.equal(missing({}).length, 20);
+  assert.equal(missing({}).length, 23);
   assert.equal(missing(full()).length, 0);
   assert.equal(coreDone({ foretagsnamn: 'A', bransch: 'B', ort_omrade: 'C', tjanster_produkter: 'D', mal_med_sidan: 'E', stil: 'F' }), true);
 });
@@ -98,8 +98,9 @@ test('AI-text rensas från markering och för långa fält', () => {
 test('utan AI sparas svaret på frågan och nästa punkt frågas', () => {
   const r = applyTurn({ brief: {}, issues: [], asked: ['foretagsnamn'], askCount: 1, message: 'Salong Ask' }, null);
   assert.equal(r.brief.foretagsnamn, 'Salong Ask');
-  assert.deepEqual(r.asked, ['bransch']);
-  assert.ok(r.reply.includes('Vad gör ni?'));
+  // Efter namnet kommer frågan om typ av företag, som styr resten av intervjun.
+  assert.deepEqual(r.asked, ['foretagstyp']);
+  assert.equal(r.reply, 'Vilket av de här passar bäst in på er?');
   assert.equal(r.done, false);
 });
 
@@ -191,8 +192,8 @@ test('rubriker som bara upprepar företagsnamnet slängs', () => {
 test('trasigt AI-svar ger ändå en riktig fråga', () => {
   const r = applyTurn({ brief: {}, asked: ['foretagsnamn'], message: 'Fogen Snickeri' }, { saves: 'nej', reply: 'Tack', asked: 'finns_inte' });
   assert.equal(r.brief.foretagsnamn, 'Fogen Snickeri');
-  assert.deepEqual(r.asked, ['bransch']);
-  assert.match(r.reply, /Vad gör ni\?/);
+  assert.deepEqual(r.asked, ['foretagstyp']);
+  assert.match(r.reply, /passar bäst/);
 });
 
 test('logga och bilder skapar uppföljning åt teamet', () => {
@@ -444,7 +445,8 @@ test('ett vagt första svar följer inte med när kunden ger ett bättre', () =>
 test('reservfrågorna anpassas efter det kunden sagt', () => {
   assert.match(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Vi gör doftljus' }), /produkter säljer ni/);
   assert.match(fallbackQuestion('oppettider', 0, { ort_omrade: 'Helsingborg men vi säljer online också' }), /bara online/);
-  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Frisörsalong' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
+  // En salong har en lokal: frågan gäller det som ska synas på sidan, inte produkter att sälja.
+  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Frisörsalong' }), 'Vilka tjänster eller varor ska synas på sidan? Skriv dem som en lista.');
 });
 
 test('frågar kunden om pris två gånger i rad fastnar inte intervjun', () => {
@@ -457,7 +459,7 @@ test('frågar kunden om pris två gånger i rad fastnar inte intervjun', () => {
 });
 
 test('en tjänst som också finns online får inte produktfrågan', () => {
-  assert.equal(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Personlig tränare', ort_omrade: 'Malmö, mostly online coaching too' }), 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.');
+  assert.doesNotMatch(fallbackQuestion('tjanster_produkter', 0, { bransch: 'Personlig tränare', ort_omrade: 'Malmö, mostly online coaching too' }), /produkter säljer ni/);
 });
 
 test('AI:n används bara där den gör nytta, så att dagens kvot räcker till fler intervjuer', () => {
