@@ -31,6 +31,11 @@ Checklistan och reglerna kommer från dokumentet "Nordvy – intervjuchatten". D
 - **Vaga svar** ger en följdfråga, högst en gång. Sedan sparas det kunden sa.
 - **Intervjun fungerar utan AI.** Svarar inte Workers AI, eller är dagens gratiskvot slut, ställs checklistans färdiga frågor i stället.
 - **Bilder och logga** laddas inte upp i chatten. Kunden mejlar dem, och det läggs som en uppföljningspunkt i underlaget.
+- **Vet kunden inte** ("vet inte", "ingen aning", en motfråga) ställs en enklare fråga om samma sak, en gång (`altQuestion` i `brief.js`), till exempel "Vad brukar kunderna säga att de gillar hos er?". Vet de inte då heller sparas "saknas" och teamet får en punkt att ta i samtalet.
+- **Ändra förra svaret:** knappen under svarsrutan tar bort det senaste svaret och lägger det i rutan igen, så att kunden kan rätta det. Upp till tolv steg bakåt.
+- **Förloppet** visas som fyra delar ("Del 2 av 4: Hur sidan ska bli", `PHASES`), inte som antal punkter.
+- **Intervjun tar slut av sig själv:** när allt för typen av företag är besvarat, när kunden säger att de vill sluta ("jag orkar inte mer", "sluta"), eller efter `MAX_ANSWERS` (36) svar. Det som saknas blir en punkt för teamet.
+- **Fliken "Dina svar"** visar bara det kunden har svarat. Teamets uppföljningspunkter visas inte för kunden, de står i underlaget.
 - **Frågorna beror på typen av företag.** Efter namnet frågar chatten vilken typ av företag det är (UF-företag, butik/café/salong, hantverk, säljer på nätet, säljer till andra företag eller annat). Står "UF" i namnet hoppas frågan över. Typen styr vilka fält som frågas (`SKIP`), hur frågorna och knapparna ser ut (`VIEW`) och vad som krävs innan svaret godtas (`FOLLOW_UPS` i `src/interview.js`, till exempel priser för den som säljer och adress för den som har en lokal). Ett UF-företag får 17 korta frågor med exempel, en salong 23.
 - **Kontaktuppgifter skickas aldrig till AI:n.** Telefonnummer och mejladresser byts mot `[telefon]` och `[mejl]` innan prompten skickas (`redact` i `src/interview.js`). Koden sparar dem direkt ur kundens svar.
 
@@ -42,7 +47,8 @@ Intervjun provar AI-tjänsterna i tur och ordning, högst 7 sekunder totalt (`PR
 
 1. **Groq** (`GROQ_API_KEY`): `openai/gpt-oss-120b` och sedan `llama-3.3-70b-versatile`. Gratis utan betalkort och mycket snabb. Varje modell har en egen dygnskvot.
 2. **Google Gemini** (`GEMINI_API_KEY`): `gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-3.8-flash` (`GEMINI_MODEL` kan lägga till en egen först). Gratisnivån var i november 2026 ofta överbelastad (503) eller slut (429). `gemini-2.5-flash` finns inte för nya konton.
-3. **Workers AI**, som alltid finns, och sist checklistans färdiga frågor.
+3. **Egen server** (`LOCAL_AI_URL`, och `LOCAL_AI_MODEL` och `LOCAL_AI_KEY` om det behövs): en OpenAI-kompatibel adress (https) till en egen modell, till exempel Ollama med `qwen2.5:7b-instruct` på en dator med grafikkort, nådd via Cloudflare Tunnel. Utan grafikkort blir svaren för långsamma för en chatt.
+4. **Workers AI**, som alltid finns, och sist checklistans färdiga frågor.
 
 En tjänst används bara när dess nyckel finns. Svarar en modell 429 (kvoten slut) eller 503 (överbelastad) pausas den i 5–15 minuter, så att kunderna inte väntar på den vid varje fråga. `/api/health` visar `groq` och `gemini`, och med `debug: true` i anropet till `/api/interview/turn` visar `provider` vilken AI som svarade och `errors` varför de före inte gjorde det.
 
