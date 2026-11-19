@@ -1,7 +1,7 @@
 // Fel från en riktig självintervju 19 november: ett internationellt sportteknikföretag (B2B).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NEED, draftModel, briefToText, parseServices } from '../public/assets/shared/brief.js';
+import { NEED, draftModel, briefToText, parseServices, plan } from '../public/assets/shared/brief.js';
 import { applyTurn } from '../src/interview.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
@@ -59,10 +59,11 @@ test('egna texter, omdömen, en befintlig domän och en internationell kund blir
   assert.match(texts.issues.map((i) => i.text).join(' '), /egna texter.*mejla/);
   const domain = applyTurn({ brief: { ...full(), doman_onskemal: '' }, asked: ['doman_onskemal'], askCount: 1, message: 'www.spiideo.com' }, null);
   assert.match(domain.issues.map((i) => i.text).join(' '), /spiideo\.com.*redan har en sida/);
-  const world = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'B' }, asked: ['ort_omrade'], askCount: 1, message: 'över hela världen' }, null);
-  assert.match(world.issues.map((i) => i.text).join(' '), /engelska/);
-  const local = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'B' }, asked: ['ort_omrade'], askCount: 1, message: 'Lund' }, null);
-  assert.equal(local.issues.length, 0);
+  // En kund utanför Sverige får frågan om språk, även om typen annars inte får den.
+  assert.ok(plan({ foretagsnamn: 'A', bransch: 'Frisörsalong', ort_omrade: 'över hela världen' }).includes('sprak'));
+  assert.ok(!plan({ foretagsnamn: 'A', bransch: 'Frisörsalong', ort_omrade: 'Lund' }).includes('sprak'));
+  const site = applyTurn({ brief: { ...full(), befintlig_sida: '' }, asked: ['befintlig_sida'], askCount: 1, message: 'www.spiideo.com' }, null);
+  assert.match(site.issues.map((i) => i.text).join(' '), /hemsida i dag: www\.spiideo\.com/);
 });
 
 test('utkastet för ett internationellt B2B-företag: ingen karta, ett möte i stället för en tid, en rubrik med målgruppen', () => {

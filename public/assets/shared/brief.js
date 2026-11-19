@@ -21,18 +21,24 @@ export const INDUSTRIES = {
 };
 
 // nivå 1 = obligatorisk, 2 = ska frågas (svar eller "saknas"), 0 = fylls i av appen.
-// Ordningen är den vi frågar i: de sex första räcker för ett första utkast.
+// Ordningen är den vi frågar i. Vilka fält som frågas beror på typen av företag (se PLAN nedan).
+// pick: svarsknapparna är själva valen, så frågan måste alltid vara checklistans (inte AI:ns ord).
 export const FIELDS = [
   { key: 'foretagsnamn', label: 'Företagsnamn', level: 1, about: 'Företagets namn.', question: 'Vad heter ditt företag?' },
+  { key: 'foretagstyp', label: 'Typ av företag', level: 1, about: 'Vilken sorts företag det är. Styr vilka frågor som ställs.', question: 'Vilket av de här passar bäst in på er?', chips: ['UF-företag', 'Butik, café eller salong', 'Hantverk eller tjänster hos kunden', 'Säljer på nätet', 'Säljer till andra företag', 'Annat'], pick: true },
   { key: 'bransch', label: 'Bransch', level: 1, about: 'Vad de gör, i en mening.', question: 'Vad gör ni? Beskriv det gärna i en mening.' },
   { key: 'ort_omrade', label: 'Ort / område', level: 1, about: 'Var de verkar och var de vill synas.', question: 'Var finns ni, och i vilket område vill ni synas?' },
   { key: 'tjanster_produkter', label: 'Tjänster / produkter', level: 1, about: 'Lista VARJE tjänst eller produkt separat: namn och kort beskrivning. Pris bara om kunden själv anger det.', question: 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.' },
-  { key: 'mal_med_sidan', label: 'Mål med sidan', level: 1, about: 'Boka tid, beställa, ringa, visa arbeten eller bara visa information.', question: 'Vad är det viktigaste en besökare ska kunna göra på sidan?', chips: ['Boka tid', 'Beställa eller köpa', 'Ringa eller mejla', 'Se våra arbeten', 'Hitta information'], multi: true },
+  { key: 'priser', label: 'Priser', level: 2, about: 'Priser som ska synas på sidan, exakt som kunden anger. Eller att de inte vill visa priser.', question: 'Vad kostar det? Skriv de priser som ska synas, eller säg att ni inte vill visa priser.', chips: ['Vi visar inga priser'] },
+  { key: 'mal_med_sidan', label: 'Mål med sidan', level: 1, about: 'Boka tid, beställa, ringa, visa arbeten eller bara visa information.', question: 'Vad är det viktigaste en besökare ska kunna göra på sidan?', chips: ['Boka tid', 'Beställa eller köpa', 'Ringa eller mejla', 'Se våra arbeten', 'Hitta information'], multi: true, pick: true },
   { key: 'stil', label: 'Stil', level: 1, about: 'Känsla, färger och gärna sidor de gillar.', question: 'Vilken känsla ska sidan ha? Nämn gärna färger eller en sida du gillar.', chips: ['Varm och personlig', 'Ren och modern', 'Exklusiv', 'Lekfull', 'Naturnära'] },
   { key: 'varfor_valja_oss', label: 'Varför välja er', level: 2, about: 'Vad som gör dem bättre eller annorlunda, med kundens egna ord.', question: 'Varför väljer kunder just er?' },
   { key: 'erfarenhet', label: 'Erfarenhet', level: 2, about: 'Hur länge de funnits eller hållit på.', question: 'Hur länge har ni funnits eller hållit på?' },
   { key: 'malgrupp', label: 'Målgrupp', level: 2, about: 'Vilka kunderna är, t.ex. privatpersoner eller företag, ålder, närområde.', question: 'Vilka är era kunder? Till exempel privatpersoner eller företag.' },
-  { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vad ska gå att göra på sidan? Välj det som passar.', chips: ['Bokning', 'Beställning', 'Webshop', 'Betalning med Swish', 'Kontaktformulär', 'Karta'], multi: true },
+  { key: 'befintlig_sida', label: 'Hemsida i dag', level: 2, about: 'Adressen till en hemsida de redan har, eller att de inte har någon.', question: 'Har ni en hemsida i dag? Skriv adressen i så fall.', chips: ['Nej, ingen hemsida'] },
+  { key: 'sprak', label: 'Språk', level: 2, about: 'Svenska, engelska eller båda.', question: 'Ska sidan vara på svenska, engelska eller båda?', chips: ['Svenska', 'Engelska', 'Båda'], pick: true },
+  { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vad ska gå att göra på sidan? Välj det som passar.', chips: ['Bokning', 'Beställning', 'Webshop', 'Betalning med Swish', 'Kontaktformulär', 'Karta'], multi: true, pick: true },
+  { key: 'bestallning', label: 'Beställning och betalning', level: 2, about: 'Hur kunderna beställer, betalar och får varan.', question: 'Hur vill ni att kunderna beställer och betalar?', chips: ['Swish', 'Kort', 'Faktura', 'Kontant', 'Vet inte än'], multi: true, pick: true },
   { key: 'kontakt', label: 'Kontakt', level: 1, about: 'Telefon, mejl och adress.', question: 'Vilka kontaktuppgifter ska stå på sidan? Telefon, mejl och adress.' },
   { key: 'oppettider', label: 'Öppettider', level: 2, about: 'Exakt som kunden anger. "saknas" om de inte har fasta tider.', question: 'Har ni öppettider? Säljer ni bara online räcker det att säga det.', chips: ['Vi har inga fasta tider', 'Vi säljer bara online'] },
   { key: 'sociala_lankar', label: 'Sociala länkar', level: 1, about: 'Instagram, Facebook, LinkedIn med mera.', question: 'Har ni Instagram, Facebook eller andra sociala medier? Skriv gärna namnen eller länkarna.', chips: ['Vi har inga'] },
@@ -48,9 +54,157 @@ export const FIELDS = [
 
 export const FIELD = Object.fromEntries(FIELDS.map((f) => [f.key, f]));
 export const KEYS = FIELDS.map((f) => f.key);
+// Alla fält som någon typ av företag får frågor om. Vilka som frågas just nu ger plan(brief).
 export const NEED = FIELDS.filter((f) => f.level > 0).map((f) => f.key);
 // Räcker för ett första utkast av sidan.
 export const CORE = ['foretagsnamn', 'bransch', 'ort_omrade', 'tjanster_produkter', 'mal_med_sidan', 'stil'];
+
+/* -------------------------------------------------- typer av företag */
+
+// Typen styr vilka frågor som ställs, hur de formuleras och vad som krävs innan intervjun är klar.
+// "hint" går till AI:n, så att frågorna passar den som svarar.
+export const PROFILES = {
+  uf: {
+    label: 'UF-företag',
+    hint: 'Gymnasieelever som driver ett UF-företag under ett läsår. Ställ korta, enkla frågor och ge gärna ett exempel i frågan. Inga facktermer. Fråga inte om domäner, funktioner, öppettider eller hur länge de funnits.',
+  },
+  lokal: {
+    label: 'Butik, café eller salong',
+    hint: 'Har en lokal som kunderna besöker. Adress, öppettider, priser och hur man bokar eller beställer är det viktigaste på sidan.',
+  },
+  hantverk: {
+    label: 'Hantverk eller tjänster hos kunden',
+    hint: 'Jobbar hemma hos kunden eller på plats. Vilka orter de tar jobb i, vilka tjänster, offert och bilder på tidigare jobb är det viktigaste.',
+  },
+  webshop: {
+    label: 'Säljer på nätet',
+    hint: 'Säljer produkter online utan lokal. Produkter, priser, betalning och leverans är det viktigaste.',
+  },
+  b2b: {
+    label: 'Säljer till andra företag',
+    hint: 'Kunderna är företag eller organisationer. Vad besökaren ska göra (boka demo, begära offert), språk och en befintlig hemsida är det viktigaste.',
+  },
+  tjanst: { label: 'Annat', hint: '' },
+};
+
+// Fält som en typ av företag inte får frågor om.
+const SKIP = {
+  uf: ['erfarenhet', 'befintlig_sida', 'sprak', 'funktioner', 'oppettider', 'egna_texter', 'doman_onskemal'],
+  lokal: ['sprak', 'bestallning', 'malgrupp'],
+  hantverk: ['sprak', 'bestallning'],
+  webshop: ['sprak', 'oppettider'],
+  b2b: ['oppettider', 'bestallning', 'priser'],
+  tjanst: ['sprak', 'bestallning'],
+};
+
+// Frågor och svarsknappar som skiljer sig per typ. Allt annat är checklistans.
+const VIEW = {
+  bransch: {
+    uf: { question: 'Vad säljer eller gör ni? En mening räcker, till exempel "Vi gör doftljus av gamla glasburkar".' },
+  },
+  ort_omrade: {
+    uf: { question: 'I vilken stad finns ni?' },
+    hantverk: { question: 'I vilka orter eller områden tar ni jobb?' },
+    webshop: { question: 'Var finns ni, och skickar ni till hela Sverige?' },
+    b2b: { question: 'Var finns ni, och i vilka länder har ni kunder?' },
+  },
+  tjanster_produkter: {
+    uf: { question: 'Vilka produkter säljer ni? Skriv dem som en lista.' },
+    webshop: { question: 'Vilka produkter säljer ni? Skriv dem som en lista.' },
+    lokal: { question: 'Vilka tjänster eller varor ska synas på sidan? Skriv dem som en lista.' },
+  },
+  priser: {
+    uf: { question: 'Vad kostar produkterna? Till exempel "Doftljus 149 kr".' },
+    webshop: { question: 'Vad kostar produkterna? Skriv priset efter varje produkt.' },
+    hantverk: { question: 'Vill ni visa priser, till exempel timpris, eller ska kunderna begära offert?', chips: ['Kunderna begär offert'] },
+  },
+  mal_med_sidan: {
+    uf: { question: 'Vad vill ni helst att folk gör när de kommer in på sidan?', chips: ['Beställa något', 'Hitta vår Instagram', 'Se vad vi gör', 'Kontakta oss'] },
+    hantverk: { chips: ['Begära offert', 'Ringa eller mejla', 'Se våra arbeten', 'Boka tid'] },
+    webshop: { chips: ['Köpa direkt på sidan', 'Se sortimentet', 'Kontakta oss'] },
+    b2b: { chips: ['Boka en demo', 'Begära offert', 'Kontakta oss', 'Läsa om produkterna'] },
+  },
+  varfor_valja_oss: {
+    uf: { question: 'Vad är det bästa med er produkt?' },
+  },
+  malgrupp: {
+    uf: { question: 'Vilka tror ni köper mest av er?', chips: ['Elever och lärare', 'Familj och vänner', 'Alla i stan'], multi: true },
+  },
+  funktioner: {
+    lokal: { chips: ['Bokning', 'Meny eller prislista', 'Karta', 'Kontaktformulär', 'Betalning med Swish'] },
+    hantverk: { chips: ['Offertformulär', 'Bilder på jobb', 'Kontaktformulär', 'Bokning'] },
+    webshop: { chips: ['Webshop', 'Betalning med Swish', 'Kontaktformulär'] },
+    b2b: { chips: ['Boka demo', 'Offertformulär', 'Kontaktformulär', 'Nyhetsbrev'] },
+  },
+  bestallning: {
+    uf: { chips: ['Swish', 'Kontant', 'Via Instagram', 'Vet inte än'] },
+    webshop: { question: 'Hur ska kunderna betala, och hur får de varorna?', chips: ['Kort', 'Swish', 'Faktura', 'Hemleverans', 'Hämta själv'] },
+  },
+  kontakt: {
+    uf: { question: 'Vilken mejl eller vilket nummer ska kunderna kontakta er på?' },
+    lokal: { question: 'Vilken adress, telefon och mejl ska stå på sidan?' },
+  },
+  sociala_lankar: {
+    uf: { question: 'Vad heter ert konto på Instagram? Har ni TikTok också?' },
+  },
+  bilder: {
+    uf: { question: 'Har ni bilder på produkterna? Bra mobilbilder räcker.' },
+    hantverk: { question: 'Har ni bilder på jobb ni har gjort?' },
+    b2b: { question: 'Har ni bilder, skärmbilder eller filmer som visar produkterna?' },
+  },
+  oppettider: {
+    lokal: { question: 'Vilka öppettider har ni? Till exempel "tis–fre 10–18, lör 10–14".', chips: ['Bara tidsbokning'] },
+  },
+};
+
+// Företaget verkar utanför Sverige. Då frågas det om språk även om typen annars inte gör det.
+export const INTERNATIONAL = /(hela världen|världen över|internationell|globalt|global\b|europa|norden|utomlands|worldwide|international)/i;
+
+// Vilken typ av företag det är: först kundens eget val, sedan det de berättat.
+export function profileOf(brief) {
+  const b = brief || {};
+  const t = lower(b.foretagstyp);
+  if (t && !isSaknas(t)) {
+    if (/(^|[^a-zåäö])uf([^a-zåäö]|$)|ung företagsamhet/.test(t)) return 'uf';
+    if (/andra företag|b2b|organisation|förening|klubb/.test(t)) return 'b2b';
+    if (/nätet|online|webshop|webbshop|e-handel/.test(t)) return 'webshop';
+    if (/hantverk|hos kunden|bygg|städ|flytt/.test(t)) return 'hantverk';
+    if (/butik|café|kafé|cafe|salong|restaurang|lokal|klinik|gym/.test(t)) return 'lokal';
+  }
+  if (isUF(b)) return 'uf';
+  if (!hasAnswer(b, 'bransch')) return 'tjanst';
+  if (isB2B(b)) return 'b2b';
+  const industry = detectIndustry(`${b.bransch} ${hasAnswer(b, 'tjanster_produkter') ? b.tjanster_produkter : ''}`);
+  if (industry === 'hantverk') return 'hantverk';
+  if (industry === 'butik' && sellsOnlineOnly(b)) return 'webshop';
+  if (['frisor', 'cafe', 'halsa', 'butik'].includes(industry)) return 'lokal';
+  return 'tjanst';
+}
+
+// Fälten som ska frågas för just det här företaget, i ordning.
+export function plan(brief) {
+  const b = brief || {};
+  const profile = profileOf(b);
+  const skip = new Set(SKIP[profile] || []);
+  if (INTERNATIONAL.test(String(b.ort_omrade || ''))) skip.delete('sprak');
+  // Står "UF" redan i namnet behövs ingen fråga om typen.
+  if (!hasValue(b, 'foretagstyp') && isUF(b)) skip.add('foretagstyp');
+  return NEED.filter((k) => !skip.has(k) || hasValue(b, k));
+}
+
+// Frågan och svarsknapparna för ett fält, anpassade efter typen av företag.
+export function questionFor(key, brief) {
+  const f = FIELD[key];
+  if (!f) return null;
+  const own = VIEW[key]?.[profileOf(brief)] || {};
+  return {
+    key,
+    question: own.question || f.question,
+    chips: own.chips || f.chips || null,
+    multi: own.multi ?? f.multi ?? false,
+    pick: f.pick || false,
+  };
+}
 export const TOPICS = ['bilder', 'logga', 'kontakt', 'innehall', 'funktioner', 'annat'];
 export const LIMITS = { value: 600, message: 800, log: 60 };
 export const MAIL_TO = 'Nordvyuf@gmail.com';
@@ -95,7 +249,7 @@ const hasStem = (text, stems) => stems.some((s) => text.includes(s));
 export const isSaknas = (v) => /^saknas\b/i.test(String(v || '').trim());
 export const hasValue = (brief, key) => Boolean(String(brief?.[key] || '').trim());
 export const hasAnswer = (brief, key) => hasValue(brief, key) && !isSaknas(brief[key]);
-export const missing = (brief) => NEED.filter((k) => !hasValue(brief, k));
+export const missing = (brief) => plan(brief).filter((k) => !hasValue(brief, k));
 export const coreDone = (brief) => CORE.every((k) => hasValue(brief, k));
 
 // Svar som betyder "nej / har inget / vet inte".
@@ -256,7 +410,7 @@ export const wantsBooking = (b) => hasStem(wishText(b), ['boka', 'bokning', 'tid
 export const wantsPayments = (b) => hasStem(wishText(b), ['betal', 'swish', 'webshop', 'webbshop', 'köpa', 'sälj', 'beställ', 'presentkort']);
 // UF-företag syns ofta bara i mejladressen eller på Instagram ("njoy.uf@gmail.com", "@njoy.uf").
 export const isUF = (b) =>
-  hasWord(lower(`${b.foretagsnamn || ''} ${b.bransch || ''} ${b.kontakt || ''} ${b.sociala_lankar || ''} ${b.doman_onskemal || ''}`), 'uf') ||
+  hasWord(lower(`${b.foretagsnamn || ''} ${b.foretagstyp || ''} ${b.bransch || ''} ${b.kontakt || ''} ${b.sociala_lankar || ''} ${b.doman_onskemal || ''}`), 'uf') ||
   lower(b.bransch).includes('ung företagsamhet');
 
 export function recommendPackage(brief) {
@@ -329,7 +483,10 @@ function audienceOf(b) {
 
 // Kunderna är organisationer, inte privatpersoner. Då bokar man ett möte, inte en tid.
 const B2B = /(företag|klubb|förening|förbund|federation|liga|ligor|kommun|organisation|skolor|myndighet|b2b|bolag)/i;
-const isB2B = (b) => B2B.test(String(b.malgrupp || '')) && !/privat|familj|alla\b/i.test(String(b.malgrupp || ''));
+const isB2B = (b) =>
+  /andra företag|b2b/i.test(String(b.foretagstyp || '')) ||
+  /(åt|för|till) (andra )?(företag|bolag|organisationer|klubbar|föreningar)|\bb2b\b/i.test(String(b.bransch || '')) ||
+  (B2B.test(String(b.malgrupp || '')) && !/privat|familj|alla\b/i.test(String(b.malgrupp || '')));
 
 
 // Pekar ut företagsnamnet och vanliga fyllnadsord så att en rubrik inte bara upprepar dem.
@@ -468,6 +625,11 @@ export function draftModel(brief, copy) {
     m.headline = fallbackHeadline({ industry, online, titles, city, audience: audienceOf(b) });
     m.sub = online ? ONLINE_PRESET.sub(company || 'Vi', city ? ` från ${city}` : '') : preset.sub(company || 'Vi', inCity);
     m.tagline = online ? `${INDUSTRIES[industry].short}${city ? ` från ${city}` : ''} · online` : `${INDUSTRIES[industry].short}${inCity}`;
+    // Ett UF-företag har ingen butik med öppettider att hitta till.
+    if (profileOf(b) === 'uf') {
+      m.sub = `${company || 'Vi'} är ett UF-företag${inCity}. Se vad vi gör och beställ direkt på sidan.`;
+      m.tagline = `UF-företag${inCity}`;
+    }
   }
   if (city) m.city = city;
   // Inga påhittade beskrivningar i utkastet. AI:ns text läggs på nedan när den finns.
@@ -532,6 +694,12 @@ export function sellsOnlineOnly(b = {}) {
 
 // Checklistans fråga, anpassad lite efter det kunden redan sagt. Används när AI:n inte svarar.
 export function fallbackQuestion(key, seed = 0, brief = {}) {
+  // Har kunden redan en hemsida frågar vi om den ska ligga kvar på samma adress.
+  const site = key === 'doman_onskemal' && String(brief?.befintlig_sida || '').match(/\b(?:www\.)?[a-z0-9-]{2,}\.(?:se|com|nu|net|org|io|eu)\b/i);
+  if (site) return `Ska den nya sidan ligga på ${site[0]}, eller vill ni ha en ny adress?`;
+  // Har typen av företag en egen fråga för fältet används den.
+  const own = VIEW[key]?.[profileOf(brief)]?.question;
+  if (own) return own;
   const said = ['foretagsnamn', 'bransch', 'ort_omrade', 'tjanster_produkter', 'mal_med_sidan'].map((k) => brief?.[k] || '').join(' ');
   if (key === 'tjanster_produkter' && SELLS.test(said)) return 'Vilka produkter säljer ni? Skriv dem som en lista, gärna med pris om ni vill att det syns.';
   if (key === 'oppettider' && ONLINE.test(said)) return 'Säljer ni bara online, eller finns det också tider då man kan komma förbi?';
