@@ -197,7 +197,7 @@ async function handleFinish(request, env) {
 async function handleApi(request, env, url) {
   const path = url.pathname;
   if (path === '/api/health' && request.method === 'GET') {
-    return json({ ok: true, ai: Boolean(env.AI), groq: Boolean(env.GROQ_API_KEY), gemini: Boolean(env.GEMINI_API_KEY), mail: String(env.CONTACT_ENDPOINT || '').startsWith('https://') });
+    return json({ ok: true, ai: Boolean(env.AI), groq: Boolean(env.GROQ_API_KEY), gemini: Boolean(env.GEMINI_API_KEY), egen: String(env.LOCAL_AI_URL || '').startsWith('https://'), mail: String(env.CONTACT_ENDPOINT || '').startsWith('https://') });
   }
   if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
   if (!sameOrigin(request)) return json({ ok: false, error: 'forbidden' }, 403);

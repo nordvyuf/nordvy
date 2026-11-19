@@ -31,6 +31,9 @@ import {
   profileOf,
   questionFor,
   PROFILES,
+  isUnsure,
+  altQuestion,
+  wantsToStop,
 } from '../public/assets/shared/brief.js';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -461,10 +464,13 @@ export function applyTurn(state, ai) {
   // Ett vagt svar på bransch eller tjänster ger en följdfråga, en gång. Det avgörs här i koden, inte av AI:n.
   const followUp = FOLLOW_UPS[lastAsked[0]];
   const vagueField = !edit && !negative && askCount < 2 && followUp && followUp.needs(message, state.brief) ? lastAsked[0] : '';
+  // Kunden vet inte: en enklare fråga om samma sak, en gång. Andra gången sparas "saknas" och teamet följer upp.
+  const unsure = !edit && Boolean(lastAsked[0]) && isUnsure(message) && !asksUs(message);
+  const altField = unsure && askCount < 2 && altQuestion(lastAsked[0]) && !hasValue(brief, lastAsked[0]) ? lastAsked[0] : '';
   // Det som sagts tidigare på samma fält får bara följa med om det var samma fråga.
   // Ett vagt första svar ("allt möjligt", "att tjäna pengar") följer inte med när kunden har gett ett bättre.
   const carryFor = (field) => {
-    if (state.carryField !== field || !state.carry) return '';
+    if (state.carryField !== field || !state.carry || isUnsure(state.carry)) return '';
     const rule = FOLLOW_UPS[field];
     return rule?.needs(state.carry, state.brief) && !rule.keep?.(state.carry) ? '' : state.carry;
   };
@@ -477,6 +483,13 @@ export function applyTurn(state, ai) {
     return { brief, issues, saves, reply: `Det går teamet igenom med dig efter intervjun. ${again}`, asked: [lastAsked[0]], skip: true, done: false, missing: missing(brief) };
   }
 
+  // Kunden vill sluta: intervjun avslutas med det som finns, och teamet får veta vad som saknas.
+  if (!edit && wantsToStop(message)) {
+    const left = missing(brief);
+    if (left.length) issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden ville avsluta intervjun. Saknar: ${left.map((k) => FIELD[k].label).join(', ')}.` }]);
+    return { brief, issues, saves, reply: null, asked: [], done: true, stopped: true, missing: left };
+  }
+
   const accept = (field, value) => {
     brief[field] = value;
     const at = saves.findIndex((s) => s.field === field);
@@ -487,7 +500,7 @@ export function applyTurn(state, ai) {
   if (ai && Array.isArray(ai.saves)) {
     for (const s of ai.saves.slice(0, 8)) {
       const field = String(s?.field || '');
-      if (!ASKABLE.includes(field) || field === vagueField) continue;
+      if (!ASKABLE.includes(field) || field === vagueField || field === altField) continue;
       if (asksUs(message) && lastAsked.includes(field)) continue; // en fråga till oss är inget svar
       let value = cleanText(s?.value);
       if (!value) continue;
@@ -510,7 +523,7 @@ export function applyTurn(state, ai) {
   // Svaret på det vi frågade om får aldrig tappas bort.
   if (!edit) {
     for (const field of lastAsked) {
-      if (!ASKABLE.includes(field) || hasValue(brief, field) || field === vagueField) continue;
+      if (!ASKABLE.includes(field) || hasValue(brief, field) || field === vagueField || field === altField) continue;
       // AI:n får be om mer på samma fält, men inte på fält där koden själv avgör följdfrågan.
       // Annars kom "Vilka tjänster erbjuder ni?" två gånger fast kunden redan svarat med en lista.
       const followUp = ai && ai.asked === field && askCount < 2 && !negative && !FOLLOW_UPS[field];
@@ -519,7 +532,10 @@ export function applyTurn(state, ai) {
       if (asksUsAgain) {
         accept(field, 'saknas');
         issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden frågade "${message.slice(0, 120)}" i stället för att svara om ${FIELD[field].label.toLocaleLowerCase('sv-SE')}.` }]);
-      } else if (negative) accept(field, field === 'referens_ok' ? 'Nej' : field === 'undvik' && NOTHING.test(message) ? 'Inget särskilt' : 'saknas');
+      } else if (negative || (unsure && field === lastAsked[0] && altQuestion(field))) {
+        accept(field, field === 'referens_ok' ? 'Nej' : field === 'undvik' && NOTHING.test(message) ? 'Inget särskilt' : 'saknas');
+        if (unsure && altQuestion(field)) issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden visste inte: ${FIELD[field].label.toLocaleLowerCase('sv-SE')}. Ta det i samtalet.` }]);
+      }
       else {
         const said = cleanText([carryFor(field), message].filter(Boolean).join(' / '));
         if (said) accept(field, field === 'referens_ok' ? yesNo(message) || said : said);
@@ -578,6 +594,9 @@ export function applyTurn(state, ai) {
   if (edit) return { brief, issues, saves, reply: null, asked: [], done: left.length === 0, missing: left };
   if (!left.length) return { brief, issues, saves, reply: null, asked: [], done: true, missing: left };
 
+  if (altField) {
+    return { brief, issues, saves, reply: altQuestion(altField), asked: [altField], done: false, missing: left };
+  }
   if (vagueField) {
     return { brief, issues, saves, reply: followQuestion(vagueField, message, state.brief), asked: [vagueField], done: false, missing: left };
   }
@@ -651,6 +670,16 @@ export const PROVIDERS = [
       { model: 'gemini-3.8-flash', thinks: true, efforts: ['none', 'low', null] },
     ],
   },
+  {
+    // Egen server, till exempel Ollama på en dator med grafikkort, nådd via Cloudflare Tunnel.
+    // LOCAL_AI_URL är hela adressen till /v1/chat/completions (https), LOCAL_AI_MODEL modellen
+    // och LOCAL_AI_KEY en nyckel om servern kräver det. Används när de stora tjänsterna inte svarar.
+    id: 'egen',
+    key: 'LOCAL_AI_URL',
+    token: 'LOCAL_AI_KEY',
+    url: (env) => (String(env.LOCAL_AI_URL || '').startsWith('https://') ? env.LOCAL_AI_URL : ''),
+    models: (env) => [{ model: env.LOCAL_AI_MODEL || 'qwen2.5:7b-instruct', efforts: [null] }],
+  },
 ];
 // Så länge får de externa tjänsterna hålla på totalt, och varje anrop högst, innan nästa tar över.
 const EXTERNAL_BUDGET_MS = 7000;
@@ -682,9 +711,11 @@ function callExternal(provider, env, entry, payload, { effort, json }, ms) {
     ...(json ? { response_format: { type: 'json_object' } } : {}),
     ...(effort ? { reasoning_effort: effort } : {}),
   };
-  return fetch(provider.url, {
+  const url = typeof provider.url === 'function' ? provider.url(env) : provider.url;
+  const secret = env[provider.token || provider.key];
+  return fetch(url, {
     method: 'POST',
-    headers: { authorization: `Bearer ${env[provider.key]}`, 'content-type': 'application/json' },
+    headers: { ...(secret ? { authorization: `Bearer ${secret}` } : {}), 'content-type': 'application/json' },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(ms),
   });
@@ -695,8 +726,10 @@ export async function runExternal(env, payload, meta = {}, errors = []) {
   const deadline = Date.now() + EXTERNAL_BUDGET_MS;
   for (const provider of PROVIDERS) {
     if (!env?.[provider.key]) continue;
+    if (typeof provider.url === 'function' && !provider.url(env)) continue;
     const own = provider.id === 'gemini' && env.GEMINI_MODEL ? [{ model: env.GEMINI_MODEL, thinks: true, efforts: ['none', 'low', null] }] : [];
-    for (const entry of [...own, ...provider.models]) {
+    const list = typeof provider.models === 'function' ? provider.models(env) : provider.models;
+    for (const entry of [...own, ...list]) {
       const id = `${provider.id}:${entry.model}`;
       if (isPaused(id)) continue;
       // Varje nivå på tänkandet med JSON-läge, och sist utan JSON-läge, om modellen inte stöder något av det (fel 400).
@@ -785,6 +818,12 @@ const hasModel = (env) => Boolean(env?.AI || PROVIDERS.some((p) => env?.[p.key])
 export function needsAi(state) {
   if (state.edit) return true;
   const field = state.asked?.[0];
+  const message = String(state.message || '');
+  // Svar där koden själv bestämmer nästa steg behöver ingen AI, så att kunden slipper vänta:
+  // "vet inte" (enklare fråga), "jag vill sluta" och vaga svar som ger kodens följdfråga.
+  if (wantsToStop(message)) return false;
+  if (field && isUnsure(message) && !asksUs(message) && altQuestion(field) && (state.askCount || 1) < 2) return false;
+  if (field && FOLLOW_UPS[field] && (state.askCount || 1) < 2 && !isNegative(message) && FOLLOW_UPS[field].needs(message, state.brief || {})) return false;
   if (!PLAIN.has(field)) return true;
   const next = missing(state.brief || {}).find((k) => k !== field);
   return Boolean(next) && !PLAIN.has(next);

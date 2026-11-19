@@ -26,6 +26,8 @@ import {
   briefToText,
   plan,
   questionFor,
+  progressOf,
+  MAX_ANSWERS,
 } from './shared/brief.js';
 import { renderPreview, createWindow } from './preview.js';
 import { openBooking, CAL_ACCOUNT } from './cal.js';
@@ -36,6 +38,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const touch = matchMedia('(pointer: coarse)').matches;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STORE = 'nordvy-intervju-v2';
+const UNDO_MAX = 12;
 const kr = (n) => `${new Intl.NumberFormat('sv-SE').format(n)} kr`;
 const GREETING =
   'Hej! Jag är Nordvys intervjuassistent. Jag ställer några frågor om ditt företag, en i taget, och bygger ett första utkast av din sida medan du svarar. Vet du inte något svar säger du bara det.';
@@ -54,6 +57,8 @@ const state = {
   partial: false,
   contact: null,
   sent: null,
+  undo: [], // ögonblicksbilder före varje svar, så att kunden kan ändra förra svaret
+  answers: 0, // antal svar i chatten, för taket MAX_ANSWERS
 };
 
 const log = $('#log');
@@ -62,6 +67,7 @@ const input = $('#answer');
 const chipsBox = $('#chips');
 const hint = $('#hint');
 const early = $('#early');
+const undoBtn = $('#undo');
 const sendBtn = $('.iv-send');
 const stage = $('#stage');
 const list = $('#list');
@@ -100,6 +106,8 @@ function restore() {
       partial: Boolean(saved.partial),
       contact: saved.contact || null,
       sent: saved.sent ?? null,
+      undo: Array.isArray(saved.undo) ? saved.undo.slice(-UNDO_MAX) : [],
+      answers: Number(saved.answers) || 0,
     });
     return true;
   } catch {
@@ -200,27 +208,28 @@ function updatePreview(animate = true) {
 }
 
 function renderChecklist() {
-  // Antalet punkter beror på typen av företag: ett UF-företag får färre och enklare frågor.
+  // Förloppet visas som fyra delar, inte som "0 av 23 punkter". Antalet frågor beror på typen av företag.
   const asks = plan(state.brief);
-  const left = missing(state.brief);
-  const done = asks.length - left.length;
-  bar.style.setProperty('--p', (done / asks.length).toFixed(3));
-  bar.setAttribute('aria-valuenow', String(done));
-  bar.setAttribute('aria-valuemax', String(asks.length));
-  stepLabel.textContent = state.stage === 'done' ? 'Underlaget är skickat' : `${done} av ${asks.length} punkter`;
+  const p = progressOf(state.brief);
+  const finished = ['summary', 'edit', 'contact', 'done'].includes(state.stage);
+  const share = finished ? 1 : p.share;
+  bar.style.setProperty('--p', share.toFixed(3));
+  bar.setAttribute('aria-valuenow', String(Math.round(share * 100)));
+  bar.setAttribute('aria-valuetext', finished ? 'Klart' : `Del ${p.part} av ${p.parts}: ${p.label}`);
+  stepLabel.textContent = state.stage === 'done' ? 'Underlaget är skickat' : finished ? 'Snart klart' : `Del ${p.part} av ${p.parts}: ${p.label}`;
 
   const dl = $('#fields');
   dl.replaceChildren();
+  // Bara det kunden har svarat visas. En lång lista med "Inte frågat än" kändes som ett formulär.
+  // Teamets uppföljningspunkter visas inte för kunden: de står i underlaget.
   for (const f of FIELDS) {
-    if (f.level === 0 && !hasValue(state.brief, f.key)) continue;
-    if (f.level > 0 && !asks.includes(f.key)) continue;
-    const v = String(state.brief[f.key] || '').trim();
-    const row = node('div', `f${v ? (isSaknas(v) ? ' gap' : ' has') : ''}${f.level === 1 ? ' req' : ''}`);
-    row.append(node('i'), node('dt', '', f.label), node('dd', v ? '' : 'none', v ? (isSaknas(v) ? 'Saknas' : v) : 'Inte frågat än'));
+    if (f.level === 0 || !asks.includes(f.key) || !hasValue(state.brief, f.key)) continue;
+    const v = String(state.brief[f.key]).trim();
+    const row = node('div', `f${isSaknas(v) ? ' gap' : ' has'}`);
+    row.append(node('i'), node('dt', '', f.label), node('dd', '', isSaknas(v) ? 'Vet inte än' : v));
     dl.append(row);
   }
-  $('#issue-box').hidden = !state.issues.length;
-  $('#issues').replaceChildren(...state.issues.map((i) => node('li', '', i.text)));
+  if (!dl.children.length) dl.append(node('p', 'fine', 'Dina svar visas här medan du svarar.'));
 }
 
 /* -------------------------------------------------------- svarsrutan */
@@ -272,6 +281,7 @@ function setupComposer() {
     setHint(chips && field.multi ? 'Välj en eller flera och tryck på pilen.' : touch ? 'Tryck på pilen för att skicka.' : 'Tryck Enter för att skicka.');
   }
   early.hidden = !(state.stage === 'chat' && coreDone(state.brief));
+  undoBtn.hidden = !(state.stage === 'chat' && state.undo.length);
   autosize();
   sendBtn.disabled = false;
   // På pekskärm öppnar vi inte tangentbordet automatiskt när det finns val att trycka på.
@@ -326,6 +336,7 @@ async function submitAnswer() {
 
   const editing = state.stage === 'edit';
   const previousAsked = state.asked[0];
+  if (!editing) remember(message);
   userSays(message);
   sendBtn.disabled = true;
   hideComposer();
@@ -372,9 +383,22 @@ async function submitAnswer() {
   }
   state.askCount = sameField ? state.askCount + 1 : 1;
   state.asked = turn.asked || [];
+  state.answers += 1;
   save();
 
   if (!state.coreShown && coreDone(state.brief)) firstDraftReady();
+  // Kunden ville sluta: inga fler frågor, teamet tar resten.
+  if (turn.stopped) {
+    await guideSays('Inga problem. Det du har berättat räcker för att börja, och resten tar vi tillsammans när vi hörs.');
+    return showSummary();
+  }
+  // Intervjun håller inte på i evighet. Efter MAX_ANSWERS svar avslutas den med det som finns.
+  if (!turn.done && turn.reply && state.answers >= MAX_ANSWERS) {
+    const left = missing(state.brief);
+    if (left.length) state.issues = cleanIssues([...state.issues, { topic: 'annat', text: `Intervjun avslutades efter ${MAX_ANSWERS} svar. Saknar: ${left.map((k) => FIELD[k].label).join(', ')}.` }]);
+    await guideSays('Tack, nu har jag det jag behöver för att teamet ska kunna börja. Resten tar vi tillsammans när vi hörs.');
+    return showSummary();
+  }
   if (turn.done || !turn.reply) return showSummary();
   await guideSays(turn.reply);
   setupComposer();
@@ -410,6 +434,32 @@ input.addEventListener('keydown', (e) => {
     submitAnswer();
   }
 });
+// Sparar läget före varje svar, så att kunden kan gå tillbaka och ändra ett svar som blev fel.
+function remember(message) {
+  const { brief, issues, asked, askCount, carry, carryField, copy, coreShown, answers } = state;
+  state.undo.push({ brief, issues, asked, askCount, carry, carryField, copy, coreShown, answers, logLen: state.log.length, message });
+  if (state.undo.length > UNDO_MAX) state.undo.shift();
+}
+
+undoBtn.addEventListener('click', () => {
+  const snap = state.undo.pop();
+  if (!snap || state.stage !== 'chat' || sendBtn.disabled) return;
+  const { logLen, message, ...rest } = snap;
+  Object.assign(state, rest);
+  state.log.length = Math.min(state.log.length, logLen);
+  save();
+  log.replaceChildren();
+  for (const m of state.log) bubble(m.who === 'me' ? 'me' : 'guide', m.text);
+  renderChecklist();
+  updatePreview(false);
+  setupComposer();
+  // Det förra svaret står kvar i rutan, så att kunden bara behöver rätta det.
+  input.value = message;
+  autosize();
+  setHint('Ändra svaret och skicka igen.');
+  input.focus({ preventScroll: true });
+});
+
 early.addEventListener('click', () => {
   state.partial = true;
   userSays('Skicka det jag har så här långt');
@@ -426,9 +476,9 @@ function showStart() {
   eyebrow.firstChild.classList.add('star');
   const ul = node('ul');
   for (const t of [
-    'En fråga i taget, i din egen takt. Vet du inte något säger du bara det.',
+    'En fråga i taget, i din egen takt. Vet du inte något säger du bara det, så får du en enklare fråga.',
     'Efter ungefär sex frågor ser du ett första utkast av din sida.',
-    'Hela intervjun tar cirka tio minuter. Sedan har vi allt vi behöver för att bygga.',
+    'Skrev du fel kan du alltid ändra förra svaret. Hela intervjun tar cirka tio minuter.',
   ])
     ul.append(node('li', '', t));
   const consent = node('label', 'consent');
@@ -467,6 +517,7 @@ function showSummary() {
   state.stage = 'summary';
   save();
   hideComposer();
+  renderChecklist();
   const card = node('div', 'card sum');
   const dl = node('dl');
   for (const f of FIELDS) {
@@ -509,6 +560,7 @@ function showContact() {
   state.stage = 'contact';
   save();
   hideComposer();
+  renderChecklist();
   const card = node('div', 'card');
   const form = node('form');
   form.noValidate = true;
@@ -523,7 +575,7 @@ function showContact() {
   const go = node('button', 'btn btn-p btn-lg', 'Skicka till Nordvy');
   go.type = 'submit';
   const left = missing(state.brief);
-  const lead = state.partial && left.length ? `Vi skickar det du hunnit svara på. ${left.length} punkter återstår, dem tar vi tillsammans.` : 'Sista steget: vem ska vi höra av oss till?';
+  const lead = state.partial && left.length ? 'Vi skickar det du hunnit svara på. Resten tar vi tillsammans när vi hörs.' : 'Sista steget: vem ska vi höra av oss till?';
   form.append(l1, l2, l3, error, go, node('p', 'fine', 'Underlaget mejlas till Nordvy. Vi hör av oss med ett förslag, utan köpkrav.'));
   card.append(node('h2', '', 'Vart ska vi höra av oss?'), node('p', 'fine', lead), form);
   if (state.partial && left.length) {

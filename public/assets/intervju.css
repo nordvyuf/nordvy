@@ -294,6 +294,16 @@ body.iv {
 .iv-hint button[hidden] {
   display: none;
 }
+/* "Ändra förra svaret" och "Skicka det jag har" står tillsammans till höger. */
+.iv-hint #undo {
+  margin-left: auto;
+}
+.iv-hint #undo + #early {
+  margin-left: 0;
+}
+.iv-hint #hint {
+  flex: 1 1 auto;
+}
 .iv-legal {
   padding: 0 clamp(1.2rem, 3vw, 2rem) 0.8rem;
   background: rgba(7, 20, 40, 0.75);
