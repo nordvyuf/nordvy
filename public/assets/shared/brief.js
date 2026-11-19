@@ -48,7 +48,7 @@ export const FIELDS = [
   { key: 'egna_texter', label: 'Egna texter', level: 2, about: 'Texter de redan har, t.ex. om oss eller tjänstebeskrivningar.', question: 'Har ni texter som redan är skrivna, till exempel en presentation av företaget?', chips: ['Ja, det har vi', 'Nej'] },
   { key: 'omdomen', label: 'Omdömen', level: 2, about: 'Bara riktiga omdömen som de har tillstånd att visa.', question: 'Har ni omdömen från riktiga kunder som ni får visa?', chips: ['Ja, det har vi', 'Nej, inga än'] },
   { key: 'doman_onskemal', label: 'Domän', level: 1, about: 'Önskat sidnamn eller webbadress.', question: 'Vilken webbadress skulle ni vilja ha? Till exempel dittforetag.se.', chips: ['Vet inte än'] },
-  { key: 'undvik', label: 'Undvik', level: 2, about: 'Något de inte vill ha på sidan.', question: 'Finns det något ni inte vill ha på sidan?', chips: ['Nej, inget särskilt'] },
+  { key: 'undvik', label: 'Övriga önskemål', level: 2, about: 'Allt annat kunden vill ha med (färger, känsla, flera sidor, animationer) och det de inte vill ha.', question: 'Är det något mer ni vill ha med på sidan, eller något ni inte vill ha?', chips: ['Nej, inget mer'] },
   { key: 'referens_ok', label: 'Referens', level: 1, about: 'Får Nordvy visa sidan som exempel? Ja eller nej.', question: 'Får Nordvy visa er färdiga sida som exempel för andra kunder?', chips: ['Ja', 'Nej'] },
 ];
 
@@ -100,7 +100,8 @@ const SKIP = {
 // Frågor och svarsknappar som skiljer sig per typ. Allt annat är checklistans.
 const VIEW = {
   bransch: {
-    uf: { question: 'Vad säljer eller gör ni? En mening räcker, till exempel "Vi gör doftljus av gamla glasburkar".' },
+    // fixed: frågan ställs exakt så här. Exemplet hjälper gymnasieelever, och AI:n kortade bort det.
+    uf: { question: 'Vad säljer eller gör ni? En mening räcker, till exempel "Vi gör doftljus av gamla glasburkar".', fixed: true },
   },
   ort_omrade: {
     uf: { question: 'I vilken stad finns ni?' },
@@ -114,7 +115,7 @@ const VIEW = {
     lokal: { question: 'Vilka tjänster eller varor ska synas på sidan? Skriv dem som en lista.' },
   },
   priser: {
-    uf: { question: 'Vad kostar produkterna? Till exempel "Doftljus 149 kr".' },
+    uf: { question: 'Vad kostar produkterna? Till exempel "Doftljus 149 kr".', fixed: true },
     webshop: { question: 'Vad kostar produkterna? Skriv priset efter varje produkt.' },
     hantverk: { question: 'Vill ni visa priser, till exempel timpris, eller ska kunderna begära offert?', chips: ['Kunderna begär offert'] },
   },
@@ -248,6 +249,7 @@ export function questionFor(key, brief) {
     chips: own.chips || f.chips || null,
     multi: own.multi ?? f.multi ?? false,
     pick: f.pick || false,
+    fixed: Boolean(own.fixed),
   };
 }
 export const TOPICS = ['bilder', 'logga', 'kontakt', 'innehall', 'funktioner', 'annat'];
