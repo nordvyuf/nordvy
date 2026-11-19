@@ -628,7 +628,9 @@ const QUOTA = /4006|daily free allocation|neurons/i;
 // (en hemlighet i Cloudflare). Svarar Gemini inte, till exempel när dagens gratiskvot är slut,
 // tar Workers AI över.
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+// gemini-2.5-flash finns inte för nya konton (Google svarade 404 i november 2026 och föreslog 3.8).
+// Finns inte den första modellen provas nästa. "gemini-flash-latest" är Googles alias för den senaste Flash.
+export const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
 
 // Telefonnummer och mejladresser skickas aldrig till AI:n. Koden sparar dem direkt ur kundens svar.
 export function redact(text) {
@@ -639,32 +641,52 @@ export function redact(text) {
 const REDACTED = /\[(mejl|telefon)\]/;
 const redactMessages = (messages) => messages.map((m) => ({ ...m, content: redact(m.content) }));
 
-async function runGemini(env, payload, withoutThinking = true) {
+// Så lite "tankeprocess" som möjligt: den gör svaren långsamma. Alla modeller tar inte emot alla nivåer,
+// så vid fel 400 provas nästa nivå, och sist utan inställning.
+const EFFORTS = ['none', 'low', null];
+
+async function callGemini(env, model, payload, effort) {
   const body = {
-    model: env.GEMINI_MODEL || GEMINI_MODEL,
+    model,
     messages: payload.messages,
-    max_tokens: payload.max_tokens,
+    // Plats för modellens tankeprocess utöver själva svaret.
+    max_tokens: payload.max_tokens + 1500,
     temperature: payload.temperature,
     response_format: { type: 'json_object' },
-    // Ingen "tankeprocess": den gör svaren långsamma och drar mer av kvoten.
-    ...(withoutThinking ? { reasoning_effort: 'none' } : {}),
+    ...(effort ? { reasoning_effort: effort } : {}),
   };
-  const response = await fetch(GEMINI_URL, {
+  return fetch(GEMINI_URL, {
     method: 'POST',
     headers: { authorization: `Bearer ${env.GEMINI_API_KEY}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(14000),
   });
-  if (response.status === 400 && withoutThinking) return runGemini(env, payload, false);
-  if (!response.ok) throw new Error(`gemini ${response.status}: ${(await response.text().catch(() => '')).slice(0, 200)}`);
-  return response.json();
 }
 
-async function askJson(env, rawMessages, schema, maxTokens, errors = []) {
+export async function runGemini(env, payload, meta = {}) {
+  const models = [env.GEMINI_MODEL, ...GEMINI_MODELS].filter((m, i, list) => m && list.indexOf(m) === i);
+  let last = '';
+  for (const model of models) {
+    for (const effort of EFFORTS) {
+      const response = await callGemini(env, model, payload, effort);
+      if (response.ok) {
+        meta.provider = `gemini:${model}`;
+        return response.json();
+      }
+      last = `gemini ${model} ${response.status}: ${(await response.text().catch(() => '')).slice(0, 160)}`;
+      if (response.status === 400) continue; // nivån på tankeprocessen stöds inte, prova nästa
+      break; // 404: modellen finns inte, prova nästa modell. Annat fel: samma sak.
+    }
+    if (!/ 404:/.test(last)) break; // kvoten slut eller fel nyckel: ingen idé att prova fler modeller
+  }
+  throw new Error(last || 'gemini: ingen modell');
+}
+
+async function askJson(env, rawMessages, schema, maxTokens, errors = [], meta = {}) {
   const messages = redactMessages(rawMessages);
   if (env?.GEMINI_API_KEY) {
     try {
-      const json = extractJson(await runGemini(env, { messages, max_tokens: maxTokens, temperature: 0.4 }));
+      const json = extractJson(await runGemini(env, { messages, max_tokens: maxTokens, temperature: 0.4 }, meta));
       if (json && typeof json === 'object') return json;
       errors.push('gemini: inget json i svaret');
     } catch (error) {
@@ -681,7 +703,10 @@ async function askJson(env, rawMessages, schema, maxTokens, errors = []) {
   for (const payload of attempts) {
     try {
       const json = extractJson(await runModel(env, payload));
-      if (json && typeof json === 'object') return json;
+      if (json && typeof json === 'object') {
+        meta.provider = 'workers-ai';
+        return json;
+      }
       errors.push('inget json i svaret');
     } catch (error) {
       const message = String(error?.message || error).slice(0, 300);
@@ -727,13 +752,15 @@ export async function interviewTurn(env, body) {
   let ai = null;
   const errors = [];
   const useAi = hasModel(env) && needsAi(state);
-  if (useAi) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors);
+  const meta = {};
+  if (useAi) ai = await askJson(env, buildTurnMessages(state), TURN_SCHEMA, 420, errors, meta);
   // Ett värde där AI:n bara ser "[mejl]" eller "[telefon]" sparas inte. Koden sparar det kunden skrev.
   if (ai && Array.isArray(ai.saves)) ai.saves = ai.saves.filter((s) => !REDACTED.test(String(s?.value || '')));
   const result = applyTurn(state, ai);
   const out = { ok: true, ...result, source: ai ? 'ai' : useAi || !hasModel(env) ? 'fallback' : 'app' };
   // Felsökning: med debug: true följer AI:ns oredigerade förslag med (eller felet), så att filtren går att justera.
-  if (body?.debug === true) out.debug = ai ? { asked: ai.asked, reply: ai.reply, saves: ai.saves } : { errors };
+  // provider säger vilken AI som svarade, och errors varför en tidigare inte gjorde det.
+  if (body?.debug === true) out.debug = ai ? { provider: meta.provider, asked: ai.asked, reply: ai.reply, saves: ai.saves, errors } : { errors };
   return out;
 }
 

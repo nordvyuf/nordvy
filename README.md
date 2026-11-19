@@ -38,11 +38,11 @@ Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS`, `SKIP` och `VI
 
 ### AI-modellen
 
-Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-2.5-flash`, kan ändras med variabeln `GEMINI_MODEL`). Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
+Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-3.8-flash`, och `gemini-flash-latest` om den inte finns; kan ändras med variabeln `GEMINI_MODEL`). `gemini-2.5-flash` finns inte för nya konton. Med `debug: true` visar `provider` vilken AI som svarade. Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
 
 Så lägger du in nyckeln (bara den som har kontot kan göra det):
 1. Gå till https://aistudio.google.com/apikey, logga in och klicka **Create API key**. Det är gratis.
-2. I Cloudflare: Workers & Pages → **nordvy** → Settings → Variables and secrets → **Add**. Välj typen **Secret**, namnet `GEMINI_API_KEY` och klistra in nyckeln. Spara.
+2. I Cloudflare: Workers & Pages → **nordvy** → Settings → **Runtime variables and secrets** (inte den under Builds) → **Add variable**. Välj typen **Secret**, namnet `GEMINI_API_KEY` och klistra in nyckeln. Spara.
 3. Kontrollera att `https://nordvyuf.se/api/health` visar `"gemini": true`.
 
 Googles gratisnivå får använda det som skickas för att förbättra Googles tjänster. Därför tas kontaktuppgifterna bort, och samtyckestexten i intervjun säger det.
