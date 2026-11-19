@@ -4,9 +4,9 @@ Nordvy är ett UF-företag (Ung Företagsamhet) som drivs av fyra gymnasieelever
 
 ## Var allt finns
 
-- **Repo:** `nordvyuf/nordvy` (publikt). Varje commit till `main` publiceras automatiskt av Cloudflare på https://nordvy.nordvyuf.workers.dev.
+- **Repo:** `nordvyuf/nordvy` (publikt). Varje commit till `main` publiceras automatiskt av Cloudflare på https://nordvyuf.se. Samma sida finns också på https://nordvy.nordvyuf.workers.dev.
 - **Förhandsvisning:** varje gren får en egen adress, `https://<gren>-nordvy.nordvyuf.workers.dev`. Den syns inte på GitHub. Räkna fram den eller fråga.
-- **Domän:** `nordvyuf.se` är inte köpt eller kopplad än.
+- **Domän:** `nordvyuf.se` är köpt hos Loopia, som har Cloudflares namnservrar. DNS sköts i Cloudflare. Domänen är kopplad som Custom domain på workern under Settings → Domains & Routes. `www.nordvyuf.se` skickas vidare till `nordvyuf.se` av `src/worker.js`.
 - **Mejl:** formulär och självintervju mejlar till `Nordvyuf@gmail.com` via ett Google Apps Script (`CONTACT_ENDPOINT` i `wrangler.jsonc`). Gränsen är 30 mejl per dag. Mejlen kommer från avsändaren "Nordvy — webbformulär". Ett intervjuunderlag kan vara uppdelat i flera mejl, märkta (1/3), (2/3) och så vidare.
 - **Bokningar:** Cal.com, `cal.com/nordvy-zovyfw`.
 - **Plan och intervjuregler:** claude.ai-chatten "Nordvy utvecklingsplan" och dokumentet "Nordvy – intervjuchatten".
