@@ -128,12 +128,13 @@ test('AI:ns egna fråga om kundens priser stoppas inte, men gissningar om domän
 });
 
 test('ett kort exempel efter AI:ns fråga får vara kvar', () => {
-  const brief = { foretagsnamn: 'Lågan UF', bransch: 'Doftljus', ort_omrade: 'Lund', tjanster_produkter: 'Doftljus' };
-  const ai = { saves: [], reply: 'Vad kostar doftljusen? Till exempel Doftljus 149 kr.', asked: 'priser' };
-  const r = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus' }, ai);
-  assert.equal(r.reply, 'Vad kostar doftljusen? Till exempel Doftljus 149 kr.');
-  const long = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus' }, { ...ai, reply: 'Vad kostar doftljusen? Det är viktigt för kunderna att se det direkt.' });
-  assert.equal(long.reply, 'Vad kostar doftljusen?');
+  // En salong: priser har ingen fast formulering, så AI:ns egen fråga med exempel används.
+  const brief = { foretagsnamn: 'Vera', foretagstyp: 'Butik, café eller salong', bransch: 'Frisörsalong', ort_omrade: 'Lund', tjanster_produkter: 'Damklippning' };
+  const ai = { saves: [], reply: 'Vad kostar en damklippning? Till exempel Damklippning 650 kr.', asked: 'priser' };
+  const r = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Damklippning' }, ai);
+  assert.equal(r.reply, 'Vad kostar en damklippning? Till exempel Damklippning 650 kr.');
+  const long = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Damklippning' }, { ...ai, reply: 'Vad kostar en damklippning? Det är viktigt för kunderna att se det direkt.' });
+  assert.equal(long.reply, 'Vad kostar en damklippning?');
 });
 
 const ok = (content) => new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 });
@@ -251,4 +252,41 @@ test('svar där koden själv bestämmer nästa fråga går utan AI, så att kund
   assert.equal(needsAi({ brief, asked: ['ort_omrade'], askCount: 1, message: 'Jag orkar inte mer' }), false);
   assert.equal(needsAi({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'allt möjligt' }), false);
   assert.equal(needsAi({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus och presentask' }), true);
+});
+
+
+// Från testintervjun 19 november (NordvyUF): färger och önskemål hamnade under "Undvik".
+test('sista frågan heter Övriga önskemål och tar emot både önskemål och sådant de inte vill ha', async () => {
+  const { FIELD } = await import('../public/assets/shared/brief.js');
+  assert.equal(FIELD.undvik.label, 'Övriga önskemål');
+  assert.match(FIELD.undvik.question, /något mer ni vill ha med/);
+  const brief = { foretagsnamn: 'A', foretagstyp: 'Annat', bransch: 'B' };
+  assert.equal(applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'Nej, inget mer' }, null).brief.undvik, 'Inget särskilt');
+});
+
+test('en stil utan färg ger en fråga om färgerna, en gång, och knappen följer med', () => {
+  const brief = { foretagsnamn: 'NordvyUF', foretagstyp: 'UF-företag', bransch: 'Hemsidor', ort_omrade: 'Malmö', tjanster_produkter: 'Hemsidor', priser: '2999', mal_med_sidan: 'Kontakta oss' };
+  const r = applyTurn({ brief, asked: ['stil'], askCount: 1, message: 'Exklusiv' }, null);
+  assert.deepEqual(r.asked, ['stil']);
+  assert.match(r.reply, /färger/);
+  const two = applyTurn({ brief, asked: ['stil'], askCount: 2, carry: 'Exklusiv', carryField: 'stil', message: 'Blå och grå, lite gult' }, null);
+  assert.equal(two.brief.stil, 'Exklusiv / Blå och grå, lite gult');
+  const none = applyTurn({ brief, asked: ['stil'], askCount: 2, carry: 'Exklusiv', carryField: 'stil', message: 'Nej' }, null);
+  assert.equal(none.brief.stil, 'Exklusiv');
+  assert.equal(applyTurn({ brief, asked: ['stil'], askCount: 1, message: 'Varm och personlig, gärna grönt' }, null).brief.stil, 'Varm och personlig, gärna grönt');
+});
+
+test('önskemål som inte ryms i UF-paketet blir en punkt för teamet', () => {
+  const brief = { foretagsnamn: 'NordvyUF', foretagstyp: 'UF-företag', bransch: 'Hemsidor' };
+  const r = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'Vi gillar inte när det endast är en sida, vill ha olika delar och animationer' }, null);
+  assert.match(r.issues.map((i) => i.text).join(' '), /flera sidor, och det ingår inte i UF-paketet.*Bas eller Premium/);
+  const ok = applyTurn({ brief, asked: ['undvik'], askCount: 1, message: 'Gärna blått' }, null);
+  assert.equal(ok.issues.length, 0);
+});
+
+test('UF-frågan om vad de gör ställs exakt, med exemplet, även när AI:n föreslår en kortare', () => {
+  const ai = { saves: [], reply: 'Vad gör ni?', asked: 'bransch' };
+  const r = applyTurn({ brief: { foretagsnamn: 'NordvyUF' }, asked: ['foretagstyp'], askCount: 1, message: 'UF-företag' }, ai);
+  assert.deepEqual(r.asked, ['bransch']);
+  assert.match(r.reply, /till exempel "Vi gör doftljus/);
 });
