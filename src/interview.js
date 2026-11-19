@@ -362,7 +362,21 @@ const FOLLOW_UPS = {
     needs: (t) => !/\d{3}|@/.test(String(t || '')),
     question: 'Vilket telefonnummer och vilken mejladress ska stå på sidan? Skriv dem gärna här, så kommer de med direkt.',
   },
+  sociala_lankar: {
+    // "Vi har allt" säger inte vilka konton det gäller.
+    needs: (t) => !/@|https?:|www\.|\.(com|se|nu)\b|insta|facebook|\bfb\b|linkedin|tiktok|youtube|twitter|\bx\b|snapchat|pinterest/i.test(String(t || '')),
+    question: 'Vilka konton har ni? Skriv namnen eller länkarna, till exempel @företaget på Instagram, så kommer de med på sidan.',
+  },
 };
+
+// "Nej, inget särskilt" på frågan om vad de vill undvika är ett svar, inte något som saknas.
+// "Vet inte" är fortfarande "saknas".
+const NOTHING = /^\s*(nej|nä|inget|ingenting)(?![a-zåäö])(?!.*vet inte)/i;
+
+// Webbadress i ett svar, till exempel "www.spiideo.com" eller "spiideo.se".
+const DOMAIN = /\b(?:www\.)?[a-z0-9-]{2,}\.(?:se|com|nu|net|org|io|eu|info|biz|co)\b/i;
+// Företaget verkar utanför Sverige. Då kan sidan behöva finnas på engelska.
+const INTERNATIONAL = /(hela världen|världen över|internationell|globalt|global\b|europa|norden|utomlands|worldwide|international)/i;
 
 const words = (s) => new Set(String(s).toLocaleLowerCase('sv-SE').split(/[^a-zåäöé0-9@.]+/).filter((w) => w.length >= 3));
 
@@ -449,13 +463,15 @@ export function applyTurn(state, ai) {
   if (!edit) {
     for (const field of lastAsked) {
       if (!ASKABLE.includes(field) || hasValue(brief, field) || field === vagueField) continue;
-      const followUp = ai && ai.asked === field && askCount < 2 && !negative;
+      // AI:n får be om mer på samma fält, men inte på fält där koden själv avgör följdfrågan.
+      // Annars kom "Vilka tjänster erbjuder ni?" två gånger fast kunden redan svarat med en lista.
+      const followUp = ai && ai.asked === field && askCount < 2 && !negative && !FOLLOW_UPS[field];
       if (followUp) continue;
       if (field !== lastAsked[0] && !negative) continue;
       if (asksUsAgain) {
         accept(field, 'saknas');
         issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden frågade "${message.slice(0, 120)}" i stället för att svara om ${FIELD[field].label.toLocaleLowerCase('sv-SE')}.` }]);
-      } else if (negative) accept(field, field === 'referens_ok' ? 'Nej' : 'saknas');
+      } else if (negative) accept(field, field === 'referens_ok' ? 'Nej' : field === 'undvik' && NOTHING.test(message) ? 'Inget särskilt' : 'saknas');
       else {
         const said = cleanText([carryFor(field), message].filter(Boolean).join(' / '));
         if (said) accept(field, field === 'referens_ok' ? yesNo(message) || said : said);
@@ -482,6 +498,19 @@ export function applyTurn(state, ai) {
   for (const s of saves) {
     if (s.field === 'logga' && !isSaknas(s.value)) addIssue('logga', 'Kunden har en logga och mejlar den. Kontrollera att den kommit in.');
     if (s.field === 'bilder' && !isSaknas(s.value)) addIssue('bilder', 'Kunden har bilder och mejlar dem. Kontrollera att de kommit in.');
+    if (s.field === 'doman_onskemal' && DOMAIN.test(s.value)) {
+      const domain = s.value.match(DOMAIN)[0];
+      addIssue('annat', `Kunden nämner ${domain}. Kolla om de redan har en sida där, och vad som ska hända med den och domänen.`);
+    }
+    if (s.field === 'ort_omrade' && INTERNATIONAL.test(s.value)) {
+      addIssue('annat', `Kunden verkar utanför Sverige ("${s.value.slice(0, 40)}"). Fråga om sidan ska finnas på engelska.`);
+    }
+  }
+  // Egna texter och omdömen finns, men de har inte skickats. Be kunden mejla dem.
+  const has = (k) => hasValue(brief, k) && !isSaknas(brief[k]) && !isNegative(brief[k]);
+  if (saves.some((s) => s.field === 'egna_texter' || s.field === 'omdomen')) {
+    const what = [has('egna_texter') && 'egna texter', has('omdomen') && 'omdömen som får visas'].filter(Boolean);
+    if (what.length) addIssue('innehall', `Kunden har ${what.join(' och ')}. Be dem mejla det, så att sidan inte byggs på gissningar.`);
   }
   const showsWork = /arbeten|portfolio|galleri|referens|visa upp/i.test(brief.mal_med_sidan || '');
   if (showsWork && isSaknas(brief.bilder) && saves.some((s) => s.field === 'bilder' || s.field === 'mal_med_sidan')) {
@@ -492,7 +521,8 @@ export function applyTurn(state, ai) {
   if (sells && isSaknas(brief.bilder) && saves.some((s) => s.field === 'bilder')) {
     addIssue('bilder', 'Kunden vill sälja eller ta emot beställningar men har inga produktbilder än. De behövs innan sidan kan bli klar.');
   }
-  if (edit && !saves.length && message) addIssue('annat', `Kunden vill ändra: ${message}`);
+  // "Nej" när kunden fått frågan "Vad vill du ändra?" betyder att inget ska ändras.
+  if (edit && !saves.length && message && !isNegative(message)) addIssue('annat', `Kunden vill ändra: ${message}`);
 
   const left = missing(brief);
   if (edit) return { brief, issues, saves, reply: null, asked: [], done: left.length === 0, missing: left };
@@ -513,6 +543,9 @@ export function applyTurn(state, ai) {
   } else {
     reply = reply.slice(0, reply.lastIndexOf('?') + 1);
   }
+  // Fält med svarsknappar får checklistans fråga, så att frågan passar knapparna.
+  // AI:n frågade annars "Ska kunderna kunna boka tid?" medan knapparna gällde alla funktioner.
+  if (FIELD[asked]?.chips) reply = fallbackQuestion(asked, NEED.length - left.length, brief);
   return { brief, issues, saves, reply, asked: [asked], done: false, missing: left };
 }
 
