@@ -818,6 +818,12 @@ const hasModel = (env) => Boolean(env?.AI || PROVIDERS.some((p) => env?.[p.key])
 export function needsAi(state) {
   if (state.edit) return true;
   const field = state.asked?.[0];
+  const message = String(state.message || '');
+  // Svar där koden själv bestämmer nästa steg behöver ingen AI, så att kunden slipper vänta:
+  // "vet inte" (enklare fråga), "jag vill sluta" och vaga svar som ger kodens följdfråga.
+  if (wantsToStop(message)) return false;
+  if (field && isUnsure(message) && !asksUs(message) && altQuestion(field) && (state.askCount || 1) < 2) return false;
+  if (field && FOLLOW_UPS[field] && (state.askCount || 1) < 2 && !isNegative(message) && FOLLOW_UPS[field].needs(message, state.brief || {})) return false;
   if (!PLAIN.has(field)) return true;
   const next = missing(state.brief || {}).find((k) => k !== field);
   return Boolean(next) && !PLAIN.has(next);
