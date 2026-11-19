@@ -198,3 +198,48 @@ test('en nivå på tänkandet eller JSON-läge som inte stöds (400) byts, och i
   assert.deepEqual(tried, ['none/json', 'low/json', '-/json', '-/text']);
   assert.equal(await runExternal({}, payload), null);
 });
+
+test('kunden vet inte: en enklare fråga en gång, sedan "saknas" och en punkt för teamet', async () => {
+  const brief = { foretagsnamn: 'Lågan UF', bransch: 'Doftljus', ort_omrade: 'Lund', tjanster_produkter: 'Doftljus', priser: '149 kr', mal_med_sidan: 'Beställa', stil: 'Lekfull' };
+  const first = applyTurn({ brief, asked: ['varfor_valja_oss'], askCount: 1, message: 'vet inte' }, null);
+  assert.deepEqual(first.asked, ['varfor_valja_oss']);
+  assert.match(first.reply, /brukar kunderna säga/);
+  assert.equal(first.brief.varfor_valja_oss, undefined);
+  const ok = applyTurn({ brief, asked: ['varfor_valja_oss'], askCount: 2, carry: 'vet inte', carryField: 'varfor_valja_oss', message: 'Att de luktar gott länge' }, null);
+  assert.equal(ok.brief.varfor_valja_oss, 'Att de luktar gott länge');
+  const again = applyTurn({ brief, asked: ['varfor_valja_oss'], askCount: 2, message: 'ingen aning' }, null);
+  assert.equal(again.brief.varfor_valja_oss, 'saknas');
+  assert.match(again.issues.map((i) => i.text).join(' '), /visste inte: varför välja er/);
+  // Ett nej till något kunden inte har är ett svar, ingen reservfråga.
+  assert.equal(applyTurn({ brief, asked: ['logga'], askCount: 1, message: 'Nej, ingen logga' }, null).brief.logga, 'saknas');
+});
+
+test('kunden vill sluta: intervjun avslutas direkt och teamet får veta vad som saknas', () => {
+  const r = applyTurn({ brief: { foretagsnamn: 'A', bransch: 'Frisör' }, asked: ['ort_omrade'], askCount: 1, message: 'Jag orkar inte mer' }, null);
+  assert.equal(r.done, true);
+  assert.equal(r.stopped, true);
+  assert.match(r.issues[0].text, /ville avsluta.*Ort \/ område/);
+  assert.equal(applyTurn({ brief: {}, asked: ['foretagsnamn'], askCount: 1, message: 'Sluta Snickeri' }, null).stopped, undefined);
+});
+
+test('förloppet visas som fyra delar, inte som antal punkter', async () => {
+  const { progressOf } = await import('../public/assets/shared/brief.js');
+  assert.deepEqual(progressOf({}), { part: 1, parts: 4, label: 'Om företaget', share: 0 });
+  const p = progressOf({ foretagsnamn: 'Lågan UF', bransch: 'x', ort_omrade: 'x', tjanster_produkter: 'x', priser: 'x' });
+  assert.equal(p.part, 2);
+  assert.equal(p.label, 'Hur sidan ska bli');
+  assert.ok(p.share > 0 && p.share < 1);
+});
+
+test('en egen AI-server används bara med en https-adress, och utan nyckel skickas inget lösenord', async () => {
+  resetPauses();
+  const sent = [];
+  const json = await withFetch(async (url, init) => {
+    sent.push({ url: String(url), auth: init.headers.authorization, model: JSON.parse(init.body).model });
+    return ok('{"a":3}');
+  }, () => runExternal({ LOCAL_AI_URL: 'https://ai.nordvy.example/v1/chat/completions', LOCAL_AI_MODEL: 'qwen2.5:7b' }, payload));
+  assert.deepEqual(json, { a: 3 });
+  assert.deepEqual(sent, [{ url: 'https://ai.nordvy.example/v1/chat/completions', auth: undefined, model: 'qwen2.5:7b' }]);
+  sent.length = 0;
+  assert.equal(await withFetch(async () => ok('{}'), () => runExternal({ LOCAL_AI_URL: 'http://192.168.1.5:11434/v1/chat/completions' }, payload)), null);
+});
