@@ -14,7 +14,7 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 | `public/kund/…` | Kundernas sidor, en mapp per kund. Byggs enligt `.claude/skills/kundsida/`. |
 | `CLAUDE.md` | Fakta och regler för Claude när den arbetar i repot. |
 | `src/worker.js` | Servern: säkerhetsrubriker, kontaktformulär och API:et för självintervjun. |
-| `src/interview.js` | Reglerna för intervjun och anropen till Workers AI. |
+| `src/interview.js` | Reglerna för intervjun och anropen till Gemini och Workers AI. |
 | `src/reviews.js` | Kontroll och mejl för omdömen från besökare på kundsidor (`POST /api/review`). |
 | `public/assets/omdomen.js` | Rutan med omdömen och formulär som kundsidor lägger in. Se skillen `kundsida`. |
 | `test/` | Tester. Kör med `npm test`. |
@@ -31,8 +31,21 @@ Checklistan och reglerna kommer från dokumentet "Nordvy – intervjuchatten". D
 - **Vaga svar** ger en följdfråga, högst en gång. Sedan sparas det kunden sa.
 - **Intervjun fungerar utan AI.** Svarar inte Workers AI, eller är dagens gratiskvot slut, ställs checklistans färdiga frågor i stället.
 - **Bilder och logga** laddas inte upp i chatten. Kunden mejlar dem, och det läggs som en uppföljningspunkt i underlaget.
+- **Frågorna beror på typen av företag.** Efter namnet frågar chatten vilken typ av företag det är (UF-företag, butik/café/salong, hantverk, säljer på nätet, säljer till andra företag eller annat). Står "UF" i namnet hoppas frågan över. Typen styr vilka fält som frågas (`SKIP`), hur frågorna och knapparna ser ut (`VIEW`) och vad som krävs innan svaret godtas (`FOLLOW_UPS` i `src/interview.js`, till exempel priser för den som säljer och adress för den som har en lokal). Ett UF-företag får 17 korta frågor med exempel, en salong 23.
+- **Kontaktuppgifter skickas aldrig till AI:n.** Telefonnummer och mejladresser byts mot `[telefon]` och `[mejl]` innan prompten skickas (`redact` i `src/interview.js`). Koden sparar dem direkt ur kundens svar.
 
-Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS` i `public/assets/shared/brief.js`. Reglerna till AI:n står i `RULES` i `src/interview.js`.
+Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS`, `SKIP` och `VIEW` i `public/assets/shared/brief.js`. Reglerna till AI:n står i `RULES` i `src/interview.js`.
+
+### AI-modellen
+
+Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-2.5-flash`, kan ändras med variabeln `GEMINI_MODEL`). Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
+
+Så lägger du in nyckeln (bara den som har kontot kan göra det):
+1. Gå till https://aistudio.google.com/apikey, logga in och klicka **Create API key**. Det är gratis.
+2. I Cloudflare: Workers & Pages → **nordvy** → Settings → Variables and secrets → **Add**. Välj typen **Secret**, namnet `GEMINI_API_KEY` och klistra in nyckeln. Spara.
+3. Kontrollera att `https://nordvyuf.se/api/health` visar `"gemini": true`.
+
+Googles gratisnivå får använda det som skickas för att förbättra Googles tjänster. Därför tas kontaktuppgifterna bort, och samtyckestexten i intervjun säger det.
 
 ### Vad det kostar
 
