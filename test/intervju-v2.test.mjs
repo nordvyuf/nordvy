@@ -134,3 +134,29 @@ test('ett kort exempel efter AI:ns fråga får vara kvar', () => {
   const long = applyTurn({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus' }, { ...ai, reply: 'Vad kostar doftljusen? Det är viktigt för kunderna att se det direkt.' });
   assert.equal(long.reply, 'Vad kostar doftljusen?');
 });
+
+test('finns inte Gemini-modellen provas nästa, och en tankenivå som inte stöds byts', async () => {
+  const { runGemini } = await import('../src/interview.js');
+  const realFetch = globalThis.fetch;
+  const tried = [];
+  try {
+    globalThis.fetch = async (url, init) => {
+      const body = JSON.parse(init.body);
+      tried.push(`${body.model}/${body.reasoning_effort ?? '-'}`);
+      if (body.model === 'gemini-3.8-flash') return new Response('{"error":{"code":404}}', { status: 404 });
+      if (body.reasoning_effort === 'none') return new Response('{"error":{"code":400}}', { status: 400 });
+      return new Response(JSON.stringify({ choices: [{ message: { content: '{"ok":1}' } }] }), { status: 200 });
+    };
+    const meta = {};
+    await runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }, meta);
+    assert.deepEqual(tried, ['gemini-3.8-flash/none', 'gemini-flash-latest/none', 'gemini-flash-latest/low']);
+    assert.equal(meta.provider, 'gemini:gemini-flash-latest');
+    // Kvoten slut (429): inga fler modeller provas.
+    tried.length = 0;
+    globalThis.fetch = async (url, init) => { tried.push(JSON.parse(init.body).model); return new Response('quota', { status: 429 }); };
+    await assert.rejects(runGemini({ GEMINI_API_KEY: 'x' }, { messages: [], max_tokens: 10, temperature: 0 }), /429/);
+    assert.deepEqual(tried, ['gemini-3.8-flash']);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
