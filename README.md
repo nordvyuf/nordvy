@@ -38,7 +38,7 @@ Vill du ändra frågorna, knapparna eller ordningen: se `FIELDS`, `SKIP` och `VI
 
 ### AI-modellen
 
-Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-3.8-flash`, och `gemini-flash-latest` om den inte finns; kan ändras med variabeln `GEMINI_MODEL`). `gemini-2.5-flash` finns inte för nya konton. Med `debug: true` visar `provider` vilken AI som svarade. Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
+Finns hemligheten `GEMINI_API_KEY` frågas Google Gemini först (modell `gemini-3.8-flash`; finns den inte eller är den överbelastad provas `gemini-flash-latest` och `gemini-flash-lite-latest`, högst 9 sekunder totalt; kan ändras med variabeln `GEMINI_MODEL`). `gemini-2.5-flash` finns inte för nya konton. Med `debug: true` visar `provider` vilken AI som svarade. Svarar Gemini inte, till exempel när Googles gratiskvot är slut, tar Workers AI över, och sedan checklistans frågor. Utan nyckel används bara Workers AI, som förut. `/api/health` visar `"gemini": true` när nyckeln finns.
 
 Så lägger du in nyckeln (bara den som har kontot kan göra det):
 1. Gå till https://aistudio.google.com/apikey, logga in och klicka **Create API key**. Det är gratis.
