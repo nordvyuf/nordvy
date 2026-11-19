@@ -243,3 +243,12 @@ test('en egen AI-server används bara med en https-adress, och utan nyckel skick
   sent.length = 0;
   assert.equal(await withFetch(async () => ok('{}'), () => runExternal({ LOCAL_AI_URL: 'http://192.168.1.5:11434/v1/chat/completions' }, payload)), null);
 });
+
+test('svar där koden själv bestämmer nästa fråga går utan AI, så att kunden slipper vänta', async () => {
+  const { needsAi } = await import('../src/interview.js');
+  const brief = { foretagsnamn: 'Lågan UF', bransch: 'Doftljus' };
+  assert.equal(needsAi({ brief, asked: ['varfor_valja_oss'], askCount: 1, message: 'vet inte' }), false);
+  assert.equal(needsAi({ brief, asked: ['ort_omrade'], askCount: 1, message: 'Jag orkar inte mer' }), false);
+  assert.equal(needsAi({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'allt möjligt' }), false);
+  assert.equal(needsAi({ brief, asked: ['tjanster_produkter'], askCount: 1, message: 'Doftljus och presentask' }), true);
+});
