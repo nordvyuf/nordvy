@@ -116,3 +116,12 @@ test('utkastet för ett UF-företag lovar inga öppettider eller "vägen hit"', 
   assert.equal(m.tagline, 'UF-företag i Lund');
   assert.doesNotMatch(`${m.sub} ${m.tagline}`, /öppettid|vägen hit/);
 });
+
+test('AI:ns egna fråga om kundens priser stoppas inte, men gissningar om domäner gör det', async () => {
+  const { tidyReply, fieldForQuestion } = await import('../src/interview.js');
+  assert.equal(tidyReply('Vad kostar doftljusen ungefär?'), 'Vad kostar doftljusen ungefär?');
+  assert.equal(tidyReply('Adressen är redan registrerad. Vill ni ha en annan?'), 'Vill ni ha en annan?');
+  assert.equal(tidyReply('Domänen är ledig?'), '');
+  assert.equal(tidyReply('Det kostar 499 kr. Vill ni boka?'), 'Vill ni boka?');
+  assert.equal(fieldForQuestion('Vad är det bästa med era doftljus?', 'varfor_valja_oss', ['varfor_valja_oss']), 'varfor_valja_oss');
+});
