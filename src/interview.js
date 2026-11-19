@@ -34,6 +34,7 @@ import {
   isUnsure,
   altQuestion,
   wantsToStop,
+  detectAccent,
 } from '../public/assets/shared/brief.js';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -251,7 +252,7 @@ const ABOUT = {
   egna_texter: /text/i,
   omdomen: /omdöme|recension|betyg/i,
   doman_onskemal: /webbadress|webbplatsadress|domän|sidnamn|webbplatsnamn|\.se\b/i,
-  undvik: /undvik|inte vill ha|inte ha|vill ni slippa/i,
+  undvik: /undvik|inte vill ha|inte ha|vill ni slippa|något mer|önskemål|vill ha med/i,
   referens_ok: /som exempel|referens/i,
 };
 
@@ -397,6 +398,13 @@ const FOLLOW_UPS = {
     needs: (t) => !/@|https?:|www\.|\.(com|se|nu)\b|insta|facebook|\bfb\b|linkedin|tiktok|youtube|twitter|\bx\b|snapchat|pinterest/i.test(String(t || '')),
     question: 'Vilka konton har ni? Skriv namnen eller länkarna, till exempel @företaget på Instagram, så kommer de med på sidan.',
   },
+  stil: {
+    // En knapp som "Exklusiv" säger inget om färgerna. Fråga en gång, så att kunden får säga dem här
+    // och inte behöver klämma in dem på slutet (det hände i ett test 19 november).
+    needs: (t) => !detectAccent(t) && !/färg|logga|instagram/i.test(String(t || '')),
+    question: 'Har ni några färger ni vill ha? Till exempel färgerna i loggan eller på Instagram.',
+    keep: () => true,
+  },
   priser: {
     // Den som säljer något behöver priser på sidan. Utan siffror frågar vi en gång till.
     needs: (t, brief) => ['uf', 'webshop', 'lokal'].includes(profileOf(brief)) && !/\d/.test(String(t || '')) && !NO_PRICES.test(String(t || '')),
@@ -532,6 +540,9 @@ export function applyTurn(state, ai) {
       if (asksUsAgain) {
         accept(field, 'saknas');
         issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden frågade "${message.slice(0, 120)}" i stället för att svara om ${FIELD[field].label.toLocaleLowerCase('sv-SE')}.` }]);
+      } else if ((negative || (unsure && field === lastAsked[0] && altQuestion(field))) && carryFor(field) && !isUnsure(carryFor(field))) {
+        // "Nej" på en följdfråga (till exempel färgerna) tar inte bort det kunden redan svarat ("Exklusiv").
+        accept(field, carryFor(field));
       } else if (negative || (unsure && field === lastAsked[0] && altQuestion(field))) {
         accept(field, field === 'referens_ok' ? 'Nej' : field === 'undvik' && NOTHING.test(message) ? 'Inget särskilt' : 'saknas');
         if (unsure && altQuestion(field)) issues = cleanIssues([...issues, { topic: 'annat', text: `Kunden visste inte: ${FIELD[field].label.toLocaleLowerCase('sv-SE')}. Ta det i samtalet.` }]);
@@ -572,6 +583,15 @@ export function applyTurn(state, ai) {
       addIssue('annat', `Kunden har en hemsida i dag: ${s.value.match(DOMAIN)[0]}. Titta på den innan ni bygger, och fråga vad som ska hända med den.`);
     }
   }
+  // Önskemål som inte ryms i paketet: teamet tar upp ett större paket i samtalet i stället för att lova för mycket.
+  const wishes = saves.map((s) => s.value).join(' ');
+  if (wishes && recommendPackage(brief).id === 'uf') {
+    const more = [];
+    if (/(flera|fler|olika) (sidor|delar|flikar)|undersid|(bara|endast) en sida|en sida på/i.test(wishes)) more.push('flera sidor');
+    if (/webshop|webbshop|betala (direkt )?på sidan|kortbetalning|bokning|boka tid/i.test(wishes)) more.push('betalning eller bokning på sidan');
+    if (more.length) addIssue('funktioner', `Kunden vill ha ${more.join(' och ')}, och det ingår inte i UF-paketet (en sida med beställningsförfrågan). Ta upp Bas eller Premium i samtalet.`);
+  }
+
   // Egna texter och omdömen finns, men de har inte skickats. Be kunden mejla dem.
   const has = (k) => hasValue(brief, k) && !isSaknas(brief[k]) && !isNegative(brief[k]);
   if (saves.some((s) => s.field === 'egna_texter' || s.field === 'omdomen')) {
@@ -619,7 +639,9 @@ export function applyTurn(state, ai) {
   }
   // Fält där knapparna är själva valen får checklistans fråga, så att frågan passar knapparna.
   // AI:n frågade annars "Ska kunderna kunna boka tid?" medan knapparna gällde alla funktioner.
-  if (questionFor(asked, brief)?.pick) reply = fallbackQuestion(asked, NEED.length - left.length, brief);
+  // Frågor med en fast formulering (till exempel UF-frågan med ett exempel) ställs också exakt.
+  const view = questionFor(asked, brief);
+  if (view?.pick || view?.fixed) reply = fallbackQuestion(asked, NEED.length - left.length, brief);
   return { brief, issues, saves, reply, asked: [asked], done: false, missing: left };
 }
 
