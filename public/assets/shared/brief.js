@@ -192,6 +192,51 @@ export function plan(brief) {
   return NEED.filter((k) => !skip.has(k) || hasValue(b, k));
 }
 
+/* ------------------------------------- faser, reservfrågor och slut */
+
+// Förloppet visas som fyra delar i stället för "0 av 23 punkter", som kändes som ett formulär.
+export const PHASES = [
+  { label: 'Om företaget', keys: ['foretagsnamn', 'foretagstyp', 'bransch', 'ort_omrade', 'tjanster_produkter', 'priser'] },
+  { label: 'Hur sidan ska bli', keys: ['mal_med_sidan', 'stil', 'varfor_valja_oss', 'erfarenhet', 'malgrupp', 'befintlig_sida', 'sprak', 'funktioner', 'bestallning'] },
+  { label: 'Kontakt', keys: ['kontakt', 'oppettider', 'sociala_lankar'] },
+  { label: 'Bilder och sista frågorna', keys: ['logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok'] },
+];
+
+// Var i intervjun kunden är: delen med den första frågan som återstår, och hur stor andel som är klar.
+export function progressOf(brief) {
+  const asks = plan(brief);
+  const left = missing(brief);
+  const next = left[0];
+  const at = next ? Math.max(0, PHASES.findIndex((p) => p.keys.includes(next))) : PHASES.length - 1;
+  return { part: at + 1, parts: PHASES.length, label: PHASES[at].label, share: asks.length ? (asks.length - left.length) / asks.length : 0 };
+}
+
+// Svar som betyder "jag vet inte" (inte "nej, vi har inget").
+const UNSURE = /(vet (inte|ej)|ingen aning|osäker|kommer inte på|har inte bestämt|inte bestämt|svår(t)? fråga|förstår inte|vad menas|hmm+|\?\s*$)/i;
+export const isUnsure = (text) => UNSURE.test(String(text || '').trim());
+
+// En enklare fråga när kunden inte vet. Ställs en gång, så att intervjun ändå får något att bygga på.
+const ALT = {
+  bransch: 'Om en kompis frågar vad ni håller på med, vad svarar ni då?',
+  ort_omrade: 'Var bor de flesta av era kunder, ungefär?',
+  tjanster_produkter: 'Vad är det kunderna köper eller bokar oftast hos er?',
+  priser: 'Ungefär vad kostar det billigaste ni säljer? En ungefärlig siffra räcker.',
+  mal_med_sidan: 'Hur gör kunderna i dag när de vill köpa av er? Ringer de, skriver på Instagram eller kommer förbi?',
+  stil: 'Vilka färger har ni i loggan, på skylten eller på Instagram?',
+  varfor_valja_oss: 'Vad brukar kunderna säga att de gillar hos er?',
+  erfarenhet: 'Vilket år började ni ungefär?',
+  malgrupp: 'Vem var er senaste kund, ungefär? Till exempel en student, en familj eller ett företag.',
+};
+export const altQuestion = (key) => ALT[key] || '';
+
+// Kunden vill sluta. Då avslutas intervjun direkt med det som finns, och teamet tar resten.
+const STOP = /^(jag )?(vill (sluta|avsluta|inte svara på fler)|orkar inte( mer)?|kan vi (sluta|avsluta)|inga fler frågor|det räcker( nu)?)(?![a-zåäö])|^(sluta|avsluta|klar nu)[\s.!]*$/i;
+export const wantsToStop = (text) => STOP.test(String(text || '').trim());
+
+// Hur många svar intervjun tar emot innan den avslutas, även om allt inte är besvarat.
+// Varje fält får högst en följdfråga, så en normal intervju är 17–30 svar.
+export const MAX_ANSWERS = 36;
+
 // Frågan och svarsknapparna för ett fält, anpassade efter typen av företag.
 export function questionFor(key, brief) {
   const f = FIELD[key];
