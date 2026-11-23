@@ -383,7 +383,8 @@ async function submitAnswer() {
   // så att intervjun går vidare om kunden frågar igen.
   const sameField = turn.asked?.[0] && turn.asked[0] === previousAsked && !hasValue(state.brief, previousAsked);
   if (!turn.skip) {
-    state.carry = sameField ? [state.carry, message].filter(Boolean).join(' / ').slice(0, LIMITS.value) : '';
+    const repeat = String(state.carry || '').toLocaleLowerCase('sv-SE').split(' / ').includes(message.trim().toLocaleLowerCase('sv-SE'));
+    state.carry = sameField ? (repeat ? state.carry : [state.carry, message].filter(Boolean).join(' / ')).slice(0, LIMITS.value) : '';
     state.carryField = sameField ? previousAsked : '';
   }
   state.askCount = sameField ? state.askCount + 1 : 1;
