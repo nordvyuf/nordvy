@@ -252,9 +252,20 @@ async function handleAsset(request, env, url) {
   return secure(new Response(html, { status: response.status, headers }), { csp: true });
 }
 
+// Korta adresser till kundsidor, till exempel nordvyuf.se/reboarduf. Sidan visas på den korta
+// adressen (adressfältet ändras inte), och dess filer hämtas som vanligt från /kund/<namn>/.
+export const SHORT_PATHS = {
+  reboarduf: '/kund/reboard/',
+};
+
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    let url = new URL(request.url);
+    const short = SHORT_PATHS[url.pathname.replace(/^\/|\/$/g, '').toLowerCase()];
+    if (short && url.hostname !== 'www.nordvyuf.se') {
+      url = new URL(short + url.search, url);
+      request = new Request(url, request);
+    }
     // www.nordvyuf.se skickas vidare till nordvyuf.se, med samma sökväg.
     if (url.hostname === 'www.nordvyuf.se') {
       url.hostname = 'nordvyuf.se';
