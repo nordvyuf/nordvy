@@ -169,7 +169,7 @@ export function createSheet(container, { label = 'Projektblad' } = {}) {
       ol.append(mark(li, `part:${p.key}`, JSON.stringify(p)));
     });
     // Platser för delarna som kommer, så att planen ser ut att växa och inte är tom.
-    const ghosts = Math.max(0, 3 - s.parts.length);
+    const ghosts = s.parts.length ? 0 : 1;
     for (let i = 0; i < ghosts; i++) {
       const li = el('li', 'pb-part pb-slot');
       li.append(el('span', 'pb-n', String(s.parts.length + i + 1)), el('div', 'pb-body', 'Fylls i när du svarar'));
@@ -190,7 +190,9 @@ export function createSheet(container, { label = 'Projektblad' } = {}) {
     const foot = el('footer', 'pb-foot');
     foot.append(el('b', '', 'Nästa steg'), el('p', '', 'När intervjun är klar bygger vi ett riktigt utkast av er sida, för hand. Ni får en länk inom 2 vardagar.'));
 
-    root.append(top, head, look, plan, need, foot);
+    // Bladet börjar tomt och växer: känslan visas först när kunden sagt något om den,
+    // och det vi behöver från dem först när intervjun är klar.
+    root.append(top, head, ...(s.chosen ? [look] : []), plan, ...(done ? [need] : []), foot);
     prev = next;
     first = false;
     // Markeringen tas bort efteråt, så att den spelas igen nästa gång samma del ändras.
