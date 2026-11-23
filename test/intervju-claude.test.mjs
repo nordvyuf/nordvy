@@ -40,3 +40,13 @@ test('prompten säger att [mejl] och [telefon] är riktiga svar', () => {
   assert.match(system.content, /\[mejl\]" och "\[telefon\]" betyder/);
   assert.match(system.content, /Fråga bara om fälten under ÅTERSTÅR/);
 });
+
+test('"vet inte" om typen av företag: Claude får inte fråga om typen igen med andra ord', () => {
+  const brief = { foretagsnamn: 'mätochmätt', foretagstyp: 'saknas' };
+  const [, user] = buildTurnMessages({ brief, history: [], asked: ['bransch'], message: 'x' });
+  assert.match(user.content, /FÖRETAGSTYP: okänd\. Kunden vet inte/);
+  const ai = { saves: [], reply: 'Är ni ett företag som säljer direkt till privatpersoner, ett som säljer till andra företag, eller något annat som en UF-grupp eller förening?', asked: 'bransch' };
+  const r = applyTurn({ brief: { foretagsnamn: 'mätochmätt' }, asked: ['foretagstyp'], askCount: 2, message: 'vet inte' }, ai);
+  assert.notDeepEqual(r.asked, ['tjanster_produkter']);
+  assert.doesNotMatch(r.reply, /privatpersoner/);
+});

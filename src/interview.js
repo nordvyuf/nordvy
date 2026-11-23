@@ -163,7 +163,10 @@ export function buildTurnMessages({ brief, history, asked, message, edit }) {
   // Bara de närmaste fälten följer med: frågan gäller alltid det första, och kortare prompt kostar mindre.
   const todo = left.slice(0, 5).map((k) => `- ${k}: ${FIELD[k].about} Förslag: "${questionFor(k, brief).question}"`);
   if (left.length > 5) todo.push(`- (och ${left.length - 5} fält till efter de här)`);
-  const who = PROFILES[profile].hint ? `FÖRETAGSTYP: ${PROFILES[profile].label}. ${PROFILES[profile].hint}` : 'FÖRETAGSTYP: inte klar än.';
+  // Har kunden redan svarat (även "vet inte") frågar vi inte om typen igen (testintervju 23 november).
+  const who = PROFILES[profile].hint
+    ? `FÖRETAGSTYP: ${PROFILES[profile].label}. ${PROFILES[profile].hint}`
+    : hasValue(brief, 'foretagstyp') ? 'FÖRETAGSTYP: okänd. Kunden vet inte, så fråga inte om det igen.' : 'FÖRETAGSTYP: inte klar än.';
   // De senaste fyra frågorna och svaren räcker för att inte upprepa sig. Det som sparats står ovanför.
   const talk = history.slice(-8).map((m) => `${m.who === 'me' ? 'KUND' : 'DU'}: ${short(m.text, 220)}`);
   const task = edit
@@ -233,7 +236,7 @@ const FILLER =
 // som AI:n säger att den frågar om, skulle kundens svar sparas på fel plats.
 const ABOUT = {
   foretagsnamn: /heter|namn/i,
-  foretagstyp: /typ av företag|vilket av|passar bäst|vilken sorts/i,
+  foretagstyp: /typ av företag|vilket av|passar bäst|vilken sorts|uf-(företag|grupp)|enskild firma|aktiebolag|förening|säljer (direkt )?till (privatpersoner|andra företag)/i,
   priser: /pris|kostar|kostnad|timpris/i,
   befintlig_sida: /hemsida i dag|hemsida idag|befintlig|nuvarande (hemsida|sida)|redan en (hemsida|sida)/i,
   sprak: /språk|engelska|svenska/i,
