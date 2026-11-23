@@ -64,8 +64,11 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
     setErrors(next);
     const first = ['name', 'contact'].find((f) => next[f]);
     if (first) {
-      nudge(refs[first].current?.parentElement, 'r-fel');
-      refs[first].current?.focus();
+      const field = refs[first].current;
+      nudge(field?.parentElement, 'r-fel');
+      // Fältet och dess etikett hamnar mitt i rutan, inte dolda under kanten.
+      field?.scrollIntoView({ block: 'center' });
+      field?.focus({ preventScroll: true });
       return;
     }
     const orderNo = newOrderNo();
@@ -96,6 +99,14 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby="bestall-besk"
+        // Fokus börjar på den valda storleken, inte på stäng-knappen.
+        onOpenAutoFocus={(e) => {
+          const checked = e.currentTarget?.querySelector?.('input[name=bestall-storlek]:checked');
+          if (checked) {
+            e.preventDefault();
+            checked.focus();
+          }
+        }}
         onCloseAutoFocus={(e) => {
           const el = opener?.current;
           if (el && el.isConnected && el !== document.body) {
@@ -108,7 +119,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
           <form onSubmit={submit} noValidate className="px-5 pb-6 pt-6 sm:px-8 sm:pb-8 sm:pt-8">
             <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">Beställ en skärbräda</DialogTitle>
             <DialogDescription id="bestall-besk" className="mt-2 text-[15px] text-black/75">
-              Det tar en halv minut. Du betalar med Swish efteråt.
+              Det tar en halv minut. I nästa steg skickar du beställningen och ser hur du betalar med Swish.
             </DialogDescription>
 
             <fieldset className="mt-6">
@@ -188,7 +199,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
             </div>
 
             <Button type="submit" size="stor" className="mt-6 w-full">
-              Gå vidare till betalning
+              Fortsätt
             </Button>
             {DRAFT && <p className="mt-3 text-[14px] text-black/70">Utkast: inget skickas härifrån än.</p>}
           </form>

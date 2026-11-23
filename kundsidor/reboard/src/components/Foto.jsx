@@ -21,7 +21,8 @@ export function Foto({ id, ratio = '4 / 5', dark = false, eager = false, reveal 
       )}
       <div className="foto-plats" role={p.src ? undefined : 'img'} aria-label={p.src ? undefined : `Foto kommer: ${p.wanted}`}>
         <span aria-hidden="true">
-          <b>Foto kommer:</b> {p.wanted}
+          <b>Foto kommer</b>
+          <span className="vad">: {p.wanted}</span>
         </span>
       </div>
     </div>

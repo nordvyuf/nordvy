@@ -107,6 +107,12 @@ mark.todo {
   color: #5c3c20;
 }
 .foto-plats b { font-weight: 600; }
+/* I smala rutor (tre i rad på mobil) räcker "Foto kommer". Hela beskrivningen finns kvar för skärmläsare. */
+.foto { container-type: inline-size; }
+@container (max-width: 170px) {
+  .foto-plats { inset: 6px; padding: 8px; font-size: 12px; }
+  .foto-plats .vad { display: none; }
+}
 .foto.mork { background: var(--color-oliv-mork); }
 .foto.mork .foto-plats { color: var(--color-salvia); border-color: color-mix(in srgb, var(--color-salvia) 55%, transparent); }
 .foto.har-bild .foto-plats { display: none; }
@@ -121,7 +127,6 @@ mark.todo {
     linear-gradient(to right, color-mix(in srgb, var(--color-andtra) 16%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in srgb, var(--color-andtra) 16%, transparent) 1px, transparent 1px);
   background-size: var(--ruta-x) var(--ruta-y);
-  background-position: -1px -1px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-andtra) 30%, transparent);
 }
 .kontur {
@@ -200,10 +205,10 @@ mark.todo {
   justify-content: space-between;
   gap: 16px;
   align-items: baseline;
-  padding: 18px 0;
-  font-family: var(--font-rubrik);
-  font-size: 26px;
-  line-height: 1.15;
+  padding: 20px 0;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 .fraga summary::-webkit-details-marker { display: none; }
 .fraga summary .plus { flex: none; transition: transform 0.3s var(--ease-mjuk); color: var(--color-andtra); }

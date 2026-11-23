@@ -11,7 +11,7 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
   const preliminary = SIZES.some((s) => !s.confirmed);
 
   return (
-    <section id="storlekar" aria-labelledby="storlekar-rubrik" className="ram py-20 md:py-28">
+    <section id="storlekar" aria-labelledby="storlekar-rubrik" className="ram pb-20 pt-12 md:pb-28 md:pt-16">
       {/* Produkten och priserna för sökmotorer (schema.org-mikrodata, eftersom CSP:n stoppar inbäddade skript). */}
       <div itemScope itemType="https://schema.org/Product" hidden>
         <meta itemProp="name" content="Skärbräda av återvunnen ek" />
@@ -50,6 +50,8 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
               aspectRatio: `${GRID.w} / ${GRID.h}`,
               '--ruta-x': pct(GRID.step, GRID.w),
               '--ruta-y': pct(GRID.step, GRID.h),
+              // Rutorna räknas från brädornas hörn nere till vänster, så att kanterna hamnar på linjerna.
+              backgroundPosition: '0 100%',
             }}
             role="img"
             aria-label={`${size.name} skärbräda, ungefär ${size.w} × ${size.h} cm, jämförd med de andra storlekarna.`}
@@ -60,6 +62,7 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
               </div>
             ))}
             <div className="bradan" style={{ width: pct(size.w, GRID.w), height: pct(size.h, GRID.h) }} aria-hidden="true">
+              {size.photo && <img src={size.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />}
               <span className="absolute bottom-2.5 left-3 font-rubrik text-[22px] leading-none text-black md:bottom-3 md:left-4 md:text-[28px]">
                 {size.w} × {size.h} cm
               </span>
@@ -67,7 +70,7 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
           </div>
           {preliminary && (
             <p className="mt-3 text-[15px] text-black/75">
-              <Todo>Måtten är preliminära. Vilka mått har era brädor?</Todo>
+              <Todo>Måtten är preliminära. Vilka mått har era brädor? Skicka gärna ett foto ovanifrån på varje storlek.</Todo>
             </p>
           )}
         </div>
@@ -109,10 +112,12 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
           </Button>
           <p className="mt-3 text-[15px] text-black/75">Du betalar med Swish efter beställningen.</p>
 
-          <p className="mt-8 border-t-[1.5px] border-oliv/25 pt-5 text-[16px]">
-            <span className="font-rubrik text-[24px] leading-none">Till jul?</span>{' '}
-            Skriv det i beställningen. <Todo>Sista dag att beställa för att hinna före jul?</Todo>
-          </p>
+          <div className="mt-8 border-t-[1.5px] border-oliv/25 pt-5">
+            <p className="font-rubrik text-[34px] leading-none">Till jul?</p>
+            <p className="mt-2 text-[16px]">
+              Skriv det i beställningen, så vet vi. <Todo>Sista dag att beställa för att hinna före jul?</Todo>
+            </p>
+          </div>
         </div>
       </div>
     </section>

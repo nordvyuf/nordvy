@@ -71,7 +71,7 @@ export default function App() {
       )}
 
       <header data-r="huvud" className="huvud top-0 z-30 bg-sand md:sticky">
-        <div className="ram flex h-[72px] items-center justify-between gap-6">
+        <div className="ram flex flex-wrap items-center justify-between gap-x-6 pb-2 pt-3 md:h-[72px] md:flex-nowrap md:py-0">
           <div className="flex items-center gap-2">
             <a href="#" className="rounded-[2px]">
               <Wordmark />
@@ -80,14 +80,14 @@ export default function App() {
               <span className="text-[12px]">logga</span>
             </Todo>
           </div>
-          <nav aria-label="Sidan" className="flex items-center gap-7 text-[16px]">
-            <a className="r-lank hidden md:inline" href="#storlekar">Storlekar</a>
-            <a className="r-lank hidden md:inline" href="#hantverket">Hantverket</a>
-            <a className="r-lank hidden md:inline" href="#fragor">Frågor</a>
-            <Button size="liten" onClick={order}>
-              Beställ
-            </Button>
+          <nav aria-label="Sidan" className="order-3 flex w-full gap-6 py-2 text-[15px] md:order-none md:ml-auto md:w-auto md:gap-7 md:py-0 md:text-[16px]">
+            <a className="r-lank" href="#storlekar">Storlekar</a>
+            <a className="r-lank" href="#hantverket">Hantverket</a>
+            <a className="r-lank" href="#fragor">Frågor</a>
           </nav>
+          <Button size="liten" onClick={order}>
+            Beställ
+          </Button>
         </div>
       </header>
 
@@ -100,7 +100,7 @@ export default function App() {
                 Skärbrädor av återvunnen ek
               </h1>
               <p data-r="intro" style={{ '--i': 2 }} className="mt-5 max-w-[34ch] text-[18px] md:mt-7 md:text-[20px]">
-                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör stilrena skärbrädor av den, i tre storlekar.
+                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör skärbrädor av den, i tre storlekar.
               </p>
               <div data-r="intro" style={{ '--i': 3 }} className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-4 md:mt-10">
                 <p className="font-rubrik text-[40px] leading-none text-black md:text-[48px]">
@@ -129,21 +129,23 @@ export default function App() {
         {/* Hantverket: en riktig ordning, visad som en fotorad. */}
         <section id="hantverket" aria-labelledby="hantverk-rubrik" className="bg-sand-mork/50 py-20 md:py-28">
           <div className="ram">
-            <div className="grid gap-6 md:grid-cols-12 md:gap-x-0">
-              <h2 id="hantverk-rubrik" className="text-[44px] md:col-span-6 md:text-[64px]">
-                Från gammalt virke till färdig bräda
-              </h2>
-              <div className="md:col-span-5 md:col-start-8 md:self-end">
-                <p className="text-[18px]">
-                  Allt är eget hantverk. Vi börjar med ek som redan har använts till något annat. <Todo>Vad var virket innan, och var hittar ni det?</Todo>
-                </p>
-              </div>
-            </div>
-            <ol className="mt-12 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-5">
-              {STEPS.map(([id, title]) => (
-                <li key={id}>
-                  <Foto id={id} reveal ratio="4 / 5" sizes="(min-width: 768px) 25vw, 50vw" />
-                  <h3 className="mt-3 text-[26px] md:text-[30px]">{title}</h3>
+            <h2 id="hantverk-rubrik" className="max-w-[15ch] text-[44px] md:text-[64px]">
+              Från gammalt virke till färdig bräda
+            </h2>
+            <p className="mt-5 max-w-[48ch] text-[18px]">
+              Vi börjar med ek som redan har använts till något annat. <Todo>Vad var virket innan, och var hittar ni det?</Todo>
+            </p>
+            {/* Tre steg i stående format, och den färdiga brädan liggande i full bredd: en bräda är bred. */}
+            <ol className="mt-12 grid grid-cols-3 gap-x-3 gap-y-8 md:gap-x-5 md:gap-y-12">
+              {STEPS.map(([id, title], n) => (
+                <li key={id} className={n === STEPS.length - 1 ? 'col-span-3' : undefined}>
+                  <Foto
+                    id={id}
+                    reveal
+                    ratio={n === STEPS.length - 1 ? '16 / 7' : '4 / 5'}
+                    sizes={n === STEPS.length - 1 ? '(min-width: 1200px) 1120px, 100vw' : '(min-width: 768px) 33vw, 33vw'}
+                  />
+                  <h3 className="mt-3 font-text text-[15px] font-medium md:text-[17px]">{title}</h3>
                 </li>
               ))}
             </ol>
@@ -177,24 +179,20 @@ export default function App() {
           </div>
         </section>
 
-        {/* Omdömen: ReBoard har omdömen men har inte skickat dem. Inga påhittade. */}
-        <section aria-labelledby="omdome-rubrik" className="ram py-20 md:py-24">
-          <div className="grid gap-6 md:grid-cols-12 md:gap-x-0">
-            <h2 id="omdome-rubrik" className="text-[40px] md:col-span-5 md:text-[52px]">
-              Från dem som har köpt
-            </h2>
-            <p className="text-[18px] md:col-span-5 md:col-start-8 md:self-end">
-              <Todo>Här kommer era riktiga omdömen. Skicka dem med namn eller förnamn, och säg att de får visas.</Todo>
-            </p>
-          </div>
-        </section>
-
-        {/* Frågor innan köpet. */}
-        <section id="fragor" aria-labelledby="fragor-rubrik" className="ram pb-20 md:pb-28">
+        {/* Frågor innan köpet, med omdömena bredvid. ReBoard har omdömen men har inte skickat dem: inga påhittade. */}
+        <section id="fragor" aria-labelledby="fragor-rubrik" className="ram py-20 md:py-28">
           <div className="grid gap-8 md:grid-cols-12 md:gap-x-0">
-            <h2 id="fragor-rubrik" className="text-[40px] md:col-span-5 md:text-[52px]">
-              Innan du beställer
-            </h2>
+            <div className="md:col-span-5 md:pr-14">
+              <h2 id="fragor-rubrik" className="text-[44px] md:text-[64px]">
+                Innan du beställer
+              </h2>
+              <div className="mt-10 border-l-[3px] border-honung pl-5">
+                <h3 className="text-[28px]">Från dem som har köpt</h3>
+                <p className="mt-2 text-[16px]">
+                  <Todo>Här kommer era riktiga omdömen. Skicka dem med namn eller förnamn, och säg att de får visas.</Todo>
+                </p>
+              </div>
+            </div>
             <div className="md:col-span-6 md:col-start-7">
               {FAQ.map(({ q, a }) => (
                 <details key={q} className="fraga">
@@ -217,7 +215,7 @@ export default function App() {
             <p className="mt-5 max-w-[40ch] text-[18px]">
               Skriv till oss på <Todo>ReBoards e-post</Todo> eller i ett meddelande på Instagram.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Button variant="ljus" size="stor" onClick={order}>
                 Beställ en bräda
               </Button>

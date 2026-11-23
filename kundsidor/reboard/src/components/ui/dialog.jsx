@@ -22,11 +22,14 @@ export function DialogContent({ className, children, ...props }) {
         )}
         {...props}
       >
+        {/* Stäng-knappen följer med när rutan scrollas på mobil. */}
+        <div className="sticky top-0 z-10 flex h-0 justify-end">
+          <DialogPrimitive.Close className="r-knapp mr-3 mt-3 grid h-11 w-11 place-items-center rounded-[2px] bg-span text-oliv hover:bg-oliv/10">
+            <X size={22} aria-hidden="true" />
+            <span className="sr-only">Stäng</span>
+          </DialogPrimitive.Close>
+        </div>
         {children}
-        <DialogPrimitive.Close className="r-knapp absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-[2px] text-oliv hover:bg-oliv/10">
-          <X size={22} aria-hidden="true" />
-          <span className="sr-only">Stäng</span>
-        </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );
