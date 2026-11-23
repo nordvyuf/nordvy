@@ -172,8 +172,9 @@ async function handleFinish(request, env) {
     return json({ ok: false, error: 'incomplete', missing: left }, 400);
   }
   const pkg = packageFor(brief);
+  const choice = ['uf', 'bas', 'premium', 'osaker'].includes(input.choice) ? input.choice : '';
   const head = left.length ? `OBS: Intervjun är inte komplett (${left.length} punkter saknas).\n\n` : '';
-  const text = `${head}${briefToText(brief, issues, contact)}\n\nORDAGRANN CHATT\n${logToText(cleanLog(input.log))}`;
+  const text = `${head}${briefToText(brief, issues, contact, choice)}\n\nORDAGRANN CHATT\n${logToText(cleanLog(input.log))}`;
   const parts = mailParts(text);
   let sent = 0;
   let error = '';
@@ -181,7 +182,7 @@ async function handleFinish(request, env) {
     const result = await sendMail(env, {
       ...contact,
       company: brief.foretagsnamn || '',
-      package: PACKAGES[pkg.id].name,
+      package: PACKAGES[choice]?.name || (choice === 'osaker' ? 'Vet inte än' : PACKAGES[pkg.id].name),
       message,
     });
     if (!result.ok) {

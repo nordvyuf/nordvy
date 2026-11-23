@@ -9,7 +9,7 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 | `public/index.html` | Nordvys hemsida. All text, alla priser och alla frågor står direkt i filen. |
 | `public/intervju.html` | Självintervjun (`/intervju`). |
 | `public/assets/` | Stil, skript, typsnitt och bilder för de två sidorna ovan. |
-| `public/assets/shared/brief.js` | Checklistan för intervjun, paketpriserna och logiken för utkastet. Används av både webbläsaren och servern. |
+| `public/assets/shared/brief.js` | Checklistan för intervjun, paketpriserna och logiken som projektbladet bygger på. Används av både webbläsaren och servern. |
 | `public/demo/…` | Fyra demosidor med påhittade företag. De har `noindex`. |
 | `public/kund/…` | Kundernas sidor, en mapp per kund. Byggs enligt `.claude/skills/kundsida/`. |
 | `CLAUDE.md` | Fakta och regler för Claude när den arbetar i repot. |
@@ -22,7 +22,7 @@ Hemsidan för Nordvy UF, självintervjun och fyra demosidor. Rena HTML-, CSS- oc
 
 ## Självintervjun
 
-Kunden svarar på en fråga i taget i en chatt. Efter de sex första punkterna visas ett första utkast av kundens sida. När alla 20 punkter i checklistan har ett svar mejlas underlaget (svaren, det som ska följas upp och hela chatten ordagrant) till `Nordvyuf@gmail.com`. Kunden kan också välja att skicka det som finns efter de sex första punkterna, och kan sedan boka en genomgång via Cal.com.
+Kunden svarar på en fråga i taget i en chatt. Bredvid chatten växer ett projektblad fram (`public/assets/projektblad.js`): namnet i det typsnitt vi tänker använda, färgerna, sidan del för del med kundens eget innehåll och det vi behöver från dem. Färger och typsnitt visas först när kunden har sagt något om känslan. Ingen låtsassida längre: Nordvy bygger ett riktigt utkast efter intervjun och skickar en länk inom 2 vardagar. I slutet väljer kunden själv paket. Vi rekommenderar ett med en kort förklaring, och kundens val står i underlaget bredvid rekommendationen. När alla 20 punkter i checklistan har ett svar mejlas underlaget (svaren, det som ska följas upp och hela chatten ordagrant) till `Nordvyuf@gmail.com`. Kunden kan också välja att skicka det som finns efter de sex första punkterna, och kan sedan boka en genomgång via Cal.com.
 
 Checklistan och reglerna kommer från dokumentet "Nordvy – intervjuchatten". Det här gäller:
 

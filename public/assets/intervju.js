@@ -2,7 +2,7 @@
 //
 // Kunden svarar på en fråga i taget. Servern (Workers AI) formulerar frågorna och
 // plockar ut svaren, men det är den här sidan som håller reda på checklistan,
-// räknar förloppet och ritar utkastet. Svarar inte servern ställs checklistans
+// räknar förloppet och ritar projektbladet. Svarar inte servern ställs checklistans
 // färdiga frågor i stället, så intervjun går alltid att slutföra.
 
 import {
@@ -21,16 +21,16 @@ import {
   isNegative,
   missing,
   coreDone,
-  draftModel,
   fallbackQuestion,
   recommendPackage,
   briefToText,
   plan,
   questionFor,
   progressOf,
+  isUF,
   MAX_ANSWERS,
 } from './shared/brief.js';
-import { renderPreview, createWindow } from './preview.js';
+import { createSheet } from './projektblad.js';
 import { openBooking, CAL_ACCOUNT } from './cal.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -42,7 +42,7 @@ const STORE = 'nordvy-intervju-v2';
 const UNDO_MAX = 12;
 const kr = (n) => `${new Intl.NumberFormat('sv-SE').format(n)} kr`;
 const GREETING =
-  'Hej! Jag är Nordvys intervjuassistent. Jag ställer några frågor om ditt företag, en i taget, och bygger ett första utkast av din sida medan du svarar. Vet du inte något svar säger du bara det.';
+  'Hej! Jag är Nordvys intervjuassistent. Jag ställer några frågor om ditt företag, en i taget, och medan du svarar ser du hur vi planerar din sida. Efter intervjun bygger vi ett riktigt utkast åt dig. Vet du inte något svar säger du bara det.';
 
 const state = {
   stage: 'start', // start, chat, edit, summary, contact, done
@@ -54,6 +54,7 @@ const state = {
   carry: '',
   carryField: '',
   copy: null,
+  choice: '', // paketet kunden själv valde: uf, bas, premium eller osaker
   coreShown: false,
   partial: false,
   contact: null,
@@ -77,8 +78,7 @@ const stepLabel = $('#step-label');
 const pstatus = $('#pstatus');
 const legal = $('.iv-legal');
 
-const win = createWindow('');
-stage.append(win.window);
+const sheet = createSheet(stage);
 
 /* ----------------------------------------------------------- lagring */
 
@@ -94,7 +94,7 @@ function restore() {
     const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (!saved || !Array.isArray(saved.log) || !saved.log.length) return false;
     Object.assign(state, {
-      stage: ['chat', 'edit', 'summary', 'contact', 'done'].includes(saved.stage) ? saved.stage : 'chat',
+      stage: ['chat', 'edit', 'summary', 'packages', 'contact', 'done'].includes(saved.stage) ? saved.stage : 'chat',
       brief: cleanBrief(saved.brief),
       issues: cleanIssues(saved.issues),
       log: cleanLog(saved.log),
@@ -103,6 +103,7 @@ function restore() {
       carry: String(saved.carry || '').slice(0, LIMITS.value),
       carryField: NEED.includes(saved.carryField) ? saved.carryField : '',
       copy: saved.copy && typeof saved.copy === 'object' ? saved.copy : null,
+      choice: ['uf', 'bas', 'premium', 'osaker'].includes(saved.choice) ? saved.choice : '',
       coreShown: Boolean(saved.coreShown),
       partial: Boolean(saved.partial),
       contact: saved.contact || null,
@@ -202,9 +203,7 @@ function userSays(text) {
 /* ------------------------------------------- utkast, förlopp, checklista */
 
 function updatePreview(animate = true) {
-  const m = draftModel(state.brief, state.copy);
-  win.setUrl(m.company || '');
-  renderPreview(win.frame, m, { animate: animate && !reduced });
+  sheet.update(state.brief, { animate: animate && !reduced, done: state.stage === 'done' });
   if (document.body.dataset.view !== 'preview') $('#tab-preview .dot').classList.add('on');
 }
 
@@ -410,23 +409,14 @@ async function submitAnswer() {
   setupComposer();
 }
 
-// De sex första punkterna är klara: nu finns ett första utkast att visa.
-// Texten putsas av AI:n i bakgrunden, intervjun väntar inte på den.
+// De sex första punkterna är klara: nu har planen för sidan tagit form.
+// Ingen låtsassida längre: det riktiga utkastet bygger Nordvy efter intervjun.
 function firstDraftReady() {
   state.coreShown = true;
   save();
-  stage.classList.add('done');
-  pstatus.textContent = 'Första utkastet är klart';
-  noteLine(touch ? 'Ditt första utkast är klart. Se det under fliken Utkast.' : 'Ditt första utkast är klart. Du ser det här bredvid.');
-  noteLine('Några frågor till, så har teamet allt de behöver.');
-  stage.classList.add('polish');
-  post('/api/interview/draft', { brief: state.brief }, 25000).then((data) => {
-    stage.classList.remove('polish');
-    if (!data?.copy) return;
-    state.copy = data.copy;
-    updatePreview();
-    save();
-  });
+  pstatus.textContent = 'Planen för din sida har tagit form';
+  noteLine(touch ? 'Planen för din sida har tagit form. Se den under fliken Planen.' : 'Planen för din sida har tagit form. Du ser den här bredvid.');
+  noteLine('Några frågor till, så har vi allt vi behöver för att bygga.');
 }
 
 composer.addEventListener('submit', (e) => {
@@ -442,8 +432,8 @@ input.addEventListener('keydown', (e) => {
 });
 // Sparar läget före varje svar, så att kunden kan gå tillbaka och ändra ett svar som blev fel.
 function remember(message) {
-  const { brief, issues, asked, askCount, carry, carryField, copy, coreShown, answers } = state;
-  state.undo.push({ brief, issues, asked, askCount, carry, carryField, copy, coreShown, answers, logLen: state.log.length, message });
+  const { brief, issues, asked, askCount, carry, carryField, coreShown, answers } = state;
+  state.undo.push({ brief, issues, asked, askCount, carry, carryField, coreShown, answers, logLen: state.log.length, message });
   if (state.undo.length > UNDO_MAX) state.undo.shift();
 }
 
@@ -469,7 +459,7 @@ undoBtn.addEventListener('click', () => {
 early.addEventListener('click', () => {
   state.partial = true;
   userSays('Skicka det jag har så här långt');
-  showContact();
+  showPackages();
 });
 
 /* -------------------------------------- start, sammanfattning, kontakt */
@@ -483,7 +473,7 @@ function showStart() {
   const ul = node('ul');
   for (const t of [
     'En fråga i taget, i din egen takt. Vet du inte något säger du bara det, så får du en enklare fråga.',
-    'Efter ungefär sex frågor ser du ett första utkast av din sida.',
+    'Medan du svarar ser du hur vi planerar din sida. Efter intervjun bygger vi ett riktigt utkast åt dig, och du får en länk inom 2 vardagar.',
     'Skrev du fel kan du alltid ändra förra svaret. Hela intervjun tar cirka tio minuter.',
   ])
     ul.append(node('li', '', t));
@@ -542,7 +532,7 @@ function showSummary() {
   yes.addEventListener('click', () => {
     card.remove();
     userSays('Ja, det stämmer');
-    showContact();
+    showPackages();
   });
   change.addEventListener('click', async () => {
     card.remove();
@@ -552,6 +542,92 @@ function showSummary() {
     await guideSays('Vad vill du ändra?');
     setupComposer();
   });
+}
+
+// Kunden väljer själv paket. Vi rekommenderar ett, med en kort förklaring, och säger kort när de andra passar.
+const FITS = {
+  uf: 'För UF-företag som vill visa sina produkter och ta emot beställningar under läsåret. Ingen månadsavgift.',
+  bas: 'När ni vill synas på Google och att kunderna ringer, mejlar eller hittar hit.',
+  premium: 'När kunderna ska kunna boka tid, beställa eller betala direkt på sidan.',
+};
+const priceLine = (p) => (p.monthly ? `${kr(p.oneTime)} + ${kr(p.monthly)}/mån` : `${kr(p.oneTime)}, ingen månadsavgift`);
+
+function showPackages() {
+  state.stage = 'packages';
+  save();
+  hideComposer();
+  renderChecklist();
+  const rec = recommendPackage(state.brief);
+  // UF-paketet är bara för UF-företag. Andra väljer mellan Bas och Premium.
+  const ids = rec.id === 'uf' || isUF(state.brief) ? ['uf', 'bas', 'premium'] : ['bas', 'premium'];
+  const all = [...ids, 'osaker'];
+
+  const card = node('div', 'card pkgs');
+  const group = node('div', 'pkg-list');
+  group.setAttribute('role', 'radiogroup');
+  group.setAttribute('aria-label', 'Paket');
+  const options = [];
+  const pick = (id) => {
+    state.choice = id;
+    save();
+    for (const o of options) {
+      const on = o.dataset.id === id;
+      o.setAttribute('aria-checked', String(on));
+      o.tabIndex = on ? 0 : -1;
+    }
+  };
+  for (const id of all) {
+    const o = node('button', `pkg-opt${id === rec.id ? ' rec' : ''}`);
+    o.type = 'button';
+    o.dataset.id = id;
+    o.setAttribute('role', 'radio');
+    o.append(node('i', 'pkg-dot'));
+    const text = node('span', 'pkg-text');
+    if (id === 'osaker') {
+      text.append(node('b', '', 'Vet inte än'), node('span', 'pkg-fit', 'Vi går igenom paketen tillsammans när vi visar utkastet.'));
+    } else {
+      const p = PACKAGES[id];
+      const top = node('span', 'pkg-top');
+      top.append(node('b', '', p.name), node('span', 'pkg-price', priceLine(p)));
+      text.append(top);
+      if (id === rec.id) text.append(node('span', 'pkg-why', `Vår rekommendation. ${rec.reason}`));
+      else text.append(node('span', 'pkg-fit', FITS[id]));
+    }
+    o.append(text);
+    o.addEventListener('click', () => pick(id));
+    o.addEventListener('keydown', (e) => {
+      const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      const i = (options.indexOf(o) + step + options.length) % options.length;
+      pick(options[i].dataset.id);
+      options[i].focus();
+    });
+    options.push(o);
+    group.append(o);
+  }
+  pick(all.includes(state.choice) ? state.choice : rec.id);
+
+  const go = node('button', 'btn btn-p btn-lg', 'Fortsätt');
+  go.type = 'button';
+  go.addEventListener('click', () => {
+    card.remove();
+    userSays(state.choice === 'osaker' ? 'Jag vet inte än vilket paket' : `Jag väljer ${PACKAGES[state.choice].name}`);
+    showContact();
+  });
+  const more = node('a', 'textlink', 'Se allt som ingår i paketen');
+  more.href = '/#paket';
+  more.target = '_blank';
+  more.rel = 'noopener';
+  card.append(
+    node('h2', '', 'Vilket paket vill ni ha?'),
+    node('p', 'fine', 'Välj det som känns rätt. Inget är bestämt förrän ni har sett utkastet, och ni kan byta då.'),
+    group,
+    go,
+    more,
+  );
+  log.append(card);
+  scrollDown();
 }
 
 function field(labelText, attrs) {
@@ -615,7 +691,7 @@ function showContact() {
     go.disabled = true;
     go.textContent = 'Skickar…';
     state.contact = { name: n, email: m, phone: phone.value.trim() };
-    const result = await post('/api/interview/finish', { brief: state.brief, issues: state.issues, log: state.log, contact: state.contact, partial: state.partial }, 45000);
+    const result = await post('/api/interview/finish', { brief: state.brief, issues: state.issues, log: state.log, contact: state.contact, partial: state.partial, choice: state.choice }, 45000);
     state.sent = Boolean(result);
     card.remove();
     showResult(true);
@@ -634,28 +710,31 @@ function showResult(fresh) {
   save();
   hideComposer();
   renderChecklist();
-  stage.classList.add('done');
   const company = state.brief.foretagsnamn || 'ditt företag';
-  pstatus.textContent = `Utkast för ${company}`;
+  pstatus.textContent = `Planen för ${company} är klar`;
+  updatePreview(false);
 
-  const rec = recommendPackage(state.brief);
-  const pkg = PACKAGES[rec.id];
   const card = node('div', 'card result');
   const eyebrow = node('p', 'eyebrow');
   eyebrow.append(useIcon('i-star'), state.sent ? 'Skickat' : 'Nästan klart');
   eyebrow.firstChild.classList.add('star');
 
   const status = node('p');
-  if (state.sent) status.textContent = 'Underlaget är skickat till Nordvy. Vi läser igenom det och hör av oss på mejl.';
+  if (state.sent) status.textContent = 'Underlaget är skickat. Nu bygger vi ett riktigt utkast av din sida, och du får en länk på mejl inom 2 vardagar.';
   else status.append('Det gick inte att skicka underlaget automatiskt. Du kan ', mailLink('mejla det till oss'), ' eller boka en genomgång här nedanför.');
 
   const recBox = node('div', 'rec');
-  const price = node('b', '', pkg.name);
-  price.append(node('span', '', pkg.monthly ? `${kr(pkg.oneTime)} + ${kr(pkg.monthly)}/mån` : kr(pkg.oneTime)));
-  recBox.append(node('small', '', 'Paket som verkar passa'), price, node('p', '', rec.reason));
+  const chosen = PACKAGES[state.choice];
+  if (chosen) {
+    const price = node('b', '', chosen.name);
+    price.append(node('span', '', priceLine(chosen)));
+    recBox.append(node('small', '', 'Ditt val'), price, node('p', '', 'Ni kan byta paket när ni har sett utkastet.'));
+  } else {
+    recBox.append(node('small', '', 'Paket'), node('b', '', 'Vi väljer tillsammans'), node('p', '', 'Vi går igenom paketen när vi visar utkastet.'));
+  }
 
   const actions = node('div', 'actions');
-  const book = node('button', 'btn btn-p btn-lg', 'Boka en genomgång av utkastet');
+  const book = node('button', 'btn btn-p btn-lg', 'Boka ett samtal om sidan');
   book.type = 'button';
   book.addEventListener('click', async () => {
     book.disabled = true;
@@ -729,11 +808,9 @@ function start() {
   if (!restored) return showStart();
 
   for (const m of state.log) bubble(m.who === 'me' ? 'me' : 'guide', m.text);
-  if (state.coreShown) {
-    stage.classList.add('done');
-    pstatus.textContent = 'Första utkastet är klart';
-  }
+  if (state.coreShown) pstatus.textContent = 'Planen för din sida har tagit form';
   if (state.stage === 'done') showResult(false);
+  else if (state.stage === 'packages') showPackages();
   else if (state.stage === 'contact') showContact();
   else if (state.stage === 'summary' || state.stage === 'edit') showSummary();
   else resumeQuestion();

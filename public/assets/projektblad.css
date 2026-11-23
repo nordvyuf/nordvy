@@ -1,0 +1,390 @@
+/* Projektbladet (projektblad.js): ett ljust arbetsblad på Nordvys mörka bakgrund.
+   Kundens namn står i det typsnitt vi tänker använda. Det som just ändrats markeras kort. */
+
+.pb {
+  --paper: #f6f8fb;
+  --paper-2: #eef2f7;
+  --pb-ink: #0b1b33;
+  --pb-mut: #5a6b82;
+  --pb-line: rgba(11, 27, 51, 0.1);
+  --pb-mark: #5bc0eb;
+  position: relative;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: clamp(1.4rem, 3.2vw, 2.4rem);
+  border-radius: 6px;
+  color: var(--pb-ink);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  /* Ett diskret punktrutnät, som ett skissblock. */
+  background:
+    radial-gradient(circle at 1px 1px, rgba(11, 27, 51, 0.07) 1px, transparent 1.4px) 0 0 / 18px 18px,
+    var(--paper);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 30px 60px -28px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+  animation: pb-lift 0.9s var(--ease) both;
+}
+/* En linje i kanten, i kundens accentfärg när den är känd. */
+.pb::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 6px 0 0 6px;
+  background: var(--pb-accent, var(--pb-mark));
+  transition: background 0.8s var(--ease);
+}
+
+.pb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+  font-size: 0.8rem;
+  color: var(--pb-mut);
+}
+.pb-label {
+  font-weight: 600;
+}
+.pb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.pb-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pb-mark);
+  box-shadow: 0 0 0 0 rgba(91, 192, 235, 0.55);
+  animation: pb-pulse 2.4s ease-out infinite;
+}
+.pb-status.ok::before {
+  background: #2f9e6b;
+  animation: none;
+}
+
+.pb-head {
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid var(--pb-line);
+}
+.pb-name {
+  font-family: var(--serif);
+  font-size: clamp(2.1rem, 4.6vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.pb-line {
+  margin-top: 0.5rem;
+  color: var(--pb-mut);
+  font-size: 1rem;
+}
+.pb-ghost {
+  color: rgba(11, 27, 51, 0.32);
+}
+
+.pb-h {
+  margin-bottom: 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--pb-mut);
+}
+.pb-look,
+.pb-plan,
+.pb-need {
+  padding-block: 1.4rem;
+  border-bottom: 1px solid var(--pb-line);
+}
+
+/* Färgprover och typsnitt */
+.pb-swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.pb-swatch {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--pb-mut);
+}
+.pb-swatch i {
+  display: block;
+  height: 52px;
+  margin-bottom: 0.35rem;
+  border-radius: 4px;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(11, 27, 51, 0.12);
+  transition: background 0.8s var(--ease);
+}
+.pb-swatch.pb-empty i {
+  background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(11, 27, 51, 0.05) 6px 7px);
+  box-shadow: inset 0 0 0 1px rgba(11, 27, 51, 0.14);
+  border: 1px dashed rgba(11, 27, 51, 0.2);
+}
+.pb-swatch.pb-empty span,
+.pb-swatch.pb-empty code {
+  color: rgba(11, 27, 51, 0.35);
+}
+.pb-type.pb-ghost .pb-aa {
+  color: rgba(11, 27, 51, 0.3);
+}
+.pb-swatch span {
+  color: var(--pb-ink);
+  font-weight: 600;
+}
+.pb-swatch code {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.pb-type {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  color: var(--pb-mut);
+  font-size: 0.85rem;
+}
+.pb-aa {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--pb-ink);
+}
+.pb-mood {
+  margin-top: 0.7rem;
+  font-size: 0.95rem;
+}
+
+/* Sidan, del för del. Numrerad, eftersom det är sidans ordning uppifrån och ner. */
+.pb-parts {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0;
+  list-style: none;
+}
+.pb-part {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.6rem;
+  padding: 0.75rem 0.6rem 0.75rem 0;
+  border-radius: 4px;
+}
+.pb-n {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--pb-line);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--pb-mut);
+  background: var(--paper);
+}
+.pb-body b {
+  display: block;
+  font-weight: 650;
+}
+.pb-body p,
+.pb-body q {
+  margin-top: 0.2rem;
+  color: var(--pb-mut);
+}
+.pb-body q {
+  display: block;
+  font-style: italic;
+  quotes: "\201D" "\201D";
+}
+.pb-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
+  margin-top: 0.3rem;
+  padding: 0;
+  list-style: none;
+  color: var(--pb-ink);
+}
+.pb-items li {
+  position: relative;
+  padding-left: 0.8rem;
+}
+.pb-items li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--pb-accent, var(--pb-mut));
+}
+.pb-slot .pb-body {
+  align-self: center;
+  color: rgba(11, 27, 51, 0.3);
+}
+.pb-slot .pb-n {
+  border-style: dashed;
+  color: rgba(11, 27, 51, 0.3);
+}
+
+/* Det vi behöver */
+.pb-need ul {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0;
+  list-style: none;
+}
+.pb-need li {
+  display: grid;
+  grid-template-columns: 1.1rem auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+}
+.pb-need li span {
+  justify-self: end;
+  color: var(--pb-mut);
+  font-size: 0.85rem;
+  text-align: right;
+}
+.pb-need i {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1.5px solid rgba(11, 27, 51, 0.25);
+  border-radius: 50%;
+}
+.pb-need .pb-ok i {
+  border-color: #2f9e6b;
+  background: #2f9e6b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 70% no-repeat;
+}
+.pb-need .pb-gap i {
+  border-style: dashed;
+  border-color: #c88a2c;
+}
+
+.pb-foot {
+  padding-top: 1.4rem;
+}
+.pb-foot b {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+.pb-foot p {
+  margin-top: 0.3rem;
+  color: var(--pb-mut);
+}
+.pb-done .pb-foot {
+  margin: 1.4rem calc(-1 * clamp(1.4rem, 3.2vw, 2.4rem)) calc(-1 * clamp(1.4rem, 3.2vw, 2.4rem));
+  padding: 1.4rem clamp(1.4rem, 3.2vw, 2.4rem);
+  border-radius: 0 0 6px 6px;
+  background: var(--pb-ink);
+  color: #f4f7fb;
+}
+.pb-done .pb-foot p {
+  color: #a3b4ca;
+}
+
+/* Det som nyss ändrats: delen landar och en ljus linje sveper under den en gång. */
+.pb-new {
+  animation: pb-in 0.7s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.pb-part.pb-new::after,
+.pb-name.pb-new::after,
+.pb-line.pb-new::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pb-mark), transparent);
+  transform-origin: left;
+  animation: pb-sweep 1.6s var(--ease) both;
+}
+.pb-name,
+.pb-line {
+  position: relative;
+}
+.pb-part.pb-new {
+  background: rgba(91, 192, 235, 0.08);
+  transition: background 1.6s ease 0.9s;
+}
+.pb-swatch.pb-new i {
+  animation: pb-pop 0.6s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+@keyframes pb-lift {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes pb-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes pb-sweep {
+  from {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+@keyframes pb-pop {
+  from {
+    transform: scale(0.86);
+    opacity: 0.4;
+  }
+}
+@keyframes pb-pulse {
+  70% {
+    box-shadow: 0 0 0 7px rgba(91, 192, 235, 0);
+  }
+  to {
+    box-shadow: 0 0 0 0 rgba(91, 192, 235, 0);
+  }
+}
+
+@media (max-width: 520px) {
+  .pb-swatch i {
+    height: 40px;
+  }
+  .pb-need li {
+    grid-template-columns: 1.1rem 1fr;
+  }
+  .pb-need li span {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb,
+  .pb-new,
+  .pb-new::after,
+  .pb-swatch.pb-new i,
+  .pb-status::before {
+    animation: none !important;
+  }
+}
