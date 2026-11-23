@@ -40,3 +40,13 @@ test('kundens eget paketval står i underlaget bredvid rekommendationen', () => 
   assert.match(briefToText(vera, [], null, 'osaker'), /Kundens val: vet inte än/);
   assert.doesNotMatch(briefToText(vera, [], null, ''), /Kundens val/);
 });
+
+test('"terrakotta och mörkgrönt" är färger, inte en mörk exklusiv stil (Kaffebaren Flora, 24 november)', async () => {
+  const { detectVibe, detectAccent } = await import('../public/assets/shared/brief.js');
+  assert.notEqual(detectVibe('Gärna terrakotta och mörkgrönt'), 'exklusiv');
+  assert.equal(detectVibe('Mörk och elegant'), 'exklusiv');
+  assert.equal(detectAccent('Gärna terrakotta och mörkgrönt').acc, '#b4532f');
+  const s = sheetModel({ foretagsnamn: 'Kaffebaren Flora', foretagstyp: 'Butik, café eller salong', bransch: 'Café med eget bageri', stil: 'Gärna terrakotta och mörkgrönt' });
+  assert.notEqual(s.font, 'Instrument Serif');
+  assert.equal(s.swatches[0].hex, '#b4532f');
+});
