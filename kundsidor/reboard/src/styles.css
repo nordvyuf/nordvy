@@ -134,7 +134,7 @@ mark.todo {
   z-index: 2;
   left: 0;
   bottom: 0;
-  border: 1.5px dashed color-mix(in srgb, var(--color-andtra) 70%, transparent);
+  border: 1.5px dashed color-mix(in srgb, var(--color-black) 32%, transparent);
   border-radius: 6px;
 }
 .kontur span {
@@ -142,7 +142,7 @@ mark.todo {
   right: 8px;
   top: 4px;
   font-size: 13px;
-  color: var(--color-andtra);
+  color: var(--color-black);
 }
 .bradan {
   position: absolute;
@@ -204,7 +204,7 @@ mark.todo {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  align-items: baseline;
+  align-items: center;
   padding: 20px 0;
   font-size: 19px;
   font-weight: 500;

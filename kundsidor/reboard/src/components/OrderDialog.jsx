@@ -116,10 +116,10 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
         }}
       >
         {!done ? (
-          <form onSubmit={submit} noValidate className="px-5 pb-6 pt-6 sm:px-8 sm:pb-8 sm:pt-8">
+          <form onSubmit={submit} noValidate className="px-5 pb-6 sm:px-8 sm:pb-8">
             <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">Beställ en skärbräda</DialogTitle>
             <DialogDescription id="bestall-besk" className="mt-2 text-[15px] text-black/75">
-              Det tar en halv minut. I nästa steg skickar du beställningen och ser hur du betalar med Swish.
+              I nästa steg skickar du beställningen och ser hur du betalar med Swish.
             </DialogDescription>
 
             <fieldset className="mt-6">
@@ -204,7 +204,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
             {DRAFT && <p className="mt-3 text-[14px] text-black/70">Utkast: inget skickas härifrån än.</p>}
           </form>
         ) : (
-          <div ref={doneRef} tabIndex={-1} className="px-5 pb-6 pt-6 outline-none sm:px-8 sm:pb-8 sm:pt-8">
+          <div ref={doneRef} tabIndex={-1} className="px-5 pb-6 outline-none sm:px-8 sm:pb-8">
             <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">Ett steg kvar</DialogTitle>
             <DialogDescription id="bestall-besk" className="mt-3 text-[16px]">
               {DRAFT ? (

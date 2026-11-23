@@ -110,14 +110,19 @@ export function SizePicker({ sizeId, setSizeId, onOrder }) {
           <Button size="stor" className="mt-8 w-full" onClick={onOrder} id="valjare-knapp">
             Beställ {size.name.toLowerCase()}, {kr(size.price)}
           </Button>
-          <p className="mt-3 text-[15px] text-black/75">Du betalar med Swish efter beställningen.</p>
-
-          <div className="mt-8 border-t-[1.5px] border-oliv/25 pt-5">
-            <p className="font-rubrik text-[34px] leading-none">Till jul?</p>
-            <p className="mt-2 text-[16px]">
-              Skriv det i beställningen, så vet vi. <Todo>Sista dag att beställa för att hinna före jul?</Todo>
-            </p>
-          </div>
+          {/* Det man undrar precis innan man trycker: betalning, leverans och tid. */}
+          <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t-[1.5px] border-oliv/25 pt-4 text-[15px]">
+            <dt className="text-black/70">Betalning</dt>
+            <dd>Swish, efter beställningen</dd>
+            <dt className="text-black/70">Leverans</dt>
+            <dd>
+              Hämta i Malmö eller få den med post. <Todo>Vad kostar frakten?</Todo>
+            </dd>
+            <dt className="text-black/70">Klar</dt>
+            <dd>
+              <Todo>Hur snart efter beställningen?</Todo>
+            </dd>
+          </dl>
         </div>
       </div>
     </section>

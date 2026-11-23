@@ -23,8 +23,8 @@ export function DialogContent({ className, children, ...props }) {
         {...props}
       >
         {/* Stäng-knappen följer med när rutan scrollas på mobil. */}
-        <div className="sticky top-0 z-10 flex h-0 justify-end">
-          <DialogPrimitive.Close className="r-knapp mr-3 mt-3 grid h-11 w-11 place-items-center rounded-[2px] bg-span text-oliv hover:bg-oliv/10">
+        <div className="sticky top-0 z-10 flex h-14 justify-end bg-span">
+          <DialogPrimitive.Close className="r-knapp mr-2 mt-1.5 grid h-11 w-11 place-items-center rounded-[2px] bg-span text-oliv hover:bg-oliv/10">
             <X size={22} aria-hidden="true" />
             <span className="sr-only">Stäng</span>
           </DialogPrimitive.Close>

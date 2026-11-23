@@ -81,9 +81,9 @@ export default function App() {
             </Todo>
           </div>
           <nav aria-label="Sidan" className="order-3 flex w-full gap-6 py-2 text-[15px] md:order-none md:ml-auto md:w-auto md:gap-7 md:py-0 md:text-[16px]">
-            <a className="r-lank" href="#storlekar">Storlekar</a>
-            <a className="r-lank" href="#hantverket">Hantverket</a>
-            <a className="r-lank" href="#fragor">Frågor</a>
+            <a className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']" href="#storlekar">Storlekar</a>
+            <a className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']" href="#hantverket">Hantverket</a>
+            <a className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']" href="#fragor">Frågor</a>
           </nav>
           <Button size="liten" onClick={order}>
             Beställ
@@ -110,13 +110,17 @@ export default function App() {
                   Välj storlek
                 </a>
               </div>
-              <a data-r="intro" style={{ '--i': 4 }} href="#hantverket" className="r-lank mt-6 inline-block text-[16px] text-oliv">
+              <p data-r="intro" style={{ '--i': 4 }} className="mt-6 text-[16px]">
+                <span className="font-medium">Till jul?</span> Skriv det i beställningen. <Todo>Sista dag att beställa för att hinna före jul?</Todo>
+              </p>
+              <a data-r="intro" style={{ '--i': 5 }} href="#hantverket" className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] mt-6 inline-block text-[16px] text-oliv">
                 Så gör vi dem
               </a>
             </div>
             <div className="-mx-[20px] md:col-span-6 md:mx-0 md:mr-[calc(min(0px,(1200px-100vw)/2)-40px)]">
-              <div data-r="intro-bild" className="overflow-hidden">
-                <Foto id="hero" ratio={null} eager dark sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[4/5] max-h-[70svh] w-full md:aspect-auto md:h-[min(calc(100svh-150px),760px)] md:max-h-none" />
+              {/* Ramen klipper, bilden inuti landar. Annars blir sidan bredare under starten. */}
+              <div className="overflow-hidden">
+                <Foto id="hero" ratio={null} eager intro dark sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[4/5] max-h-[70svh] w-full md:aspect-auto md:h-[min(calc(100svh-150px),760px)] md:max-h-none" />
               </div>
             </div>
           </div>
@@ -136,14 +140,16 @@ export default function App() {
               Vi börjar med ek som redan har använts till något annat. <Todo>Vad var virket innan, och var hittar ni det?</Todo>
             </p>
             {/* Tre steg i stående format, och den färdiga brädan liggande i full bredd: en bräda är bred. */}
-            <ol className="mt-12 grid grid-cols-3 gap-x-3 gap-y-8 md:gap-x-5 md:gap-y-12">
+            {/* Mobil: stegen under varandra, liggande, så att fotona blir stora nog att se något på. */}
+            <ol className="mt-12 grid grid-cols-1 gap-y-8 md:grid-cols-3 md:gap-x-5 md:gap-y-12">
               {STEPS.map(([id, title], n) => (
-                <li key={id} className={n === STEPS.length - 1 ? 'col-span-3' : undefined}>
+                <li key={id} className={n === STEPS.length - 1 ? 'md:col-span-3' : undefined}>
                   <Foto
                     id={id}
                     reveal
-                    ratio={n === STEPS.length - 1 ? '16 / 7' : '4 / 5'}
-                    sizes={n === STEPS.length - 1 ? '(min-width: 1200px) 1120px, 100vw' : '(min-width: 768px) 33vw, 33vw'}
+                    ratio={null}
+                    className={n === STEPS.length - 1 ? 'aspect-[3/2] md:aspect-[16/7]' : 'aspect-[3/2] md:aspect-[4/5]'}
+                    sizes={n === STEPS.length - 1 ? '(min-width: 1200px) 1120px, 100vw' : '(min-width: 768px) 33vw, 100vw'}
                   />
                   <h3 className="mt-3 font-text text-[15px] font-medium md:text-[17px]">{title}</h3>
                 </li>
@@ -171,7 +177,7 @@ export default function App() {
               <p className="mt-5 max-w-[40ch] text-span/85">
                 <Todo>Vilka är ni? Namn, skola och vem som gör vad.</Todo>
               </p>
-              <a href={INSTAGRAM} className="r-lank mt-8 inline-flex items-center gap-2 text-[17px] text-span">
+              <a href={INSTAGRAM} className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] mt-8 inline-flex items-center gap-2 text-[17px] text-span">
                 <Instagram size={20} aria-hidden="true" />
                 Följ oss på Instagram
               </a>
