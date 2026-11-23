@@ -1,6 +1,6 @@
 // Självintervjun på servern.
 //
-// AI:n (Cloudflare Workers AI) formulerar frågorna och plockar ut svaren.
+// AI:n (Claude Haiku 5.5, med Workers AI och andra som reserv) formulerar frågorna och plockar ut svaren.
 // Appen bestämmer allt annat: vad som sparas, vad som saknas, när intervjun
 // är klar och vad som följs upp. Svarar inte AI:n går intervjun vidare ändå,
 // med de färdiga frågorna i checklistan.
@@ -724,6 +724,72 @@ export function redact(text) {
 const REDACTED = /\[(mejl|telefon)\]/;
 const redactMessages = (messages) => messages.map((m) => ({ ...m, content: redact(m.content) }));
 
+/* ------------------------------------------------- Claude (Anthropic) */
+
+// Claude Haiku 5.5 provas först när ANTHROPIC_API_KEY finns som hemlighet (Secret) i Cloudflare.
+// En intervju kostar ungefär 4 öre (cirka 13 anrop), se README. Svarar Claude inte tar kedjan
+// nedan över (Groq, Gemini, egen server, Workers AI) och sist checklistans färdiga frågor.
+export const CLAUDE_MODEL = 'claude-haiku-5-5';
+const CLAUDE_MS = 5000;
+
+// Claudes JSON-läge kräver additionalProperties: false på varje objekt i schemat.
+export function strictSchema(schema) {
+  if (Array.isArray(schema)) return schema.map(strictSchema);
+  if (!schema || typeof schema !== 'object') return schema;
+  const out = Object.fromEntries(Object.entries(schema).map(([k, v]) => [k, strictSchema(v)]));
+  if (out.type === 'object') out.additionalProperties = false;
+  return out;
+}
+
+async function claudeClient(env) {
+  // I testerna lämnas en låtsasklient in via env.CLAUDE_CLIENT, så att inget riktigt anrop görs.
+  if (env.CLAUDE_CLIENT) return env.CLAUDE_CLIENT;
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  return new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 0, timeout: CLAUDE_MS });
+}
+
+// Ger JSON-svaret från Claude, eller null (och en rad i errors) när det inte gick.
+export async function runClaude(env, messages, schema, maxTokens, meta = {}, errors = []) {
+  if (!env?.ANTHROPIC_API_KEY) return null;
+  const model = env.CLAUDE_MODEL || CLAUDE_MODEL;
+  const id = `claude:${model}`;
+  if (isPaused(id)) return null;
+  const system = messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n');
+  try {
+    const client = await claudeClient(env);
+    const response = await client.messages.create(
+      {
+        model,
+        // Haiku 5.5 tänker själv när det behövs, och tänkandet räknas in här. Låg nivå håller svaret snabbt.
+        max_tokens: maxTokens + 1200,
+        // Reglerna är lika i varje anrop och sparas i Claudes cache, så att de blir billiga efter första frågan.
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+        messages: messages.filter((m) => m.role !== 'system'),
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: strictSchema(schema) } },
+      },
+      { timeout: CLAUDE_MS, maxRetries: 0 },
+    );
+    const u = response.usage || {};
+    meta.usage = { input: u.input_tokens, cacheRead: u.cache_read_input_tokens, cacheWrite: u.cache_creation_input_tokens, output: u.output_tokens };
+    if (response.stop_reason !== 'end_turn') {
+      errors.push(`${id}: slutade med ${response.stop_reason}`);
+      return null;
+    }
+    const text = (response.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+    const json = JSON.parse(text);
+    if (!json || typeof json !== 'object') throw new Error('inget json i svaret');
+    meta.provider = id;
+    return json;
+  } catch (error) {
+    const status = error?.status;
+    errors.push(`${id}${status ? ` ${status}` : ''}: ${String(error?.message || error).replace(/\s+/g, ' ').slice(0, 140)}`);
+    // 529 betyder att Anthropic är överbelastat, som 503 hos andra.
+    if (status) pause(id, status === 529 ? 503 : status);
+    else if (/timed? ?out|timeout|abort/i.test(String(error?.name || error?.message))) pause(id, 'timeout');
+    return null;
+  }
+}
+
 function callExternal(provider, env, entry, payload, { effort, json }, ms) {
   const body = {
     model: entry.model,
@@ -791,6 +857,8 @@ export async function runExternal(env, payload, meta = {}, errors = []) {
 
 async function askJson(env, rawMessages, schema, maxTokens, errors = [], meta = {}) {
   const messages = redactMessages(rawMessages);
+  const claude = await runClaude(env, messages, schema, maxTokens, meta, errors);
+  if (claude) return claude;
   const external = await runExternal(env, { messages, max_tokens: maxTokens, temperature: 0.4 }, meta, errors);
   if (external) return external;
   if (errors.length) console.warn('external ai failed', errors.join(' | ').slice(0, 600));
@@ -835,7 +903,7 @@ function readState(body) {
 // Enkla fält där checklistans fråga räcker och svaret sparas som det är. Mellan två sådana
 // frågor behövs ingen AI, vilket ungefär halverar vad en intervju drar av dagens AI-kvot.
 const PLAIN = new Set(['kontakt', 'oppettider', 'sociala_lankar', 'logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok', 'befintlig_sida', 'sprak']);
-const hasModel = (env) => Boolean(env?.AI || PROVIDERS.some((p) => env?.[p.key]));
+const hasModel = (env) => Boolean(env?.AI || env?.ANTHROPIC_API_KEY || PROVIDERS.some((p) => env?.[p.key]));
 
 export function needsAi(state) {
   if (state.edit) return true;
@@ -865,7 +933,7 @@ export async function interviewTurn(env, body) {
   const out = { ok: true, ...result, source: ai ? 'ai' : useAi || !hasModel(env) ? 'fallback' : 'app' };
   // Felsökning: med debug: true följer AI:ns oredigerade förslag med (eller felet), så att filtren går att justera.
   // provider säger vilken AI som svarade, och errors varför en tidigare inte gjorde det.
-  if (body?.debug === true) out.debug = ai ? { provider: meta.provider, asked: ai.asked, reply: ai.reply, saves: ai.saves, errors } : { errors };
+  if (body?.debug === true) out.debug = ai ? { provider: meta.provider, usage: meta.usage, asked: ai.asked, reply: ai.reply, saves: ai.saves, errors } : { errors };
   return out;
 }
 
