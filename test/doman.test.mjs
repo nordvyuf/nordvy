@@ -25,3 +25,17 @@ test('nordvyuf.se och workers.dev visar sidan, med nordvyuf.se som canonical', a
     assert.match(await res.text(), /href="https:\/\/nordvyuf\.se\/"/, host);
   }
 });
+
+test('nordvyuf.se/reboarduf visar ReBoards utkast utan att byta adress', async () => {
+  const asked = [];
+  const local = { ...env, ASSETS: { fetch: async (req) => { asked.push(new URL(req.url).pathname); return new Response('<!doctype html>ReBoard', { headers: { 'content-type': 'text/html; charset=utf-8' } }); } } };
+  for (const path of ['/reboarduf', '/reboarduf/', '/ReBoardUF']) {
+    const res = await worker.fetch(new Request(`https://nordvyuf.se${path}`), local);
+    assert.equal(res.status, 200);
+    assert.match(await res.text(), /ReBoard/);
+  }
+  assert.deepEqual(asked, ['/kund/reboard/', '/kund/reboard/', '/kund/reboard/']);
+  const www = await worker.fetch(new Request('https://www.nordvyuf.se/reboarduf'), local);
+  assert.equal(www.status, 301);
+  assert.equal(www.headers.get('location'), 'https://nordvyuf.se/reboarduf');
+});
