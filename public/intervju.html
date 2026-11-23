@@ -4,22 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Självintervjun – berätta om din nya hemsida | Nordvy</title>
-<meta name="description" content="Berätta om ditt företag i en chatt, en fråga i taget. Du ser ett första utkast av din hemsida efter några minuter, och Nordvy får underlaget för att bygga den. Gratis och utan köpkrav.">
+<meta name="description" content="Berätta om ditt företag i en chatt, en fråga i taget. Du ser hur vi planerar din hemsida medan du svarar, och inom 2 vardagar får du ett riktigt utkast byggt av Nordvy. Gratis och utan köpkrav.">
 <meta name="theme-color" content="#071428">
 <link rel="canonical" href="__ORIGIN__/intervju">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="sv_SE">
 <meta property="og:site_name" content="Nordvy">
 <meta property="og:url" content="__ORIGIN__/intervju">
-<meta property="og:title" content="Berätta om din nya hemsida och se ett första utkast">
-<meta property="og:description" content="En fråga i taget. Utkastet byggs medan du svarar. Gratis och utan köpkrav.">
+<meta property="og:title" content="Berätta om din nya hemsida och få ett gratis utkast">
+<meta property="og:description" content="En fråga i taget. Planen för din sida tar form medan du svarar, och vi bygger ett riktigt utkast inom 2 vardagar. Gratis och utan köpkrav.">
 <meta property="og:image" content="__ORIGIN__/assets/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 <link rel="stylesheet" href="/assets/fonts/kund/typsnitt.css">
-<link rel="stylesheet" href="/assets/preview.css">
+<link rel="stylesheet" href="/assets/projektblad.css">
 <link rel="stylesheet" href="/assets/intervju.css">
 <script src="/assets/boot.js"></script>
 <script type="module" src="/assets/intervju.js"></script>
@@ -44,7 +44,7 @@
 
 <div class="iv-tabs" role="tablist" aria-label="Visa">
   <button type="button" role="tab" id="tab-chat" aria-selected="true" data-view="chat">Intervju</button>
-  <button type="button" role="tab" id="tab-preview" aria-selected="false" data-view="preview">Utkast<i class="dot" aria-hidden="true"></i></button>
+  <button type="button" role="tab" id="tab-preview" aria-selected="false" data-view="preview">Planen<i class="dot" aria-hidden="true"></i></button>
   <button type="button" role="tab" id="tab-list" aria-selected="false" data-view="list">Dina svar</button>
 </div>
 
@@ -68,12 +68,11 @@
     <p class="iv-legal">Assistenten är en AI och kan missförstå. Nordvys team läser alltid igenom underlaget.</p>
   </section>
 
-  <section class="iv-preview" aria-label="Ditt utkast">
+  <section class="iv-preview" aria-label="Planen för din sida">
     <div class="iv-ptop">
-      <p class="eyebrow"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><span id="pstatus">Utkastet byggs medan du svarar</span></p>
+      <p class="eyebrow"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><span id="pstatus">Din sida planeras medan du svarar</span></p>
       <div class="iv-device" role="group" aria-label="Visa">
-        <button type="button" data-panel="desktop" aria-pressed="true">Dator</button>
-        <button type="button" data-panel="mobile" aria-pressed="false">Mobil</button>
+        <button type="button" data-panel="sheet" aria-pressed="true">Planen</button>
         <button type="button" data-panel="list" aria-pressed="false">Dina svar</button>
       </div>
     </div>
