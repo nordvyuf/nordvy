@@ -393,7 +393,8 @@ export function detectCity(text) {
 }
 
 export function detectVibe(text) {
-  const t = lower(text);
+  // "Mörkgrönt" är en färg, inte en mörk och exklusiv stil (Kaffebaren Flora, test 24 november).
+  const t = lower(text).replace(/mörk(?=\s*-?\s*(grön|blå|brun|röd|lila|grå|rosa|gul|orange))/g, '');
   if (hasStem(t, ['energi', 'sportig', 'kraftfull', 'peppig'])) return 'modern';
   if (hasStem(t, ['exklusiv', 'lyx', 'premium', 'elegant', 'mörk', 'svart', 'guld'])) return 'exklusiv';
   if (hasStem(t, ['lekfull', 'färgglad', 'rolig', 'glad', 'busig', 'rosa', 'gul'])) return 'lekfull';
@@ -412,6 +413,7 @@ const COLORS = [
   { stems: ['mörkgrön', 'skogsgrön'], acc: '#2f5a3c' },
   { stems: ['grön'], acc: '#3f6e4a' },
   { stems: ['turkos', 'petrol'], acc: '#126b6b' },
+  { stems: ['terrakotta', 'terracotta', 'tegel', 'rost'], acc: '#b4532f' },
   { stems: ['vinröd', 'röd'], acc: '#a8322a' },
   { stems: ['rosa'], acc: '#b0406a' },
   { stems: ['lila'], acc: '#6236c4' },

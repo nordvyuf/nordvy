@@ -50,3 +50,11 @@ test('"vet inte" om typen av företag: Claude får inte fråga om typen igen med
   assert.notDeepEqual(r.asked, ['tjanster_produkter']);
   assert.doesNotMatch(r.reply, /privatpersoner/);
 });
+
+test('önskad webbadress när kunden inte har någon hemsida: bara kolla att adressen är ledig', () => {
+  const brief = { foretagsnamn: 'Kaffebaren Flora', foretagstyp: 'Butik, café eller salong', befintlig_sida: 'saknas' };
+  const r = applyTurn({ brief, asked: ['doman_onskemal'], askCount: 1, message: 'kaffebarenflora.se' }, null);
+  const text = r.issues.map((i) => i.text).join(' ');
+  assert.match(text, /Kunden vill ha adressen kaffebarenflora\.se\. Kolla att den är ledig\./);
+  assert.doesNotMatch(text, /redan har en sida där/);
+});
