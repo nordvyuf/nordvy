@@ -1,7 +1,7 @@
 // Startsidan: meny, animationer, demon i toppen, demominiatyrerna och kontaktformuläret.
 
-import { renderPreview } from './preview.js';
-import { draftModel, FIELD } from './shared/brief.js';
+import { createSheet } from './projektblad.js';
+import { FIELD } from './shared/brief.js';
 import { bindBookingLinks } from './cal.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -9,11 +9,11 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Tre påhittade intervjuer som spelas upp i toppen. Utkastet ritas av samma kod
-// som i den riktiga självintervjun, så det som visas är det kunden faktiskt får.
+// Tre påhittade intervjuer som spelas upp i toppen. Projektbladet ritas av samma kod
+// som i den riktiga självintervjun, så det som visas är det kunden faktiskt ser.
 const DEMOS = [
-  { foretagsnamn: 'Salong Ask', bransch: 'Frisörsalong', ort_omrade: 'Malmö', tjanster_produkter: 'Klippning, färg och slingor, bryn och fransar', mal_med_sidan: 'Boka tid', stil: 'Exklusiv' },
-  { foretagsnamn: 'Bageri Solkorn', bransch: 'Surdegsbageri och kafé', ort_omrade: 'Malmö', tjanster_produkter: 'Surdegsbröd, bullar, lunch', mal_med_sidan: 'Hitta information, se meny', stil: 'Varm och personlig' },
+  { foretagsnamn: 'Salong Ask', foretagstyp: 'Butik, café eller salong', bransch: 'Frisörsalong', ort_omrade: 'Malmö', tjanster_produkter: 'Klippning, färg och slingor, bryn och fransar', priser: 'Klippning 520 kr, färg från 950 kr, bryn och fransar 350 kr', mal_med_sidan: 'Boka tid', stil: 'Exklusiv' },
+  { foretagsnamn: 'Bageri Solkorn', foretagstyp: 'Butik, café eller salong', bransch: 'Surdegsbageri och kafé', ort_omrade: 'Malmö', tjanster_produkter: 'Surdegsbröd, bullar, lunch', priser: 'Surdegslimpa 65 kr, kardemummabulle 35 kr, lunch 115 kr', mal_med_sidan: 'Hitta information, se meny', stil: 'Varm och personlig' },
   { foretagsnamn: 'Fogen Snickeri', bransch: 'Snickerifirma', ort_omrade: 'Skåne', tjanster_produkter: 'Kök, badrum, altaner', mal_med_sidan: 'Ringa eller mejla, begära offert', stil: 'Ren och modern' },
 ];
 
@@ -124,14 +124,12 @@ async function heroDemo() {
   const site = $('#demo-site');
   const label = $('#demo-label');
   if (!stage) return;
-  const frameEl = document.createElement('div');
-  frameEl.className = 'pv-frame';
-  site.append(frameEl);
+  const sheet = createSheet(site);
 
   if (reduced) {
-    renderPreview(frameEl, draftModel(DEMOS[0]), { animate: false });
+    sheet.update(DEMOS[0], { animate: false });
     stage.classList.add('show-site');
-    label.textContent = `Utkast: ${DEMOS[0].foretagsnamn}`;
+    label.textContent = `Planen för ${DEMOS[0].foretagsnamn}`;
     return;
   }
 
@@ -165,14 +163,19 @@ async function heroDemo() {
     stage.classList.remove('show-site');
     await sleep(500);
     chat.replaceChildren();
-    label.textContent = 'Du svarar. Sidan tar form.';
+    label.textContent = 'Du svarar. Planen tar form.';
     await say(FIELD.foretagsnamn.question);
     await type(d.foretagsnamn);
     await say(FIELD.bransch.question);
     await type(`${d.bransch} i ${d.ort_omrade}`);
-    renderPreview(frameEl, draftModel(d), { animate: true });
+    // Först det kunden har sagt om företaget, sedan känslan: färgerna och typsnittet byts in.
+    const { stil, ...early } = d;
+    sheet.update(early, { animate: false });
     stage.classList.add('show-site');
-    label.textContent = `Utkast: ${d.foretagsnamn}`;
+    label.textContent = 'Planen tar form';
+    await sleep(1800);
+    sheet.update(d, { animate: true });
+    label.textContent = `Planen för ${d.foretagsnamn}`;
     await sleep(5200);
   }
 }

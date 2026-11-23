@@ -594,8 +594,22 @@ section {
   transform: scale(1.04);
   overflow: hidden;
 }
-.demo-site .pv-frame {
-  height: 100%;
+/* Projektbladet ritas i full storlek och skalas ner, så att det ser likadant ut som i intervjun. */
+.demo-site {
+  padding: 14px 14px 0;
+}
+.demo-site .pb {
+  width: 600px;
+  max-width: none;
+  margin: 0;
+  transform: scale(0.668);
+  transform-origin: top left;
+  animation: none;
+}
+@media (max-width: 480px) {
+  .demo-site .pb {
+    transform: scale(calc((100vw - 3.5rem) / 600px));
+  }
 }
 .demo-stage.show-site .demo-chat {
   opacity: 0;
