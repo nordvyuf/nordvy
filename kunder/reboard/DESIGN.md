@@ -95,6 +95,11 @@ Produkten och priset kommer före "om oss" eftersom det är en enda produkt i tr
   - Etiketterna i väljaren har bättre kontrast.
   - Länkarna har större tryckytor på mobil.
   - Sidan blir inte längre bredare under startanimationen.
+- **Runda 3 (6/10):**
+  - Den fasta raden på mobil visar vald storlek och pris, och döljs medan väljaren syns.
+  - Färre beställningsknappar: knappen i sidfoten är borttagen.
+  - Fokusringen på storleksknapparna har bättre kontrast.
+  - Rubrikerna har olika storlek beroende på vikt.
 - **Det som återstår** kräver ReBoards material: foton (särskilt ett ovanifrån per storlek och ett i toppen), loggan, måtten, var virket kommer ifrån, skötsel, leveranstid och omdömen.
 
 ## AI-listan i design.md: det här bytte vi ut

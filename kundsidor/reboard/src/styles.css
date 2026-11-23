@@ -192,7 +192,7 @@ mark.todo {
 .segment label + label .seg { border-left: 1.5px solid var(--color-oliv); }
 .segment .seg small { font-size: 13px; opacity: 0.85; font-variant-numeric: tabular-nums; }
 .segment input:checked + .seg { background: var(--color-oliv); color: var(--color-span); }
-.segment input:focus-visible + .seg { outline: 3px solid var(--color-honung); outline-offset: 2px; position: relative; z-index: 1; }
+.segment input:focus-visible + .seg { outline: 3px solid var(--color-black); outline-offset: 2px; position: relative; z-index: 1; }
 .segment label:hover input:not(:checked) + .seg { background: color-mix(in srgb, var(--color-oliv) 10%, transparent); }
 
 /* Frågor och svar: inbyggda <details>, som fungerar utan JavaScript. */

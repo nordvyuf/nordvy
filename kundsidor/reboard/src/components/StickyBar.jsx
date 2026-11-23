@@ -1,10 +1,11 @@
 // Fast Beställ-rad längst ner på mobil. Den syns när toppens knapp har scrollats förbi,
-// och döljs när storleksväljaren eller kontakten syns (där finns redan en knapp).
+// och döljs medan storleksväljaren syns, så att den inte täcker brädorna.
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button.jsx';
 import { SIZES, kr } from '../data.js';
 
-export function StickyBar({ onOrder }) {
+export function StickyBar({ onOrder, sizeId }) {
+  const size = SIZES.find((s) => s.id === sizeId);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export function StickyBar({ onOrder }) {
       }
       update();
     });
-    for (const el of [hero, document.getElementById('valjare-knapp'), document.getElementById('kontakt')]) if (el) io.observe(el);
+    for (const el of [hero, document.getElementById('storlekar')]) if (el) io.observe(el);
     return () => io.disconnect();
   }, []);
 
@@ -33,9 +34,9 @@ export function StickyBar({ onOrder }) {
     >
       <div className="ram flex items-center justify-between gap-4 py-3">
         <p className="text-[15px] leading-tight">
-          Skärbräda av ek
+          {size.name} skärbräda
           <br />
-          <span className="font-rubrik text-[22px]">från {kr(SIZES[0].price)}</span>
+          <span className="font-rubrik text-[22px]">{kr(size.price)}</span>
         </p>
         <Button onClick={onOrder}>Beställ</Button>
       </div>

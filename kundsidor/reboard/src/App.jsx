@@ -100,7 +100,7 @@ export default function App() {
                 Skärbrädor av återvunnen ek
               </h1>
               <p data-r="intro" style={{ '--i': 2 }} className="mt-5 max-w-[34ch] text-[18px] md:mt-7 md:text-[20px]">
-                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör skärbrädor av den, i tre storlekar.
+                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör skärbrädor av den, i tre storlekar.
               </p>
               <div data-r="intro" style={{ '--i': 3 }} className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-4 md:mt-10">
                 <p className="font-rubrik text-[40px] leading-none text-black md:text-[48px]">
@@ -168,7 +168,7 @@ export default function App() {
               <Foto id="team" reveal dark ratio="4 / 5" sizes="(min-width: 768px) 40vw, 100vw" />
             </div>
             <div className="md:col-span-6 md:col-start-7 md:self-center">
-              <h2 id="vi-rubrik" className="text-[44px] md:text-[64px]">
+              <h2 id="vi-rubrik" className="text-[40px] md:text-[52px]">
                 Ett UF-företag från Malmö
               </h2>
               <p className="mt-6 max-w-[40ch] text-[20px] leading-[1.5]">
@@ -189,7 +189,7 @@ export default function App() {
         <section id="fragor" aria-labelledby="fragor-rubrik" className="ram py-20 md:py-28">
           <div className="grid gap-8 md:grid-cols-12 md:gap-x-0">
             <div className="md:col-span-5 md:pr-14">
-              <h2 id="fragor-rubrik" className="text-[44px] md:text-[64px]">
+              <h2 id="fragor-rubrik" className="text-[40px] md:text-[48px]">
                 Innan du beställer
               </h2>
               <div className="mt-10 border-l-[3px] border-honung pl-5">
@@ -222,9 +222,6 @@ export default function App() {
               Skriv till oss på <Todo>ReBoards e-post</Todo> eller i ett meddelande på Instagram.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Button variant="ljus" size="stor" onClick={order}>
-                Beställ en bräda
-              </Button>
               <a href={INSTAGRAM} className={`${buttonVariants({ size: 'stor' })} border-[1.5px] border-span/60 bg-transparent hover:bg-span/10`}>
                 <Instagram size={20} aria-hidden="true" />
                 @reboarduf
@@ -239,7 +236,7 @@ export default function App() {
         </div>
       </footer>
 
-      <StickyBar onOrder={order} />
+      <StickyBar onOrder={order} sizeId={sizeId} />
       <OrderDialog open={open} onOpenChange={setOpen} sizeId={sizeId} setSizeId={setSizeId} opener={opener} />
     </>
   );
