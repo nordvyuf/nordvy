@@ -51,34 +51,51 @@ Skagerak gick inte att öppna.
 
 ```
 [utkastrad]
-[ReBoard UF ........................ Storlekar  Hantverket  Frågor  (Beställ)]
+[ReBoard UF (logga) ......... Storlekar  Hantverket  Frågor  (Beställ)]   mobil: länkarna på egen rad
 
-TOPP: text till vänster (mobil: först)  | foto som går ut i högerkanten, 4:5
+TOPP: text till vänster (mobil: först)  | foto som går ut i högerkanten
   Skärbrädor av återvunnen ek           |  "Foto kommer: en bräda nära,
-  Vi gör dem själva, för hand …         |   ändträ och oljad yta"
-  Från 500 kr   [Välj storlek]  Så gör vi dem
+  Eget hantverk från Malmö …            |   i dagsljus, så att ådringen syns"
+  Från 500 kr   [Välj storlek]
+  Till jul? Skriv det i beställningen. (sista dag: todo)
+  Så gör vi dem
 
 STORLEKAR (det djärva draget)
-  [rutnät 5 cm: konturer liten/mellan/stor, vald ifylld]  | Liten  Mellan  Stor
-                                                          | 750 kr
-                                                          | mått, passar till (todo)
-                                                          | [Beställ mellan, 750 kr]
-  Till jul? Sista beställningsdag (todo)
+  Hur stor ska den vara?                  | Liten  Mellan  Stor
+  [rutnät 5 cm: konturer, vald ifylld]    | 750 kr, mått, passar till (todo)
+                                          | [Beställ mellan, 750 kr]
+                                          | Betalning / Leverans / Klar
 
-HANTVERKET: fyra foton i samma höjd: virket, slipningen, oljan, klar
-  en mening om återvunnet, konkret (todo: var kommer virket ifrån?)
+HANTVERKET: rubrik och en mening, sedan virket, slipningen och oljan (stående),
+  och den färdiga brädan liggande i full bredd. Mobil: alla under varandra, liggande.
 
-VILKA VI ÄR: olivgrön yta, deras egen mening från Instagram + teamfoto (todo)
+VILKA VI ÄR: olivgrön yta, teamfoto + deras egen mening från Instagram
 
-OMDÖMEN: tom plats med todo. De har omdömen men har inte skickat dem.
+INNAN DU BESTÄLLER: rubrik och omdömen (todo) till vänster, frågorna till höger
 
-FRÅGOR: rubrik till vänster, frågorna till höger (hämtning/frakt, Swish, skötsel, tid)
-
-KONTAKT: olivgrön: mejl (todo), Instagram @reboarduf
+KONTAKT: mörk oliv: mejl (todo), Instagram @reboarduf
 [mobil: fast Beställ-rad när toppen har scrollats förbi]
 ```
 
-Produkten och priset kommer före "om oss" eftersom det är en enda produkt i tre storlekar. Väljaren *är* butiken. Hantverket kommer direkt efter, eftersom "eget hantverk av återvunnet virke" är det kunden själv säger är det bästa. Frågorna kommer nära slutet för att ta bort tvekan precis innan kontakten.
+Produkten och priset kommer före "om oss" eftersom det är en enda produkt i tre storlekar. Väljaren *är* butiken. Hantverket kommer direkt efter, eftersom "eget hantverk av återvunnet virke" är det kunden själv säger är det bästa. Omdömena står bredvid frågorna, eftersom båda tar bort tvekan precis innan köpet. Julklappen står i toppen, eftersom sidan visas i slutet av november.
+
+### Ändrat efter de blinda granskningarna
+
+- **Runda 1 (6/10):**
+  - Rutnätet räknas från brädornas hörn, så att kanterna ligger på linjerna.
+  - Omdömena flyttades till frågorna, så att rubriken inte står ensam.
+  - Den färdiga brädan visas liggande.
+  - Frågorna och stegen står i Work Sans, eftersom den smala serifen blev trång i liten storlek.
+  - Menyn syns på mobil.
+  - Stäng-knappen följer med när rutan scrollas, och fokus går tillbaka till knappen.
+- **Runda 2 (6/10):**
+  - Julraden flyttades till toppen.
+  - Betalning, leverans och tid står vid köpknappen.
+  - Hantverket står under varandra på mobil, så att fotona blir stora nog.
+  - Etiketterna i väljaren har bättre kontrast.
+  - Länkarna har större tryckytor på mobil.
+  - Sidan blir inte längre bredare under startanimationen.
+- **Det som återstår** kräver ReBoards material: foton (särskilt ett ovanifrån per storlek och ett i toppen), loggan, måtten, var virket kommer ifrån, skötsel, leveranstid och omdömen.
 
 ## AI-listan i design.md: det här bytte vi ut
 
