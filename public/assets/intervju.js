@@ -6,6 +6,7 @@
 // färdiga frågor i stället, så intervjun går alltid att slutföra.
 
 import {
+  repeatChips,
   FIELDS,
   FIELD,
   NEED,
@@ -255,7 +256,11 @@ function setupComposer() {
   input.value = '';
   input.maxLength = LIMITS.message;
   chipsBox.replaceChildren();
-  const chips = state.stage === 'edit' ? null : field?.chips;
+  // En följdfråga om samma fält (färger efter stilen, en enklare fråga efter "vet inte") får egna
+  // knappar eller inga alls, så att kunden inte svarar på förra frågan igen.
+  const repeat = state.askCount > 1;
+  const chips = state.stage === 'edit' ? null : repeat ? repeatChips(state.asked[0]) : field?.chips;
+  const multi = !repeat && Boolean(field?.multi);
   chipsBox.hidden = !chips;
   if (chips) {
     for (const label of chips) {
@@ -263,7 +268,7 @@ function setupComposer() {
       chip.type = 'button';
       chip.setAttribute('aria-pressed', 'false');
       chip.addEventListener('click', () => {
-        if (!field.multi) {
+        if (!multi) {
           input.value = label;
           return submitAnswer();
         }
@@ -277,8 +282,8 @@ function setupComposer() {
     input.placeholder = 'Skriv vad som ska ändras';
     setHint('Till exempel: "Telefonnumret ska vara 040-12 34 56".');
   } else {
-    input.placeholder = chips ? (field.multi ? 'Något mer? (valfritt)' : 'Eller skriv ett eget svar') : 'Skriv ditt svar';
-    setHint(chips && field.multi ? 'Välj en eller flera och tryck på pilen.' : touch ? 'Tryck på pilen för att skicka.' : 'Tryck Enter för att skicka.');
+    input.placeholder = chips ? (multi ? 'Något mer? (valfritt)' : 'Eller skriv ett eget svar') : 'Skriv ditt svar';
+    setHint(chips && multi ? 'Välj en eller flera och tryck på pilen.' : touch ? 'Tryck på pilen för att skicka.' : 'Tryck Enter för att skicka.');
   }
   early.hidden = !(state.stage === 'chat' && coreDone(state.brief));
   undoBtn.hidden = !(state.stage === 'chat' && state.undo.length);

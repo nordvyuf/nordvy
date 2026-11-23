@@ -290,3 +290,16 @@ test('UF-frågan om vad de gör ställs exakt, med exemplet, även när AI:n fö
   assert.deepEqual(r.asked, ['bransch']);
   assert.match(r.reply, /till exempel "Vi gör doftljus/);
 });
+
+test('följdfrågan om färger har färgknappar, inte stilknapparna (ReBoard UF 23 november)', async () => {
+  const { repeatChips, FIELD } = await import('../public/assets/shared/brief.js');
+  const colours = repeatChips('stil');
+  assert.ok(colours.length >= 3);
+  for (const label of FIELD.stil.chips) assert.ok(!colours.includes(label), `${label} ska inte visas på färgfrågan`);
+  assert.equal(repeatChips('bransch'), null);
+  const brief = { foretagsnamn: 'ReBoard UF', foretagstyp: 'UF-företag', bransch: 'Skärbrädor av återvunnet virke', ort_omrade: 'Malmö', tjanster_produkter: 'Skärbrädor i tre storlekar', priser: 'Liten 500 kr', mal_med_sidan: 'Beställa något' };
+  const first = applyTurn({ brief, asked: ['stil'], askCount: 1, message: 'Naturnära' }, null);
+  assert.deepEqual(first.asked, ['stil']);
+  const answer = applyTurn({ brief, asked: ['stil'], askCount: 2, carry: 'Naturnära', carryField: 'stil', message: 'Beige och brunt' }, null);
+  assert.equal(answer.brief.stil, 'Naturnära / Beige och brunt');
+});

@@ -230,6 +230,14 @@ const ALT = {
 };
 export const altQuestion = (key) => ALT[key] || '';
 
+// Knappar på en följdfråga om samma fält. Fältets vanliga knappar passar inte där: på färgfrågan
+// efter stilen låg stilknapparna kvar, och kunden tryckte "Varm och personlig" i stället för en färg
+// (ReBoard UF 23 november). Fält som inte står här får inga knappar på följdfrågan.
+const REPEAT_CHIPS = {
+  stil: ['Beige och brunt', 'Grönt', 'Blått', 'Svart och vitt', 'Samma färger som loggan'],
+};
+export const repeatChips = (key) => REPEAT_CHIPS[key] || null;
+
 // Kunden vill sluta. Då avslutas intervjun direkt med det som finns, och teamet tar resten.
 const STOP = /^(jag )?(vill (sluta|avsluta|inte svara på fler)|orkar inte( mer)?|kan vi (sluta|avsluta)|inga fler frågor|det räcker( nu)?)(?![a-zåäö])|^(sluta|avsluta|klar nu)[\s.!]*$/i;
 export const wantsToStop = (text) => STOP.test(String(text || '').trim());
