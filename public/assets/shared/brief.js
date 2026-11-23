@@ -765,7 +765,7 @@ export function fallbackQuestion(key, seed = 0, brief = {}) {
 /* ------------------------------------------------------------ underlag */
 
 // Texten som mejlas till Nordvy och följer med i bokningen.
-export function briefToText(brief, issues = [], contact = null) {
+export function briefToText(brief, issues = [], contact = null, choice = '') {
   const b = brief || {};
   const pkg = recommendPackage(b);
   const lines = ['SJÄLVINTERVJU – UNDERLAG', ''];
@@ -780,6 +780,9 @@ export function briefToText(brief, issues = [], contact = null) {
   lines.push('', `Saknar svar: ${left.length ? left.map((k) => FIELD[k].label).join(', ') : 'inget'}`);
   lines.push(`Att följa upp: ${issues.length ? issues.map((i) => `[${i.topic}] ${i.text}`).join(' | ') : 'inget'}`);
   lines.push(`Rekommenderat paket: ${packageLine(pkg.id)}`);
+  // Kunden väljer själv paket i slutet av intervjun.
+  if (PACKAGES[choice]) lines.push(`Kundens val: ${packageLine(choice)}`);
+  else if (choice === 'osaker') lines.push('Kundens val: vet inte än, vill gå igenom paketen tillsammans');
   return lines.join('\n');
 }
 
