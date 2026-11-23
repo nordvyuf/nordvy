@@ -595,7 +595,9 @@ export function applyTurn(state, ai) {
     const sameAsSite = (v) => lowerDomain(v) && lowerDomain(v) === lowerDomain(brief.befintlig_sida);
     if (s.field === 'doman_onskemal' && DOMAIN.test(s.value) && !sameAsSite(s.value)) {
       const domain = s.value.match(DOMAIN)[0];
-      addIssue('annat', `Kunden nämner ${domain}. Kolla om de redan har en sida där, och vad som ska hända med den och domänen.`);
+      // Har kunden redan sagt att de inte har någon hemsida är frågan bara om adressen är ledig.
+      const noSite = hasValue(brief, 'befintlig_sida') && (isSaknas(brief.befintlig_sida) || isNegative(brief.befintlig_sida));
+      addIssue('annat', noSite ? `Kunden vill ha adressen ${domain}. Kolla att den är ledig.` : `Kunden nämner ${domain}. Kolla om de redan har en sida där, och vad som ska hända med den och domänen.`);
     }
     if (s.field === 'befintlig_sida' && DOMAIN.test(s.value)) {
       addIssue('annat', `Kunden har en hemsida i dag: ${s.value.match(DOMAIN)[0]}. Titta på den innan ni bygger, och fråga vad som ska hända med den.`);
