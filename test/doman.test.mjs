@@ -39,3 +39,22 @@ test('nordvyuf.se/reboarduf visar ReBoards utkast utan att byta adress', async (
   assert.equal(www.status, 301);
   assert.equal(www.headers.get('location'), 'https://nordvyuf.se/reboarduf');
 });
+
+test('intervjuunderlaget skickas som ett enda mejl', async () => {
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { sent.push(JSON.parse(init.body)); return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } }); };
+  try {
+    const { NEED } = await import('../public/assets/shared/brief.js');
+    const brief = Object.fromEntries(NEED.map((k) => [k, `Ett ganska långt svar om ${k} som kunden skrev med egna ord`]));
+    const log = Array.from({ length: 50 }, (_, i) => ({ who: i % 2 ? 'me' : 'ai', text: `Meddelande nummer ${i} i chatten, med lite text så att det blir långt.` }));
+    const res = await worker.fetch(new Request('https://nordvyuf.se/api/interview/finish', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://nordvyuf.se' }, body: JSON.stringify({ brief, issues: [], log, contact: { name: 'Test', email: 'test@example.com' }, choice: 'bas' }) }), { ...env, CONTACT_ENDPOINT: 'https://script.google.com/macros/s/test/exec' });
+    const out = await res.json();
+    assert.equal(out.ok, true);
+    assert.equal(sent.length, 1);
+    assert.doesNotMatch(sent[0].message, /^\(1\//);
+    assert.match(sent[0].message, /ORDAGRANN CHATT/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
