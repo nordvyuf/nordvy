@@ -1,0 +1,44 @@
+{
+  "namn": "facebook-demosidor",
+  "fps": 30,
+  "format": ["4x5", "9x16", "1x1"],
+  "skarmbilder": [
+    { "namn": "salong", "url": "/demo/salong-ask/", "typ": "mobil", "hojd": 2600 },
+    { "namn": "fogen", "url": "/demo/fogen-snickeri/", "typ": "mobil", "hojd": 2600 },
+    { "namn": "solkorn", "url": "/demo/solkorn/", "typ": "mobil", "hojd": 2600 },
+    { "namn": "fogen-dator", "url": "/demo/fogen-snickeri/", "typ": "dator", "hojd": 2400 },
+    {
+      "namn": "intervju", "url": "/intervju", "typ": "mobil",
+      "intervju": {
+        "brief": { "foretagsnamn": "Salong Ask", "foretagstyp": "Butik, café eller salong", "bransch": "Frisörsalong i Malmö", "ort_omrade": "Malmö", "tjanster_produkter": "Klippning, färg, fransar", "priser": "Klippning 520 kr, färg från 950 kr", "mal_med_sidan": "Boka tid", "stil": "Varm och personlig, beige", "varfor_valja_oss": "Vi tar oss tid för varje kund" },
+        "logg": [
+          { "who": "guide", "text": "Vad heter ditt företag?" }, { "who": "me", "text": "Salong Ask" },
+          { "who": "guide", "text": "Vad gör ni? Beskriv det gärna i en mening." }, { "who": "me", "text": "Frisörsalong i Malmö" },
+          { "who": "guide", "text": "Vilka tjänster ska synas på sidan?" }, { "who": "me", "text": "Klippning, färg och fransar" },
+          { "who": "guide", "text": "Vad kostar det?" }, { "who": "me", "text": "Klippning 520 kr, färg från 950 kr" },
+          { "who": "guide", "text": "Vad är det viktigaste en besökare ska kunna göra på sidan?" }, { "who": "me", "text": "Boka tid" },
+          { "who": "guide", "text": "Vilken känsla ska sidan ha? Nämn gärna färger." }, { "who": "me", "text": "Varm och personlig, beige" },
+          { "who": "guide", "text": "Har ni bilder på lokalen eller era arbeten?" }
+        ],
+        "fragar": ["bilder"]
+      }
+    },
+    {
+      "namn": "planen", "url": "/intervju", "typ": "mobil", "klicka": "[data-view=preview]",
+      "intervju": {
+        "brief": { "foretagsnamn": "Salong Ask", "foretagstyp": "Butik, café eller salong", "bransch": "Frisörsalong i Malmö", "ort_omrade": "Malmö", "tjanster_produkter": "Klippning, färg, fransar", "priser": "Klippning 520 kr, färg från 950 kr", "mal_med_sidan": "Boka tid", "stil": "Varm och personlig, beige", "varfor_valja_oss": "Vi tar oss tid för varje kund" },
+        "logg": [{ "who": "guide", "text": "Vad heter ditt företag?" }, { "who": "me", "text": "Salong Ask" }]
+      }
+    }
+  ],
+  "scener": [
+    { "typ": "krok", "langd": 2800, "rubrik": "Har ditt företag\n*ingen hemsida?*", "text": "Dina kunder letar på nätet." },
+    { "typ": "karusell", "langd": 4200, "rubrik": "Vi bygger den\n*åt dig.*", "bilder": ["salong.png", "fogen.png", "solkorn.png"], "etiketter": ["Exempelsida", "Exempelsida", "Exempelsida"] },
+    { "typ": "mobil", "langd": 3800, "rubrik": "Svara på\n*några frågor.*", "bild": "intervju.png", "chip": "Eller prata in svaren", "chipIkon": "mikrofon" },
+    { "typ": "mobil", "langd": 3200, "rubrik": "Se planen\n*ta form.*", "bild": "planen.png" },
+    { "typ": "siffra", "langd": 2600, "siffra": "2", "text": "vardagar till ett ==gratis utkast==", "under": "Byggt för hand av oss." },
+    { "typ": "webblasare", "langd": 3400, "rubrik": "Mobil, dator och\n*Google.*", "bild": "fogen-dator.png", "adress": "dittforetag.se" },
+    { "typ": "lista", "langd": 3600, "rubrik": "Utan krångel.", "punkter": [{ "text": "Klar inom 7 dagar", "under": "från att vi fått ditt material" }, { "text": "2 999 kr + 149 kr/mån", "under": "introduktionspris för våra 10 första kunder" }, { "text": "Ingen bindningstid", "under": "på månadsavgiften" }] },
+    { "typ": "uppmaning", "langd": 3800, "rubrik": "Se hur din sida\n*kan bli.*", "adress": "nordvyuf.se", "knapp": "Gör intervjun", "text": "Gratis utkast. Inget köpkrav." }
+  ]
+}
