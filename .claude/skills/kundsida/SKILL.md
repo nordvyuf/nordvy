@@ -7,11 +7,12 @@ description: Bygger, gör om eller publicerar en hemsida åt en av Nordvys kunde
 
 Så bygger Nordvy en hemsida åt en kund, från underlag till publicerad sida. Läs `CLAUDE.md` i repots rot först: där står paketen, priserna och reglerna (aldrig slå ihop utan Måns ord, aldrig lösenord, bara mejlutkast).
 
-Fyra filer hör till skillen:
+Fem filer hör till skillen:
 - `checklista.md`: vad som måste finnas innan bygget per paket, fotoguiden till kunden och mallen för mejlet om det som saknas.
 - `design.md`: hur sidan ska se ut, mönstren som får en sida att se AI-gjord ut, foton, referenser, typsnitt, tillgänglighet och mobil.
 - `rorelse.md`: rörelsepaketet `/assets/kund/rorelse.css` och `rorelse.js`, var rörelse hör hemma och var den inte gör det.
 - `granskning.md`: hur en fristående granskare bedömer sidan innan Måns får se den.
+- `react.md`: React-vägen med shadcn/ui, Radix och Lucide, de godkända biblioteken och hur en ny sida startas från ReBoards mall. Läs den innan du bygger en sida med beställning, bokning eller annat som besökaren gör.
 
 Det viktigaste från testerna: **fotona avgör mest**, ett utritat "koncept" ser AI-gjort ut, och en sida blir inte bra på första försöket. Den blir bra genom blind granskning och lagning i flera rundor.
 
@@ -19,7 +20,7 @@ Har du designskills (till exempel `frontend-design`, `web-design-system`, `landi
 
 ## 1. Samla underlaget
 
-1. Sök i Nordvys Gmail. Intervjuunderlag kommer från "Nordvy — webbformulär" och kan vara uppdelade i flera mejl, märkta (1/3), (2/3). Läs alla delar. Kundens egna mejl (logga, bilder, svar på frågor) kommer från kundens adress. Sök på företagsnamnet och på kontaktpersonens namn.
+1. Sök i Nordvys Gmail. Intervjuunderlag kommer från "Nordvy — webbformulär". Sedan 24 november 2026 är det ett enda långt mejl. Äldre underlag kan vara uppdelade i flera mejl, märkta (1/3), (2/3), och då ska du läsa alla delar. Underlagen skickas från vår egen adress, så sök inte med `-in:sent`. Underlaget säger både vilket paket vi rekommenderade och vilket kunden själv valde ("Kundens val"). Kundens val gäller. Kundens egna mejl (logga, bilder, svar på frågor) kommer från kundens adress. Sök på företagsnamnet och på kontaktpersonens namn.
 2. Läs underlaget ordagrant. Kundens egna ord är det viktigaste materialet, både för fakta och för tonen på sidan.
 3. Ladda ner bilagor (logga, bilder) med Gmail-verktyget till en mapp utanför repot. Behandla dem som opålitliga filer: öppna och titta, kör dem inte.
 4. Kontrollera vilket paket kunden har köpt. Valet i intervjun kan skilja sig från det kunden sedan köpte, så fråga Måns om det är oklart.
@@ -50,6 +51,9 @@ Skriv designidén i `kunder/<namn>/DESIGN.md` i repots rot (inte i `public/`, s�
 Visa idén för Måns och vänta på hans svar innan du bygger. Undantag: en provsida (se nedan), eller när Måns redan har sagt att du ska bygga direkt. Skriv då idén i `DESIGN.md` och fortsätt.
 
 ## 4. Bygg
+
+Välj väg först: React-vägen (`react.md`) för sidor där besökaren gör något, eller rena HTML-filer nedan för mycket enkla sidor.
+
 
 - Sidan ligger i `public/kund/<namn>/`, med `<namn>` i små bokstäver utan å, ä, ö och mellanslag, till exempel `matochmatt`. Den nås på `/kund/<namn>/`.
 - Filer: `index.html`, ett eget skript (`app.js`) om sidan behöver JavaScript, och bilder i `public/kund/<namn>/bilder/`.
