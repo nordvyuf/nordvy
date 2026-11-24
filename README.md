@@ -71,7 +71,7 @@ Workers AI har 10 000 gratis "neuroner" per dygn, gemensamt för live-sidan och 
 
 ### Mejlen
 
-Formuläret och självintervjun skickar via samma Google Apps Script som mejlar till `Nordvyuf@gmail.com`. Adressen står i `wrangler.jsonc` (`CONTACT_ENDPOINT`). Skriptet har en gräns på 30 mejl per dag, och en intervju blir 2–4 mejl. Höj `MAX_EMAILS_PER_DAY` i skriptet om det behövs.
+Formuläret och självintervjun skickar via samma Google Apps Script som mejlar till `Nordvyuf@gmail.com`. Adressen står i `wrangler.jsonc` (`CONTACT_ENDPOINT`). Skriptet har en gräns på 30 mejl per dag. En intervju blir **ett** långt mejl (`MAIL_CHARS` i `src/worker.js`, 19 000 tecken). Det kräver att skriptet tar emot långa meddelanden: rad 18 i skriptet ska vara `const message = clean(input.message, 20000);` (var 2000 till 24 november 2026, då blev en intervju 2–4 mejl). Höj `MAX_EMAILS_PER_DAY` i skriptet om det behövs.
 
 ## Testa lokalt
 
