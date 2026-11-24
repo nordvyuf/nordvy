@@ -2,11 +2,12 @@
 // Serverar sajten i /public och några små API:er:
 //   POST /api/interview/turn    ett steg i självintervjun (Workers AI)
 //   POST /api/interview/draft   textförslag till utkastet (Workers AI)
-//   POST /api/interview/finish  mejlar underlaget till Nordvy
+//   POST /api/interview/finish  mejlar underlaget till Nordvy, med logga, bilder och byggunderlag (JSON) som bilagor
+//   POST /api/interview/transcribe  mikrofonknappen: tal till text (Whisper på Workers AI)
 //   POST /api/contact           mejlar kontaktformuläret till Nordvy
 //   POST /api/review            mejlar ett omdöme från en besökare till Nordvy (visas först när kunden godkänt)
 
-import { interviewTurn, draftCopy, packageFor } from './interview.js';
+import { interviewTurn, draftCopy, packageFor, buildSpec, transcribe } from './interview.js';
 import { readReview, reviewMail } from './reviews.js';
 import {
   PACKAGES,
@@ -19,9 +20,15 @@ import {
   briefToText,
   logToText,
   mailParts,
+  slugify,
 } from '../public/assets/shared/brief.js';
 
 const MAX_BODY = 40_000;
+// Underlaget med logga och bilder (förminskade i webbläsaren) och en inspelning till mikrofonknappen.
+const FINISH_BODY = 9_000_000;
+const AUDIO_BODY = 4_000_000;
+// Logga och bilder som följer med underlaget. Gränserna ryms i ett Gmail-mejl (25 MB) med god marginal.
+export const FILE_RULES = { max: 11, each: 2_800_000, total: 8_500_000, types: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'] };
 // Så långt får ett mejl med intervjuunderlaget vara. Google-skriptet kapar vid 20 000 tecken.
 const MAIL_CHARS = 19_000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,11 +49,12 @@ const CSP = [
   "object-src 'none'",
 ].join('; ');
 
-function secure(response, { csp = false } = {}) {
+function secure(response, { csp = false, mic = false } = {}) {
   const headers = new Headers(response.headers);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Mikrofonen får bara användas av självintervjun (mikrofonknappen), och bara på vår egen sida.
+  headers.set('Permissions-Policy', `camera=(), microphone=(${mic ? 'self' : ''}), geolocation=()`);
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   headers.set('X-Frame-Options', 'SAMEORIGIN');
   if (csp) headers.set('Content-Security-Policy', CSP);
@@ -67,9 +75,11 @@ function siteOrigin(request, env) {
   return /^https:\/\/[a-z0-9.-]+$/i.test(fixed) ? fixed : new URL(request.url).origin;
 }
 
-async function readJson(request) {
+async function readJson(request, max = MAX_BODY) {
+  const length = Number(request.headers.get('content-length') || 0);
+  if (length > max) return null;
   const text = await request.text();
-  if (text.length > MAX_BODY) return null;
+  if (text.length > max) return null;
   try {
     const data = JSON.parse(text);
     return data && typeof data === 'object' ? data : null;
@@ -161,8 +171,34 @@ async function handleReview(request, env, url) {
   return json(result, result.ok ? 200 : result.error === 'not_configured' ? 503 : 502);
 }
 
+// Kontrollerar filerna från webbläsaren: bara bilder, rimliga storlekar och giltig base64.
+// En logga först, sedan bilderna. Ger { files, dropped }.
+export function readFiles(raw) {
+  const out = [];
+  let dropped = 0;
+  let total = 0;
+  const list = Array.isArray(raw) ? raw : [];
+  for (const f of list) {
+    const kind = f?.kind === 'logo' ? 'logo' : 'photo';
+    const type = String(f?.type || '');
+    const data = String(f?.data || '');
+    const okType = FILE_RULES.types.includes(type) && (type !== 'image/svg+xml' || kind === 'logo');
+    const okData = data.length > 100 && data.length <= FILE_RULES.each && /^[A-Za-z0-9+/]+={0,2}$/.test(data);
+    if (!okType || !okData || out.length >= FILE_RULES.max || total + data.length > FILE_RULES.total || (kind === 'logo' && out.some((x) => x.kind === 'logo'))) {
+      dropped += 1;
+      continue;
+    }
+    const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/svg+xml': 'svg' }[type];
+    const base = cleanText(f?.name, 60).replace(/\.[a-z0-9]+$/i, '').replace(/[^a-zA-Z0-9åäöÅÄÖ_-]+/g, '-') || 'bild';
+    out.push({ kind, type, data, name: `${kind === 'logo' ? 'logga' : `bild-${out.filter((x) => x.kind === 'photo').length + 1}`}-${base}.${ext}` });
+    total += data.length;
+  }
+  out.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'logo' ? -1 : 1));
+  return { files: out, dropped };
+}
+
 async function handleFinish(request, env) {
-  const input = await readJson(request);
+  const input = await readJson(request, FINISH_BODY);
   if (!input) return json({ ok: false, error: 'invalid_request' }, 400);
   const contact = readContact(input.contact);
   if (!contact.name || !EMAIL.test(contact.email)) return json({ ok: false, error: 'invalid_contact' }, 400);
@@ -175,19 +211,33 @@ async function handleFinish(request, env) {
   }
   const pkg = packageFor(brief);
   const choice = ['uf', 'bas', 'premium', 'osaker'].includes(input.choice) ? input.choice : '';
+  const { files, dropped } = readFiles(input.files);
+  // Sa kunden att loggan eller bilderna laddades upp, men filerna kom inte med (till exempel efter
+  // att sidan laddats om i en annan webbläsare)? Då behöver teamet be om dem.
+  const fileIssues = [];
+  if (/^laddade upp/i.test(brief.logga || '') && !files.some((f) => f.kind === 'logo')) fileIssues.push({ topic: 'logga', text: 'Kunden laddade upp en logga, men den kom inte med. Be om den.' });
+  if (/^laddade upp/i.test(brief.bilder || '') && !files.some((f) => f.kind === 'photo')) fileIssues.push({ topic: 'bilder', text: 'Kunden laddade upp bilder, men de kom inte med. Be om dem.' });
+  if (dropped) fileIssues.push({ topic: 'bilder', text: `${dropped} uppladdade filer kunde inte tas emot (fel format eller för stora).` });
+  const allIssues = cleanIssues([...issues, ...fileIssues]);
+  const spec = await buildSpec(env, brief, { contact, choice, files, issues: allIssues });
   const head = left.length ? `OBS: Intervjun är inte komplett (${left.length} punkter saknas).\n\n` : '';
-  const text = `${head}${briefToText(brief, issues, contact, choice)}\n\nORDAGRANN CHATT\n${logToText(cleanLog(input.log))}`;
+  const attached = files.length ? `\n\nBIFOGADE FILER\n${files.map((f) => `- ${f.name}`).join('\n')}` : '';
+  const text = `${head}${briefToText(brief, allIssues, contact, choice)}${attached}\n\nORDAGRANN CHATT\n${logToText(cleanLog(input.log))}`;
+  // Byggunderlaget i JSON följer med som en fil, så att det går att ge direkt till hemsidebyggaren.
+  const specFile = { name: `byggunderlag-${slugify(brief.foretagsnamn || 'kund')}.json`, type: 'application/json', data: utf8Base64(JSON.stringify(spec, null, 2)) };
   // Ett enda långt mejl. Kräver att Google-skriptet tar emot långa meddelanden
   // (clean(input.message, 20000) i stället för 2000, se README). Bara extremt långa chattar delas i två.
   const parts = mailParts(text, MAIL_CHARS, 2);
   let sent = 0;
   let error = '';
-  for (const message of parts) {
+  for (const [i, message] of parts.entries()) {
     const result = await sendMail(env, {
       ...contact,
       company: brief.foretagsnamn || '',
       package: PACKAGES[choice]?.name || (choice === 'osaker' ? 'Vet inte än' : PACKAGES[pkg.id].name),
       message,
+      // Filerna följer bara med det första mejlet.
+      attachments: i === 0 ? [specFile, ...files.map(({ name, type, data }) => ({ name, type, data }))] : [],
     });
     if (!result.ok) {
       error = result.error;
@@ -196,7 +246,15 @@ async function handleFinish(request, env) {
     sent += 1;
   }
   if (!sent) return json({ ok: false, error: error || 'send_failed' }, error === 'not_configured' ? 503 : 502);
-  return json({ ok: true, sent, parts: parts.length, package: pkg });
+  return json({ ok: true, sent, parts: parts.length, package: pkg, files: files.length });
+}
+
+// JSON-filer i mejlet behöver base64 av UTF-8 (å, ä, ö).
+function utf8Base64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
 
 async function handleApi(request, env, url) {
@@ -211,6 +269,13 @@ async function handleApi(request, env, url) {
     if (await limited(request, env, 'mail')) return json({ ok: false, error: 'rate_limited' }, 429);
     if (path === '/api/review') return handleReview(request, env, url);
     return path === '/api/contact' ? handleContact(request, env) : handleFinish(request, env);
+  }
+  if (path === '/api/interview/transcribe') {
+    if (await limited(request, env, 'interview')) return json({ ok: false, error: 'rate_limited' }, 429);
+    const body = await readJson(request, AUDIO_BODY);
+    if (!body) return json({ ok: false, error: 'invalid_request' }, 400);
+    const result = await transcribe(env, body);
+    return json(result, result.ok ? 200 : result.error === 'not_configured' ? 503 : 400);
   }
   if (path === '/api/interview/turn' || path === '/api/interview/draft') {
     if (await limited(request, env, 'interview')) return json({ ok: false, error: 'rate_limited' }, 429);
@@ -254,7 +319,7 @@ async function handleAsset(request, env, url) {
   headers.delete('content-length');
   headers.delete('etag');
   headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
-  return secure(new Response(html, { status: response.status, headers }), { csp: true });
+  return secure(new Response(html, { status: response.status, headers }), { csp: true, mic: /^\/intervju(\.html)?\/?$/.test(url.pathname) });
 }
 
 // Korta adresser till kundsidor, till exempel nordvyuf.se/reboarduf. Sidan visas på den korta

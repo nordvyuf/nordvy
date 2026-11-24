@@ -57,6 +57,8 @@ const ASSETS = {
 // Låtsas-AI: sparar svaret på det senast frågade fältet och ställer nästa fråga.
 const MOCK_AI = {
   async run(model, payload) {
+    // Mikrofonknappen: låtsas att talet blev den här texten.
+    if (payload.audio) return { text: 'Vi säljer skärbrädor av gammal ek från rivna hus.' };
     const text = payload.messages.at(-1).content;
     if (!text.includes('KUNDENS SVAR')) {
       return { response: { headline: 'Låtsasrubrik skriven av test-AI:n', sub: 'En underrubrik som visar att AI-vägen i koden fungerar som den ska.', tagline: 'Test i Malmö', cta: 'Boka nu', services: [{ title: 'Tjänst ett', text: 'Kort text.' }, { title: 'Tjänst två', text: 'Kort text.' }, { title: 'Tjänst tre', text: 'Kort text.' }], about: '' } };
@@ -88,7 +90,12 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input.url;
   if (url.startsWith('https://script.google.com/')) {
-    console.log('\n--- MEJL (skickas inte lokalt) ---\n', JSON.parse(init.body), '\n');
+    const mail = JSON.parse(init.body);
+    // Bilagorna skrivs som namn och storlek. Byggunderlaget (JSON) skrivs ut i sin helhet.
+    const files = (mail.attachments || []).map((f) =>
+      f.type === 'application/json' ? `${f.name}:\n${Buffer.from(f.data, 'base64').toString('utf8')}` : `${f.name} (${f.type}, ${Math.round((f.data.length * 3) / 4 / 1024)} kB)`,
+    );
+    console.log('\n--- MEJL (skickas inte lokalt) ---\n', { ...mail, attachments: files.length }, '\n', files.join('\n'), '\n');
     return Response.json({ ok: true });
   }
   return realFetch(input, init);

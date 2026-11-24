@@ -30,23 +30,30 @@ export const FIELDS = [
   { key: 'ort_omrade', label: 'Ort / område', level: 1, about: 'Var de verkar och var de vill synas.', question: 'Var finns ni, och i vilket område vill ni synas?' },
   { key: 'tjanster_produkter', label: 'Tjänster / produkter', level: 1, about: 'Lista VARJE tjänst eller produkt separat: namn och kort beskrivning. Pris bara om kunden själv anger det.', question: 'Vilka tjänster eller produkter erbjuder ni? Skriv dem som en lista.' },
   { key: 'priser', label: 'Priser', level: 2, about: 'Priser som ska synas på sidan, exakt som kunden anger. Eller att de inte vill visa priser.', question: 'Vad kostar det? Skriv de priser som ska synas, eller säg att ni inte vill visa priser.', chips: ['Vi visar inga priser'] },
+  // Det här fick vi fråga ReBoard UF om i efterhand (mått, virke, skötsel). Bara för den som säljer produkter.
+  { key: 'produktdetaljer', label: 'Om produkterna', level: 2, about: 'Det köparen vill veta om produkterna: storlek eller mått, vad de är gjorda av, vad de passar till och skötsel.', question: 'Berätta lite mer om produkterna: storlek eller mått, vad de är gjorda av, och om något är bra att veta, till exempel skötsel.' },
   { key: 'mal_med_sidan', label: 'Mål med sidan', level: 1, about: 'Boka tid, beställa, ringa, visa arbeten eller bara visa information.', question: 'Vad är det viktigaste en besökare ska kunna göra på sidan?', chips: ['Boka tid', 'Beställa eller köpa', 'Ringa eller mejla', 'Se våra arbeten', 'Hitta information'], multi: true, pick: true },
   { key: 'stil', label: 'Stil', level: 1, about: 'Känsla, färger och gärna sidor de gillar.', question: 'Vilken känsla ska sidan ha? Nämn gärna färger eller en sida du gillar.', chips: ['Varm och personlig', 'Ren och modern', 'Exklusiv', 'Lekfull', 'Naturnära'] },
   { key: 'varfor_valja_oss', label: 'Varför välja er', level: 2, about: 'Vad som gör dem bättre eller annorlunda, med kundens egna ord.', question: 'Varför väljer kunder just er?' },
   { key: 'erfarenhet', label: 'Erfarenhet', level: 2, about: 'Hur länge de funnits eller hållit på.', question: 'Hur länge har ni funnits eller hållit på?' },
+  { key: 'om_oss', label: 'Vilka ni är', level: 2, about: 'Vilka som driver företaget och vem som gör vad. Förnamn räcker.', question: 'Vilka är ni som driver företaget, och vem gör vad? Förnamn räcker.' },
   { key: 'malgrupp', label: 'Målgrupp', level: 2, about: 'Vilka kunderna är, t.ex. privatpersoner eller företag, ålder, närområde.', question: 'Vilka är era kunder? Till exempel privatpersoner eller företag.' },
   { key: 'befintlig_sida', label: 'Hemsida i dag', level: 2, about: 'Adressen till en hemsida de redan har, eller att de inte har någon.', question: 'Har ni en hemsida i dag? Skriv adressen i så fall.', chips: ['Nej, ingen hemsida'] },
   { key: 'sprak', label: 'Språk', level: 2, about: 'Svenska, engelska eller båda.', question: 'Ska sidan vara på svenska, engelska eller båda?', chips: ['Svenska', 'Engelska', 'Båda'], pick: true },
   { key: 'funktioner', label: 'Funktioner', level: 1, about: 'Bokning, kontaktformulär, karta, webshop.', question: 'Vad ska gå att göra på sidan? Välj det som passar.', chips: ['Bokning', 'Beställning', 'Webshop', 'Betalning med Swish', 'Kontaktformulär', 'Karta'], multi: true, pick: true },
-  { key: 'bestallning', label: 'Beställning och betalning', level: 2, about: 'Hur kunderna beställer, betalar och får varan.', question: 'Hur vill ni att kunderna beställer och betalar?', chips: ['Swish', 'Kort', 'Faktura', 'Kontant', 'Vet inte än'], multi: true, pick: true },
+  { key: 'bestallning', label: 'Beställning och betalning', level: 2, about: 'Hur kunderna beställer och betalar.', question: 'Hur vill ni att kunderna beställer och betalar?', chips: ['Swish', 'Kort', 'Faktura', 'Kontant', 'Vet inte än'], multi: true, pick: true },
+  { key: 'leverans', label: 'Leverans', level: 2, about: 'Hur köparen får varan: var man hämtar, eller att den skickas och vad frakten kostar, och hur snart den är klar.', question: 'Hur får kunden varan? Till exempel att man hämtar den, eller att ni skickar och vad frakten kostar.', chips: ['Kunden hämtar', 'Vi skickar', 'Båda delarna'] },
+  // Numret skickas aldrig till AI:n (fältet är "enkelt" i interview.js och siffror döljs).
+  { key: 'swish', label: 'Swish-nummer', level: 2, about: 'Företagets Swish-nummer, som kunderna betalar till på sidan.', question: 'Vilket Swish-nummer ska kunderna betala till? Det ska vara företagets nummer, inte någons privata.', chips: ['Vi har inget än'] },
   { key: 'kontakt', label: 'Kontakt', level: 1, about: 'Telefon, mejl och adress.', question: 'Vilka kontaktuppgifter ska stå på sidan? Telefon, mejl och adress.' },
   { key: 'oppettider', label: 'Öppettider', level: 2, about: 'Exakt som kunden anger. "saknas" om de inte har fasta tider.', question: 'Har ni öppettider? Säljer ni bara online räcker det att säga det.', chips: ['Vi har inga fasta tider', 'Vi säljer bara online'] },
   { key: 'sociala_lankar', label: 'Sociala länkar', level: 1, about: 'Instagram, Facebook, LinkedIn med mera.', question: 'Har ni Instagram, Facebook eller andra sociala medier? Skriv gärna namnen eller länkarna.', chips: ['Vi har inga'] },
-  { key: 'logga', label: 'Logga', level: 2, about: 'Har de en logga? Den mejlas till Nordvy efter intervjun.', question: 'Har ni en logga?', chips: ['Ja, jag mejlar den', 'Nej, ingen logga'] },
+  // "Ladda upp …" öppnar filväljaren i intervjun (se UPLOAD_CHIPS). Filerna följer med mejlet till Nordvy.
+  { key: 'logga', label: 'Logga', level: 2, about: 'Har de en logga? Den laddas upp i intervjun med en knapp.', question: 'Har ni en logga?', chips: ['Ladda upp loggan', 'Nej, ingen logga', 'Jag mejlar den senare'] },
   { key: 'logga_status', label: 'Logga: status', level: 0, about: 'ej verifierad eller saknas.' },
-  { key: 'bilder', label: 'Bilder', level: 2, about: 'Bilder på lokal, produkter, personal eller arbeten. De mejlas till Nordvy efter intervjun.', question: 'Har ni bilder på lokalen, produkterna eller era arbeten?', chips: ['Ja, jag mejlar bilder', 'Inte än'] },
+  { key: 'bilder', label: 'Bilder', level: 2, about: 'Bilder på lokal, produkter, personal eller arbeten. De laddas upp i intervjun med en knapp.', question: 'Har ni bilder på lokalen, produkterna eller era arbeten?', chips: ['Ladda upp bilder', 'Inte än', 'Jag mejlar dem senare'] },
   { key: 'egna_texter', label: 'Egna texter', level: 2, about: 'Texter de redan har, t.ex. om oss eller tjänstebeskrivningar.', question: 'Har ni texter som redan är skrivna, till exempel en presentation av företaget?', chips: ['Ja, det har vi', 'Nej'] },
-  { key: 'omdomen', label: 'Omdömen', level: 2, about: 'Bara riktiga omdömen som de har tillstånd att visa.', question: 'Har ni omdömen från riktiga kunder som ni får visa?', chips: ['Ja, det har vi', 'Nej, inga än'] },
+  { key: 'omdomen', label: 'Omdömen', level: 2, about: 'Bara riktiga omdömen som de har tillstånd att visa, med texten och förnamnet på den som skrev.', question: 'Har ni omdömen från riktiga kunder som ni får visa?', chips: ['Ja, det har vi', 'Nej, inga än'] },
   { key: 'doman_onskemal', label: 'Domän', level: 1, about: 'Önskat sidnamn eller webbadress.', question: 'Vilken webbadress skulle ni vilja ha? Till exempel dittforetag.se.', chips: ['Vet inte än'] },
   { key: 'undvik', label: 'Övriga önskemål', level: 2, about: 'Allt annat kunden vill ha med (färger, känsla, flera sidor, animationer) och det de inte vill ha.', question: 'Är det något mer ni vill ha med på sidan, eller något ni inte vill ha?', chips: ['Nej, inget mer'] },
   { key: 'referens_ok', label: 'Referens', level: 1, about: 'Får Nordvy visa sidan som exempel? Ja eller nej.', question: 'Får Nordvy visa er färdiga sida som exempel för andra kunder?', chips: ['Ja', 'Nej'] },
@@ -97,8 +104,23 @@ const SKIP = {
   tjanst: ['sprak', 'bestallning'],
 };
 
+// Fält som bara frågas när de behövs. Produktfrågorna gäller den som säljer varor, och
+// Swish-numret bara den som vill ta betalt med Swish.
+const SELLS_GOODS = (b) => ['uf', 'webshop'].includes(profileOf(b));
+const ONLY_IF = {
+  produktdetaljer: SELLS_GOODS,
+  leverans: SELLS_GOODS,
+  swish: (b) => /swish/i.test(`${b.bestallning || ''} ${b.funktioner || ''}`) && !isNegative(b.bestallning),
+};
+
+// Svarsknappar som öppnar filväljaren i stället för att skickas som svar.
+export const UPLOAD_CHIPS = { 'Ladda upp loggan': 'logo', 'Ladda upp bilder': 'photo' };
+
 // Frågor och svarsknappar som skiljer sig per typ. Allt annat är checklistans.
 const VIEW = {
+  om_oss: {
+    uf: { question: 'Vilka är ni i UF-företaget, och vem gör vad? Förnamn räcker.' },
+  },
   bransch: {
     // fixed: frågan ställs exakt så här. Exemplet hjälper gymnasieelever, och AI:n kortade bort det.
     uf: { question: 'Vad säljer eller gör ni? En mening räcker, till exempel "Vi gör doftljus av gamla glasburkar".', fixed: true },
@@ -190,15 +212,15 @@ export function plan(brief) {
   if (INTERNATIONAL.test(String(b.ort_omrade || ''))) skip.delete('sprak');
   // Står "UF" redan i namnet behövs ingen fråga om typen.
   if (!hasValue(b, 'foretagstyp') && isUF(b)) skip.add('foretagstyp');
-  return NEED.filter((k) => !skip.has(k) || hasValue(b, k));
+  return NEED.filter((k) => (!skip.has(k) && (!ONLY_IF[k] || ONLY_IF[k](b))) || hasValue(b, k));
 }
 
 /* ------------------------------------- faser, reservfrågor och slut */
 
 // Förloppet visas som fyra delar i stället för "0 av 23 punkter", som kändes som ett formulär.
 export const PHASES = [
-  { label: 'Om företaget', keys: ['foretagsnamn', 'foretagstyp', 'bransch', 'ort_omrade', 'tjanster_produkter', 'priser'] },
-  { label: 'Hur sidan ska bli', keys: ['mal_med_sidan', 'stil', 'varfor_valja_oss', 'erfarenhet', 'malgrupp', 'befintlig_sida', 'sprak', 'funktioner', 'bestallning'] },
+  { label: 'Om företaget', keys: ['foretagsnamn', 'foretagstyp', 'bransch', 'ort_omrade', 'tjanster_produkter', 'priser', 'produktdetaljer'] },
+  { label: 'Hur sidan ska bli', keys: ['mal_med_sidan', 'stil', 'varfor_valja_oss', 'erfarenhet', 'om_oss', 'malgrupp', 'befintlig_sida', 'sprak', 'funktioner', 'bestallning', 'leverans', 'swish'] },
   { label: 'Kontakt', keys: ['kontakt', 'oppettider', 'sociala_lankar'] },
   { label: 'Bilder och sista frågorna', keys: ['logga', 'bilder', 'egna_texter', 'omdomen', 'doman_onskemal', 'undvik', 'referens_ok'] },
 ];

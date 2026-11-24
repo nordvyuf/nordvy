@@ -29,8 +29,11 @@ import {
   progressOf,
   isUF,
   MAX_ANSWERS,
+  UPLOAD_CHIPS,
 } from './shared/brief.js';
 import { createSheet } from './projektblad.js';
+import * as uploads from './uploads.js';
+import { createMic } from './mikrofon.js';
 import { openBooking, CAL_ACCOUNT } from './cal.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -59,6 +62,7 @@ const state = {
   partial: false,
   contact: null,
   sent: null,
+  sentFiles: 0, // hur många uppladdade filer som kom fram
   undo: [], // ögonblicksbilder före varje svar, så att kunden kan ändra förra svaret
   answers: 0, // antal svar i chatten, för taket MAX_ANSWERS
 };
@@ -108,6 +112,7 @@ function restore() {
       partial: Boolean(saved.partial),
       contact: saved.contact || null,
       sent: saved.sent ?? null,
+      sentFiles: Number(saved.sentFiles) || 0,
       undo: Array.isArray(saved.undo) ? saved.undo.slice(-UNDO_MAX) : [],
       answers: Number(saved.answers) || 0,
     });
@@ -116,12 +121,13 @@ function restore() {
     return false;
   }
 }
-function startOver() {
+async function startOver() {
   try {
     localStorage.removeItem(STORE);
   } catch {
     /* inget att rensa */
   }
+  await uploads.clearFiles();
   location.href = '/intervju';
 }
 
@@ -243,6 +249,7 @@ function setHint(text, bad = false) {
   hint.classList.toggle('bad', bad);
 }
 function hideComposer() {
+  mic?.stop();
   composer.hidden = true;
   legal.hidden = true;
 }
@@ -266,7 +273,11 @@ function setupComposer() {
       const chip = node('button', 'chip', label);
       chip.type = 'button';
       chip.setAttribute('aria-pressed', 'false');
+      // "Ladda upp loggan" och "Ladda upp bilder" öppnar filväljaren i stället för att svara.
+      const kind = UPLOAD_CHIPS[label];
+      if (kind) chip.classList.add('chip-upload');
       chip.addEventListener('click', () => {
+        if (kind) return uploadAnswer(kind);
         if (!multi) {
           input.value = label;
           return submitAnswer();
@@ -283,6 +294,7 @@ function setupComposer() {
   } else {
     input.placeholder = chips ? (multi ? 'Något mer? (valfritt)' : 'Eller skriv ett eget svar') : 'Skriv ditt svar';
     setHint(chips && multi ? 'Välj en eller flera och tryck på pilen.' : touch ? 'Tryck på pilen för att skicka.' : 'Tryck Enter för att skicka.');
+    if (state.asked[0] === 'bilder' && !repeat) setHint('Tips: bilder i dagsljus blir bäst. Du kan välja flera på en gång.');
   }
   early.hidden = !(state.stage === 'chat' && coreDone(state.brief));
   undoBtn.hidden = !(state.stage === 'chat' && state.undo.length);
@@ -331,7 +343,24 @@ function offlineTurn(message) {
   };
 }
 
-async function submitAnswer() {
+// Kunden tryckte "Ladda upp loggan" eller "Ladda upp bilder". Filerna görs mindre i webbläsaren och
+// följer med underlaget när det skickas. Svaret i chatten blir "Laddade upp …", med små bilder under.
+async function uploadAnswer(kind) {
+  if (sendBtn.disabled) return;
+  const chosen = await uploads.pickFiles(kind);
+  if (!chosen.length) return;
+  sendBtn.disabled = true;
+  setHint(kind === 'logo' ? 'Förbereder loggan …' : 'Förbereder bilderna …');
+  const { added, failed } = await uploads.addFiles(chosen, kind);
+  sendBtn.disabled = false;
+  if (!added) return setHint('Det gick inte att läsa filen. Prova en JPG- eller PNG-bild.', true);
+  const list = kind === 'logo' ? [uploads.logo()] : uploads.photos();
+  const what = kind === 'logo' ? `Laddade upp loggan (${list[0].name})` : `Laddade upp ${list.length} ${list.length === 1 ? 'bild' : 'bilder'}`;
+  input.value = failed ? `${what}. ${failed} fil${failed === 1 ? '' : 'er'} gick inte att läsa.` : what;
+  submitAnswer({ thumbs: list });
+}
+
+async function submitAnswer({ thumbs } = {}) {
   if (sendBtn.disabled || composer.hidden) return;
   const picked = $$('.chip[aria-pressed="true"]', chipsBox).map((c) => c.textContent);
   const typed = input.value.trim();
@@ -342,6 +371,7 @@ async function submitAnswer() {
   const previousAsked = state.asked[0];
   if (!editing) remember(message);
   userSays(message);
+  if (thumbs?.length) log.lastElementChild?.append(uploads.thumbStrip(thumbs));
   sendBtn.disabled = true;
   hideComposer();
   // "Nej" på "Vad vill du ändra?" betyder att allt stämmer. Det är ingen ändring att notera.
@@ -423,6 +453,13 @@ composer.addEventListener('submit', (e) => {
   e.preventDefault();
   submitAnswer();
 });
+// Mikrofonknappen: kunden pratar, och texten hamnar i svarsrutan så att den kan rättas innan den skickas.
+const mic = createMic({
+  button: $('#mic'),
+  input,
+  onText: () => autosize(),
+  onState: (text, bad) => setHint(text, bad),
+});
 input.addEventListener('input', autosize);
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
@@ -483,6 +520,7 @@ function showStart() {
   for (const t of [
     'En fråga i taget, i din egen takt. Vet du inte något säger du bara det, så får du en enklare fråga.',
     'Medan du svarar ser du hur vi planerar din sida. Efter intervjun bygger vi ett riktigt utkast åt dig, och du får en länk inom 2 vardagar.',
+    'Du kan prata in dina svar med mikrofonknappen och ladda upp logga och bilder direkt i chatten.',
     'Skrev du fel kan du alltid ändra förra svaret. Hela intervjun tar cirka tio minuter.',
   ])
     ul.append(node('li', '', t));
@@ -492,7 +530,7 @@ function showStart() {
   const text = node('span');
   text.append(
     node('b', '', 'Jag godkänner att mina svar behandlas. '),
-    'Svaren tolkas av en AI-tjänst (Claude från Anthropic, med Cloudflare Workers AI som reserv) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter. ',
+    'Svaren tolkas av en AI-tjänst (Claude från Anthropic, med Cloudflare Workers AI som reserv) och mejlas till Nordvy, med logga och bilder du laddar upp, när du skickar in dem. Pratar du in ett svar gör Cloudflare om ljudet till text, och ljudet sparas inte. Telefonnummer och mejladresser tas bort innan något skickas till AI:n. Vi använder svaren bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter. ',
     policyLink(),
   );
   consent.append(box, text);
@@ -525,9 +563,23 @@ function showSummary() {
   hideComposer();
   renderChecklist();
   const card = node('div', 'card sum');
+  // Det som står ordagrant på sidan visas först, så att kunden kollar det extra noga.
+  // ReBoard UF fick annars frågan i efterhand om vilken mejladress som skulle stå på sidan.
+  const onPage = ['kontakt', 'swish', 'oppettider', 'sociala_lankar'].filter((k) => hasValue(state.brief, k) && !isSaknas(state.brief[k]));
+  const top = node('div', 'onpage');
+  if (onPage.length) {
+    top.append(node('h3', '', 'Det här står på er sida'), node('p', '', 'Kolla extra noga att det stämmer. Är något fel, tryck på "Jag vill ändra något".'));
+    const pdl = node('dl');
+    for (const k of onPage) {
+      const item = node('div');
+      item.append(node('dt', '', FIELD[k].label), node('dd', '', state.brief[k]));
+      pdl.append(item);
+    }
+    top.append(pdl);
+  }
   const dl = node('dl');
   for (const f of FIELDS) {
-    if (f.level === 0 || !hasValue(state.brief, f.key)) continue;
+    if (f.level === 0 || !hasValue(state.brief, f.key) || onPage.includes(f.key)) continue;
     const item = node('div');
     item.append(node('dt', '', f.label), node('dd', '', isSaknas(state.brief[f.key]) ? 'Saknas' : state.brief[f.key]));
     dl.append(item);
@@ -536,7 +588,7 @@ function showSummary() {
   yes.type = 'button';
   const change = node('button', 'textlink', 'Jag vill ändra något');
   change.type = 'button';
-  card.append(node('h2', '', 'Stämmer det här?'), dl, yes, change);
+  card.append(node('h2', '', 'Stämmer det här?'), ...(onPage.length ? [top] : []), dl, yes, change);
   log.append(card);
   scrollDown();
   yes.addEventListener('click', () => {
@@ -668,7 +720,7 @@ function showContact() {
   go.type = 'submit';
   const left = missing(state.brief);
   const lead = state.partial && left.length ? 'Vi skickar det du hunnit svara på. Resten tar vi tillsammans när vi hörs.' : 'Sista steget: vem ska vi höra av oss till?';
-  form.append(l1, l2, l3, error, go, node('p', 'fine', 'Underlaget mejlas till Nordvy. Vi hör av oss med ett förslag, utan köpkrav.'));
+  form.append(l1, l2, l3, filesBox(), error, go, node('p', 'fine', 'Underlaget, loggan och bilderna mejlas till Nordvy. Vi hör av oss med ett förslag, utan köpkrav.'));
   card.append(node('h2', '', 'Vart ska vi höra av oss?'), node('p', 'fine', lead), form);
   if (state.partial && left.length) {
     const back = node('button', 'textlink', 'Fortsätt intervjun i stället');
@@ -701,11 +753,44 @@ function showContact() {
     go.disabled = true;
     go.textContent = 'Skickar…';
     state.contact = { name: n, email: m, phone: phone.value.trim() };
-    const result = await post('/api/interview/finish', { brief: state.brief, issues: state.issues, log: state.log, contact: state.contact, partial: state.partial, choice: state.choice }, 45000);
+    const files = uploads.payload();
+    if (files.length) go.textContent = 'Skickar underlag och bilder…';
+    const result = await post('/api/interview/finish', { brief: state.brief, issues: state.issues, log: state.log, contact: state.contact, partial: state.partial, choice: state.choice, files }, 60000);
     state.sent = Boolean(result);
+    state.sentFiles = result ? Number(result.files) || 0 : 0;
     card.remove();
     showResult(true);
   });
+}
+
+// Logga och bilder på sista steget: det som laddats upp syns, och kunden kan lägga till eller ta bort.
+function filesBox() {
+  const box = node('div', 'files');
+  const render = () => {
+    box.replaceChildren();
+    const list = uploads.all();
+    const has = { logo: Boolean(uploads.logo()), photo: uploads.photos().length };
+    box.append(node('p', 'files-title', list.length ? `Följer med: ${[has.logo && 'loggan', has.photo && `${has.photo} ${has.photo === 1 ? 'bild' : 'bilder'}`].filter(Boolean).join(' och ')}` : 'Logga och bilder (valfritt)'));
+    if (list.length) box.append(uploads.thumbStrip(list, { onRemove: (f) => uploads.removeFile(f.id).then(render) }));
+    const row = node('div', 'files-add');
+    for (const [kind, label] of [['logo', has.logo ? 'Byt logga' : 'Lägg till logga'], ['photo', has.photo ? 'Lägg till fler bilder' : 'Lägg till bilder']]) {
+      if (kind === 'photo' && has.photo >= uploads.MAX_PHOTOS) continue;
+      const b = node('button', 'chip chip-upload', label);
+      b.type = 'button';
+      b.addEventListener('click', async () => {
+        const chosen = await uploads.pickFiles(kind);
+        if (!chosen.length) return;
+        b.disabled = true;
+        b.textContent = 'Förbereder …';
+        await uploads.addFiles(chosen, kind);
+        render();
+      });
+      row.append(b);
+    }
+    box.append(row);
+  };
+  render();
+  return box;
 }
 
 function mailLink(label) {
@@ -761,10 +846,14 @@ function showResult(fresh) {
   actions.append(book, plans);
 
   const next = node('p', 'fine');
-  next.append('Har du logga och bilder? Mejla dem till ');
-  const mail = node('a', '', MAIL_TO);
-  mail.href = `mailto:${MAIL_TO}?subject=${encodeURIComponent(`Bilder: ${company}`)}`;
-  next.append(mail, ' så använder vi dem när vi bygger.');
+  if (state.sent && state.sentFiles) {
+    next.textContent = `Vi har fått ${state.sentFiles === 1 ? 'en fil' : `${state.sentFiles} filer`} från dig och använder dem när vi bygger.`;
+  } else {
+    next.append('Har du logga och bilder? Mejla dem till ');
+    const mail = node('a', '', MAIL_TO);
+    mail.href = `mailto:${MAIL_TO}?subject=${encodeURIComponent(`Bilder: ${company}`)}`;
+    next.append(mail, ' så använder vi dem när vi bygger.');
+  }
 
   const again = node('button', 'textlink', 'Gör en ny intervju');
   again.type = 'button';
@@ -810,7 +899,9 @@ $$('.iv-device button').forEach((b) =>
   }),
 );
 
-function start() {
+async function start() {
+  // Uppladdade filer ligger i webbläsarens IndexedDB och hämtas innan sista steget kan visas.
+  await uploads.restoreFiles();
   const restored = restore();
   renderChecklist();
   updatePreview(false);

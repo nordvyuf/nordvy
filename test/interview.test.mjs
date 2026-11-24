@@ -28,10 +28,10 @@ import worker from '../src/worker.js';
 
 const full = () => Object.fromEntries(NEED.map((k) => [k, 'x']));
 
-test('checklistan: 25 möjliga punkter, 23 innan typen är känd, 6 räcker för ett utkast', () => {
-  assert.equal(NEED.length, 25);
+test('checklistan: 29 möjliga punkter, 24 innan typen är känd, 6 räcker för ett utkast', () => {
+  assert.equal(NEED.length, 29);
   assert.equal(CORE.length, 6);
-  assert.equal(missing({}).length, 23);
+  assert.equal(missing({}).length, 24);
   assert.equal(missing(full()).length, 0);
   assert.equal(coreDone({ foretagsnamn: 'A', bransch: 'B', ort_omrade: 'C', tjanster_produkter: 'D', mal_med_sidan: 'E', stil: 'F' }), true);
 });
