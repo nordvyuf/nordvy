@@ -33,7 +33,8 @@ Kort (2026-11-17):
 
 ## Teknik i korthet
 
-- Rena HTML-, CSS- och JavaScript-filer utan byggsteg, i `public/`. Servern är `src/worker.js`.
+- Rena HTML-, CSS- och JavaScript-filer utan byggsteg, i `public/`. Servern är `src/worker.js`. Undantag: kundsidor med React (shadcn/ui, Radix, Lucide) har källkoden i `kundsidor/<namn>/` och byggs lokalt till `public/kund/<namn>/`, se `.claude/skills/kundsida/react.md`.
+- Intervjun använder Claude Haiku 5.5 (`ANTHROPIC_API_KEY` som Secret i Cloudflare), med Workers AI som reserv.
 - Alla sidor utom `/demo/` får en strikt CSP: inga inbäddade `<script>`, bara skript från egen domän och Cal.com, typsnitt bara från egen domän, och inbäddade rutor bara från Cal.com och OpenStreetMap (kartor). Inbäddade stilar och `style=""` fungerar. Fria typsnitt för kundsidor ligger i `public/assets/fonts/kund/`.
 - `npm test` kör testerna. `npm run preview` startar sajten på http://localhost:8788 (utan AI, och mejl skrivs ut i terminalen).
 - Kontroll efter publicering: `/api/health` ska svara `"ai": true, "mail": true`.
