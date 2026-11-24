@@ -30,6 +30,7 @@ Kort (2026-11-17):
 - **Skicka inga mejl.** Skapa utkast i Gmail som Måns läser och skickar själv.
 - **Repot är publikt.** Committa inga personuppgifter som inte ska synas på en sida: inga intervjuunderlag, privata mejladresser eller telefonnummer. Committa med identiteten `Claude <noreply@anthropic.com>`, aldrig någons privata mejl.
 - **Kundsidor** byggs enligt skillen `kundsida` (`.claude/skills/kundsida/`).
+- **Reklamfilmer** (Facebook, Instagram, TikTok) görs med skillen `reklamfilm` (`.claude/skills/reklamfilm/`). Filmerna sparas utanför repot.
 
 ## Teknik i korthet
 
