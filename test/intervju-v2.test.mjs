@@ -226,7 +226,7 @@ test('kunden vill sluta: intervjun avslutas direkt och teamet får veta vad som 
 test('förloppet visas som fyra delar, inte som antal punkter', async () => {
   const { progressOf } = await import('../public/assets/shared/brief.js');
   assert.deepEqual(progressOf({}), { part: 1, parts: 4, label: 'Om företaget', share: 0 });
-  const p = progressOf({ foretagsnamn: 'Lågan UF', bransch: 'x', ort_omrade: 'x', tjanster_produkter: 'x', priser: 'x' });
+  const p = progressOf({ foretagsnamn: 'Lågan UF', bransch: 'x', ort_omrade: 'x', tjanster_produkter: 'x', priser: 'x', produktdetaljer: 'x' });
   assert.equal(p.part, 2);
   assert.equal(p.label, 'Hur sidan ska bli');
   assert.ok(p.share > 0 && p.share < 1);

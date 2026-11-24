@@ -15,7 +15,8 @@ test('UF-företag: en fråga om funktioner (som UF hoppar över) blir inte en fr
   const ai = { saves: [], reply: 'Ska kunderna kunna beställa direkt på sidan med en knapp, eller räcker det att de skickar ett mejl till er?', asked: 'kontakt' };
   const r = applyTurn({ brief, asked: ['mal_med_sidan'], askCount: 2, carry: 'tjäna pengar', carryField: 'mal_med_sidan', message: 'att de kan beställa ljus' }, ai);
   assert.notDeepEqual(r.asked, ['kontakt']);
-  assert.deepEqual(r.asked, ['stil']);
+  // Nästa fält för ett UF-företag efter priserna är frågan om produkterna (mått, material, skötsel).
+  assert.deepEqual(r.asked, ['produktdetaljer']);
 });
 
 test('en kort uppmaning efter frågan är kvar', () => {
@@ -37,7 +38,7 @@ test('samma svar två gånger på samma fält sparas en gång', () => {
 
 test('prompten säger att [mejl] och [telefon] är riktiga svar', () => {
   const [system] = buildTurnMessages({ brief: {}, history: [], asked: ['kontakt'], message: '[mejl]' });
-  assert.match(system.content, /\[mejl\]" och "\[telefon\]" betyder/);
+  assert.match(system.content, /\[mejl\]", "\[telefon\]" och "\[swish\]" betyder/);
   assert.match(system.content, /Fråga bara om fälten under ÅTERSTÅR/);
 });
 
