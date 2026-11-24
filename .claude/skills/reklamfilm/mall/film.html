@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="sv">
+<meta charset="utf-8">
+<title>Nordvy reklamfilm</title>
+<!--
+  Mallen för Nordvys reklamfilmer. Den läser en film-JSON (?film=/film/film.json) och ett format
+  (?format=9x16, 4x5 eller 1x1) och bygger scenerna. Allt rör sig med CSS-animationer som startar
+  från t = 0, så att rendera.mjs kan pausa och spola fram bild för bild. Scentyperna står i SKILL.md.
+-->
+<style>
+@font-face { font-family: "Fraunces"; font-weight: 100 900; src: url("/assets/fonts/fraunces-latin-opsz-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 100 900; src: url("/assets/fonts/fraunces-latin-opsz-italic.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 100 900; src: url("/assets/fonts/inter-latin-wght-normal.woff2") format("woff2"); }
+@property --sweep { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+:root { --navy: #071428; --deep: #0e2748; --ice: #5bc0eb; --ice2: #a5e1fa; --ink: #f4f7fb; --mut: #a3b4ca; --W: 1080px; --H: 1920px; --top: 220px; --bottom: 330px; --hs: 1; }
+* { margin: 0; box-sizing: border-box; }
+html, body { width: var(--W); height: var(--H); overflow: hidden; background: var(--navy); }
+body { font-family: Inter, Arial, sans-serif; color: var(--ink); position: relative; }
+
+/* Bakgrund: två mjuka ljusfläckar som glider och Nordvys stjärna som vrider sig långsamt. */
+.bg { position: absolute; inset: 0; background: var(--navy); overflow: hidden; }
+.blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .5; }
+.blob.a { width: 900px; height: 900px; background: #12406a; right: -300px; top: -200px; }
+.blob.b { width: 800px; height: 800px; background: #0c3157; left: -320px; bottom: -260px; }
+.bigstar { position: absolute; width: 140%; left: -20%; top: 50%; translate: 0 -50%; opacity: .06; }
+
+.scene { position: absolute; inset: 0; padding: var(--top) 84px var(--bottom); display: flex; flex-direction: column; gap: calc(48px * var(--hs)); opacity: 0; }
+.scene.center { justify-content: center; align-items: center; text-align: center; }
+/* I de bredare formaten (4:5, 1:1) står rubriken till vänster och mobilen till höger, så att mobilen blir stor. */
+.wide .scene[data-typ="mobil"] { flex-direction: row; align-items: center; gap: 40px; padding-left: 70px; padding-right: 40px; }
+.wide .scene[data-typ="mobil"] h2 { flex: 0 0 42%; font-size: 92px; }
+.wide .check { font-size: 50px; }
+.wide .scene[data-typ="mobil"] .media { height: 100%; }
+.media { flex: 1; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+
+h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; letter-spacing: -0.02em; line-height: 1.02; }
+h1 { font-size: calc(150px * var(--hs)); }
+h2 { font-size: calc(100px * var(--hs)); }
+em { font-style: italic; font-weight: 500; color: var(--ice); }
+.lead { font-size: calc(46px * var(--hs)); line-height: 1.35; color: var(--mut); }
+.word { display: inline-block; white-space: pre; }
+.line { display: block; }
+.brand { display: inline-flex; align-items: center; gap: 20px; font-size: calc(60px * var(--hs)); font-weight: 600; }
+.star { display: inline-block; }
+.star svg { width: 100%; height: 100%; display: block; }
+
+/* Mobil */
+.phone { position: relative; height: 100%; aspect-ratio: 0.48; border-radius: 9% / 4.3%; overflow: hidden; border: 10px solid #1b2d4a; background: #0b1730; box-shadow: 0 50px 120px rgba(0,0,0,.55), 0 0 0 2px rgba(165,225,250,.14); }
+.phone img, .browser .view img { width: 100%; display: block; position: absolute; top: 0; left: 0; }
+.tag { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; padding: 8px 18px; border-radius: 999px; background: rgba(7,20,40,.82); color: var(--ice2); font-size: 22px; font-weight: 600; white-space: nowrap; }
+.chip { position: absolute; display: inline-flex; align-items: center; gap: 16px; padding: 22px 32px; border-radius: 999px; background: var(--ice); color: var(--navy); font-size: calc(38px * var(--hs)); font-weight: 600; box-shadow: 0 24px 60px rgba(0,0,0,.4); white-space: nowrap; }
+.chip svg { width: 1.1em; height: 1.1em; }
+
+/* Karusell: tre mobiler i solfjäder */
+.fan { position: relative; height: 100%; width: 100%; }
+.fan .phone { position: absolute; top: 0; left: 50%; height: 100%; }
+
+/* Webbläsare */
+.browser { position: relative; width: 100%; aspect-ratio: 1.45; max-height: 100%; border-radius: 22px; overflow: hidden; background: #f4f6f9; box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+.browser .top { height: 58px; background: #e3e8ef; display: flex; align-items: center; gap: 10px; padding: 0 20px; }
+.browser .dot { width: 16px; height: 16px; border-radius: 50%; background: #c3ccd8; }
+.browser .addr { margin-left: 16px; flex: 1; height: 36px; border-radius: 10px; background: #fff; color: #4a5a70; font-size: 22px; display: flex; align-items: center; padding: 0 16px; overflow: hidden; white-space: nowrap; }
+.browser .view { position: absolute; top: 58px; left: 0; right: 0; bottom: 0; overflow: hidden; }
+
+/* Checklista */
+.checks { display: flex; flex-direction: column; gap: calc(36px * var(--hs)); align-self: stretch; }
+.check { display: flex; align-items: center; gap: 30px; font-size: calc(58px * var(--hs)); font-weight: 600; }
+.check svg { width: calc(84px * var(--hs)); height: calc(84px * var(--hs)); flex: none; }
+.check path { stroke-dasharray: 40; stroke-dashoffset: 40; }
+.check small { display: block; font-size: 0.55em; font-weight: 400; color: var(--mut); margin-top: 6px; }
+
+/* Siffra */
+.stat { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: calc(320px * var(--hs)); line-height: .9; color: var(--ice); letter-spacing: -0.04em; }
+.statlabel { font-size: calc(64px * var(--hs)); font-weight: 600; }
+
+/* Uppmaning */
+.url { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: calc(118px * var(--hs)); color: var(--ice); letter-spacing: -0.02em; overflow: hidden; white-space: nowrap; display: inline-block; }
+.btn { display: inline-block; padding: 30px 56px; border-radius: 999px; background: var(--ice); color: var(--navy); font-size: calc(46px * var(--hs)); font-weight: 600; }
+.mark { background: linear-gradient(transparent 62%, rgba(91,192,235,.45) 62%, rgba(91,192,235,.45) 92%, transparent 92%) no-repeat; background-size: var(--sweep) 100%; padding: 0 .08em; }
+
+@keyframes up { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: none; } }
+@keyframes wordIn { from { opacity: 0; transform: translateY(60%) rotate(4deg); filter: blur(8px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6); } 70% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes rise { from { opacity: 0; transform: translateY(60%) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes fanL { from { opacity: 0; transform: translateX(-50%) translateX(-140%) rotate(-24deg); } to { opacity: 1; transform: translateX(-50%) translateX(-62%) rotate(-9deg) scale(.86); } }
+@keyframes fanR { from { opacity: 0; transform: translateX(-50%) translateX(140%) rotate(24deg); } to { opacity: 1; transform: translateX(-50%) translateX(62%) rotate(9deg) scale(.86); } }
+@keyframes fanM { from { opacity: 0; transform: translateX(-50%) translateY(40%); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes pan { from { transform: translateY(0); } to { transform: translateY(var(--pan, 0px)); } }
+@keyframes zoomIn { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes sweep { from { --sweep: 0%; } to { --sweep: 100%; } }
+@keyframes type { from { max-width: 0; } to { max-width: 100%; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(91,192,235,.6); } 50% { box-shadow: 0 0 0 30px rgba(91,192,235,0); } }
+@keyframes starIn { 0% { opacity: 0; transform: scale(.2) rotate(-120deg); } 70% { opacity: 1; transform: scale(1.15) rotate(12deg); } 100% { opacity: 1; transform: none; } }
+@keyframes spin { from { transform: rotate(0deg) scale(.95); } to { transform: rotate(50deg) scale(1.05); } }
+@keyframes driftA { from { transform: translate(0, 0); } to { transform: translate(-260px, 340px); } }
+@keyframes driftB { from { transform: translate(0, 0); } to { transform: translate(300px, -280px); } }
+</style>
+<body>
+<div class="bg"><div class="blob a"></div><div class="blob b"></div><svg class="bigstar" viewBox="0 0 24 24"><path d="M12 0c.9 6.6 4.4 10.1 12 12-7.6 1.9-11.1 5.4-12 12-.9-6.6-4.4-10.1-12-12C7.6 10.1 11.1 6.6 12 0z" fill="#5bc0eb"/></svg></div>
+<script>
+const STAR = '<svg viewBox="0 0 24 24"><path d="M12 0c.9 6.6 4.4 10.1 12 12-7.6 1.9-11.1 5.4-12 12-.9-6.6-4.4-10.1-12-12C7.6 10.1 11.1 6.6 12 0z" fill="#5bc0eb"/></svg>';
+const MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>';
+const CHECK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#5bc0eb"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#071428" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const FORMATS = { '9x16': { W: 1080, H: 1920, top: 230, bottom: 340, hs: 1 }, '4x5': { W: 1080, H: 1350, top: 90, bottom: 110, hs: 0.78 }, '1x1': { W: 1080, H: 1080, top: 70, bottom: 80, hs: 0.66 } };
+const EASE = 'cubic-bezier(0.2, 0.7, 0.2, 1)';
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// *kursiv* i texten blir isblå kursiv, och ==markerat== får en överstrykning som sveps fram.
+const rich = (s) => esc(s).replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/==(.+?)==/g, '<span class="mark">$1</span>').replace(/\n/g, '<br>');
+const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; };
+
+const params = new URLSearchParams(location.search);
+const F = FORMATS[params.get('format')] || FORMATS['9x16'];
+const root = document.documentElement.style;
+if (F.H / F.W < 1.5) document.documentElement.classList.add('wide');
+root.setProperty('--W', F.W + 'px'); root.setProperty('--H', F.H + 'px'); root.setProperty('--top', F.top + 'px'); root.setProperty('--bottom', F.bottom + 'px'); root.setProperty('--hs', F.hs);
+
+// a(element, namn, längd, start, extra): en animation som börjar vid start (ms från filmens början).
+const anims = new Map();
+function a(node, name, dur, start, extra = 'both') {
+  if (!node) return;
+  const list = anims.get(node) || [];
+  list.push(`${name} ${dur}ms ${name === 'pan' || name === 'spin' || name.startsWith('drift') || name === 'type' ? (name === 'type' ? 'steps(14, end)' : 'linear') : EASE} ${start}ms ${extra}`);
+  anims.set(node, list);
+  node.style.animation = list.join(', ');
+}
+// Rubrik där orden kommer ett i taget.
+function words(node, start, step = 90) {
+  let i = 0;
+  const walk = (n) => {
+    for (const c of [...n.childNodes]) {
+      if (c.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        for (const part of c.textContent.split(/(\s+)/)) {
+          if (!part) continue;
+          if (/^\s+$/.test(part)) { frag.append(part); continue; }
+          const w = el(`<span class="word">${esc(part)}</span>`);
+          a(w, 'wordIn', 700, start + i++ * step);
+          frag.append(w);
+        }
+        c.replaceWith(frag);
+      } else if (c.nodeType === 1 && c.tagName !== 'BR') walk(c);
+    }
+  };
+  walk(node);
+  node.querySelectorAll('.mark').forEach((m) => a(m, 'sweep', 600, start + i * step + 200));
+  return start + i * step;
+}
+function heading(scene, text, start, tag = 'h2') {
+  const h = el(`<${tag}>${rich(text)}</${tag}>`);
+  scene.append(h);
+  return words(h, start);
+}
+function phone(src, label) {
+  const p = el(`<div class="phone"><img src="${esc(src)}" alt="">${label ? `<span class="tag">${esc(label)}</span>` : ''}</div>`);
+  return p;
+}
+
+const BUILD = {
+  // Stor text som kommer ord för ord. { rubrik, text, stjarna }
+  krok(s, sc, t0) {
+    sc.classList.add('center');
+    if (s.stjarna !== false) { const st = el(`<span class="star" style="width:${130 * F.hs}px;height:${130 * F.hs}px">${STAR}</span>`); sc.append(st); a(st, 'starIn', 900, t0 + 50); }
+    const end = heading(sc, s.rubrik, t0 + 250, 'h1');
+    if (s.text) { const p = el(`<p class="lead">${rich(s.text)}</p>`); sc.append(p); a(p, 'up', 700, end + 150); }
+  },
+  // Rubrik och en mobil med en skärmbild som rullar. { rubrik, bild, etikett, chip, chipIkon: "mikrofon" }
+  mobil(s, sc, t0, len) {
+    heading(sc, s.rubrik, t0 + 150);
+    const m = el('<div class="media"></div>'); sc.append(m);
+    const p = phone(s.bild, s.etikett); m.append(p);
+    a(p, 'rise', 900, t0 + 350);
+    a(p.querySelector('img'), 'pan', Math.max(800, len - 1600), t0 + 1200);
+    if (s.chip) {
+      const c = el(`<span class="chip">${s.chipIkon === 'mikrofon' ? MIC : ''}${esc(s.chip)}</span>`);
+      c.style.right = '4%'; c.style.bottom = '12%'; m.append(c);
+      a(c, 'pop', 600, t0 + Math.min(2200, len - 1200)); a(c, 'pulse', 1400, t0 + Math.min(2800, len - 600), '2 both');
+    }
+  },
+  // Tre mobiler i solfjäder. { rubrik, bilder: [3], etiketter: [3] }
+  karusell(s, sc, t0) {
+    heading(sc, s.rubrik, t0 + 150);
+    const m = el('<div class="media"><div class="fan"></div></div>'); sc.append(m);
+    const fan = m.firstChild;
+    const [l, mid, r] = s.bilder.map((b, i) => phone(b, s.etiketter?.[i]));
+    fan.append(l, r, mid);
+    a(l, 'fanL', 900, t0 + 500); a(r, 'fanR', 900, t0 + 650); a(mid, 'fanM', 900, t0 + 350);
+    for (const p of [l, mid, r]) a(p.querySelector('img'), 'pan', 3200, t0 + 1300);
+  },
+  // Webbläsare med en datorbild som rullar. { rubrik, bild, adress }
+  webblasare(s, sc, t0, len) {
+    heading(sc, s.rubrik, t0 + 150);
+    const m = el('<div class="media"></div>'); sc.append(m);
+    const b = el(`<div class="browser"><div class="top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="addr">${esc(s.adress || '')}</span></div><div class="view"><img src="${esc(s.bild)}" alt=""></div></div>`);
+    m.append(b);
+    a(b, 'rise', 900, t0 + 350);
+    a(b.querySelector('img'), 'pan', Math.max(800, len - 1700), t0 + 1300);
+  },
+  // Punkter med bockar som ritas. { rubrik, punkter: [{ text, under }] }
+  lista(s, sc, t0) {
+    if (s.rubrik) heading(sc, s.rubrik, t0 + 150);
+    const box = el('<div class="checks"></div>'); sc.append(box);
+    sc.style.justifyContent = 'center';
+    s.punkter.forEach((pt, i) => {
+      const row = el(`<div class="check">${CHECK}<span>${rich(pt.text)}${pt.under ? `<small>${esc(pt.under)}</small>` : ''}</span></div>`);
+      box.append(row);
+      a(row, 'up', 600, t0 + 600 + i * 450);
+      a(row.querySelector('path'), 'draw', 500, t0 + 850 + i * 450);
+    });
+  },
+  // En stor siffra. { siffra, text, under }
+  siffra(s, sc, t0) {
+    sc.classList.add('center');
+    const n = el(`<div class="stat">${esc(s.siffra)}</div>`); sc.append(n); a(n, 'pop', 800, t0 + 200);
+    const l = el(`<p class="statlabel">${rich(s.text)}</p>`); sc.append(l); a(l, 'up', 700, t0 + 700);
+    if (s.under) { const u = el(`<p class="lead">${rich(s.under)}</p>`); sc.append(u); a(u, 'up', 700, t0 + 1000); }
+  },
+  // Avslutning med adress som skrivs fram och en knapp. { rubrik, adress, knapp, text }
+  uppmaning(s, sc, t0) {
+    sc.classList.add('center');
+    const st = el(`<span class="star" style="width:${120 * F.hs}px;height:${120 * F.hs}px">${STAR}</span>`); sc.append(st); a(st, 'starIn', 900, t0 + 50);
+    const end = heading(sc, s.rubrik, t0 + 300);
+    if (s.adress) { const u = el(`<span class="url">${esc(s.adress)}</span>`); sc.append(u); a(u, 'type', 900, end + 200); }
+    if (s.knapp) { const b = el(`<span class="btn">${esc(s.knapp)}</span>`); sc.append(b); a(b, 'pop', 600, end + 1100); a(b, 'pulse', 1400, end + 1700, '3 both'); }
+    if (s.text) { const p = el(`<p class="lead">${rich(s.text)}</p>`); sc.append(p); a(p, 'up', 700, end + 1400); }
+  },
+};
+
+async function build() {
+  const filmUrl = params.get('film') || '/film/film.json';
+  const film = await (await fetch(filmUrl)).json();
+  const base = new URL(filmUrl, location.href);
+  const fix = (s) => { for (const k of ['bild']) if (s[k]) s[k] = new URL(s[k], base).href; if (s.bilder) s.bilder = s.bilder.map((b) => new URL(b, base).href); };
+  let t = 0;
+  const css = [];
+  const total = film.scener.reduce((sum, s) => sum + s.langd, 0);
+  film.scener.forEach((s, i) => {
+    fix(s);
+    const sc = el(`<section class="scene" data-typ="${esc(s.typ)}"></section>`);
+    document.body.append(sc);
+    const last = i === film.scener.length - 1;
+    // Varje scen tonar in och ut med en egen kurva, så att två animationer inte slåss om opaciteten.
+    const inP = (350 / s.langd) * 100, outP = 100 - (380 / s.langd) * 100;
+    css.push(`@keyframes sc${i} { 0% { opacity: 0; transform: scale(1.04); } ${inP.toFixed(2)}% { opacity: 1; transform: none; } ${last ? '' : `${outP.toFixed(2)}% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-30px); }`} ${last ? '100% { opacity: 1; transform: none; }' : ''} }`);
+    sc.style.animation = `sc${i} ${s.langd}ms linear ${t}ms both`;
+    BUILD[s.typ](s, sc, t, s.langd);
+    t += s.langd;
+  });
+  const style = document.createElement('style'); style.textContent = css.join('\n'); document.head.append(style);
+  a(document.querySelector('.bigstar'), 'spin', total, 0);
+  a(document.querySelector('.blob.a'), 'driftA', total, 0);
+  a(document.querySelector('.blob.b'), 'driftB', total, 0);
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
+  // Hur långt varje skärmbild ska rulla: bildens höjd minus ramens höjd.
+  for (const img of document.querySelectorAll('.phone img, .browser .view img')) {
+    const frame = img.parentElement;
+    const over = img.offsetHeight - frame.clientHeight;
+    img.style.setProperty('--pan', `${-Math.max(0, over)}px`);
+  }
+  window.__film = { ms: total, fps: film.fps || 30 };
+}
+window.__ready = build().catch((e) => { document.body.append(el(`<pre style="color:#fff;font-size:30px;position:absolute;top:20px">${esc(e.stack)}</pre>`)); throw e; });
+</script>
+</body>
+</html>
