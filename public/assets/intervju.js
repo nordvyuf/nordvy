@@ -464,6 +464,15 @@ early.addEventListener('click', () => {
 
 /* -------------------------------------- start, sammanfattning, kontakt */
 
+// Länk till integritetspolicyn i samtycket. Öppnas i en ny flik, så att intervjun ligger kvar.
+function policyLink() {
+  const a = node('a', '', 'Läs integritetspolicyn');
+  a.href = '/integritet';
+  a.target = '_blank';
+  a.rel = 'noopener';
+  return a;
+}
+
 function showStart() {
   hideComposer();
   const card = node('div', 'card start');
@@ -483,7 +492,8 @@ function showStart() {
   const text = node('span');
   text.append(
     node('b', '', 'Jag godkänner att mina svar behandlas. '),
-    'Svaren tolkas av en AI-tjänst (Claude från Anthropic, Groq, Google Gemini eller Cloudflare Workers AI) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n, men Google kan använda resten av texten för att förbättra sina tjänster. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter.',
+    'Svaren tolkas av en AI-tjänst (Claude från Anthropic, med Cloudflare Workers AI som reserv) och mejlas till Nordvy när du skickar in dem. Telefonnummer och mejladresser tas bort innan något skickas till AI:n. Vi använder dem bara för att ta fram ett förslag på din hemsida och raderar dem om du ber oss. Skriv inga personnummer, lösenord eller betaluppgifter. ',
+    policyLink(),
   );
   consent.append(box, text);
   const error = node('span', 'err');
