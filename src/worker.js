@@ -22,6 +22,8 @@ import {
 } from '../public/assets/shared/brief.js';
 
 const MAX_BODY = 40_000;
+// Så långt får ett mejl med intervjuunderlaget vara. Google-skriptet kapar vid 20 000 tecken.
+const MAIL_CHARS = 19_000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Gäller Nordvys egna sidor. Demosidorna under /demo/ har egna inbäddade stilar och skript.
@@ -175,7 +177,9 @@ async function handleFinish(request, env) {
   const choice = ['uf', 'bas', 'premium', 'osaker'].includes(input.choice) ? input.choice : '';
   const head = left.length ? `OBS: Intervjun är inte komplett (${left.length} punkter saknas).\n\n` : '';
   const text = `${head}${briefToText(brief, issues, contact, choice)}\n\nORDAGRANN CHATT\n${logToText(cleanLog(input.log))}`;
-  const parts = mailParts(text);
+  // Ett enda långt mejl. Kräver att Google-skriptet tar emot långa meddelanden
+  // (clean(input.message, 20000) i stället för 2000, se README). Bara extremt långa chattar delas i två.
+  const parts = mailParts(text, MAIL_CHARS, 2);
   let sent = 0;
   let error = '';
   for (const message of parts) {
