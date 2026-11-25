@@ -120,3 +120,16 @@ test('nordvyuf.se och www fungerar som förut', async () => {
   const robots = await (await get('https://nordvyuf.se/robots.txt', env)).text();
   assert.match(robots, /Sitemap: https:\/\/nordvyuf\.se\/sitemap\.xml/);
 });
+
+test('ReBoard är live: reboard.nordvyuf.se är huvudadressen', async () => {
+  assert.equal(SUBDOMAINS.reboard.live, true);
+  const { env } = makeEnv();
+  const old = await get('https://nordvyuf.se/kund/reboard/', env);
+  assert.equal(old.status, 301);
+  assert.equal(old.headers.get('location'), 'https://reboard.nordvyuf.se/');
+  const page = await get('https://reboard.nordvyuf.se/', env);
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /rel="canonical" href="https:\/\/reboard\.nordvyuf\.se\/"/);
+  // Nordvys egen sitemap tar inte med kundsidan, den finns i underadressens sitemap.
+  assert.doesNotMatch(await (await get('https://nordvyuf.se/sitemap.xml', env)).text(), /kund\/reboard/);
+});

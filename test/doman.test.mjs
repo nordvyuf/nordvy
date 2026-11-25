@@ -26,16 +26,15 @@ test('nordvyuf.se och workers.dev visar sidan, med nordvyuf.se som canonical', a
   }
 });
 
-test('nordvyuf.se/reboarduf visar ReBoards utkast utan att byta adress', async () => {
-  const asked = [];
-  const local = { ...env, ASSETS: { fetch: async (req) => { asked.push(new URL(req.url).pathname); return new Response('<!doctype html>ReBoard', { headers: { 'content-type': 'text/html; charset=utf-8' } }); } } };
+test('nordvyuf.se/reboarduf skickas till ReBoards egen adress, reboard.nordvyuf.se', async () => {
+  // ReBoard har live: true i SUBDOMAINS (26/11), så den korta adressen skickas vidare med 301.
+  // Hur korta adresser visas när underadressen inte är live testas i underadresser.test.mjs.
   for (const path of ['/reboarduf', '/reboarduf/', '/ReBoardUF']) {
-    const res = await worker.fetch(new Request(`https://nordvyuf.se${path}`), local);
-    assert.equal(res.status, 200);
-    assert.match(await res.text(), /ReBoard/);
+    const res = await worker.fetch(new Request(`https://nordvyuf.se${path}`), env);
+    assert.equal(res.status, 301, path);
+    assert.equal(res.headers.get('location'), 'https://reboard.nordvyuf.se/', path);
   }
-  assert.deepEqual(asked, ['/kund/reboard/', '/kund/reboard/', '/kund/reboard/']);
-  const www = await worker.fetch(new Request('https://www.nordvyuf.se/reboarduf'), local);
+  const www = await worker.fetch(new Request('https://www.nordvyuf.se/reboarduf'), env);
   assert.equal(www.status, 301);
   assert.equal(www.headers.get('location'), 'https://nordvyuf.se/reboarduf');
 });
