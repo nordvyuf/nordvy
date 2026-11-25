@@ -2,10 +2,10 @@
 // och döljs medan storleksväljaren syns, så att den inte täcker brädorna.
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button.jsx';
-import { SIZES, kr } from '../data.js';
+import { findSize, kr } from '../data.js';
 
 export function StickyBar({ onOrder, sizeId }) {
-  const size = SIZES.find((s) => s.id === sizeId);
+  const size = findSize(sizeId);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -34,11 +34,11 @@ export function StickyBar({ onOrder, sizeId }) {
     >
       <div className="ram flex items-center justify-between gap-4 py-3">
         <p className="text-[15px] leading-tight">
-          {size.name} skärbräda
+          {size.price ? `${size.name} skärbräda` : 'Skärbräda i egna mått'}
           <br />
-          <span className="font-rubrik text-[22px]">{kr(size.price)}</span>
+          <span className="font-rubrik text-[22px]">{size.price ? kr(size.price) : 'pris efter offert'}</span>
         </p>
-        <Button onClick={onOrder}>Beställ</Button>
+        <Button onClick={onOrder}>{size.price ? 'Beställ' : 'Fråga'}</Button>
       </div>
     </div>
   );

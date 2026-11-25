@@ -4,7 +4,7 @@ Måns har sagt att utkastet ska byggas direkt, utan att vänta på svar. Allt vi
 
 ## Vem sidan är för och vad besökaren ska göra
 
-Sidan riktar sig till köksintresserade, matentusiaster och miljöintresserade, och den ska få dem att **beställa en skärbräda**. Tre storlekar: liten 500 kr, mellan 750 kr och stor 1 000 kr. Besökaren ska förstå tre saker innan den köper: vilken storlek den vill ha, vad den kostar och att brädan är gjord för hand av återvunnen ek.
+Sidan riktar sig till köksintresserade, matentusiaster och miljöintresserade, och den ska få dem att **beställa en skärbräda**. Två storlekar: liten 33 × 22 × 3 cm för 500 kr och stor 42 × 28 × 3 cm för 1 000 kr (bekräftat av Max 25/11), och egna mått efter offert. Besökaren ska förstå tre saker innan den köper: vilken storlek den vill ha, vad den kostar och att brädan är gjord för hand av återvunnen ek.
 
 ## Det enda djärva draget: storleksväljaren
 
@@ -128,3 +128,27 @@ Instagram-kontot har inga inlägg ännu (0 inlägg den 23/11), bara profilbilden
 ## Tekniken (Måns beslut)
 
 Källkoden ligger i `kundsidor/reboard/` (Vite, React 18, Tailwind 4 och komponenter i shadcn-stil med Radix Dialog och Lucide). Den byggs till statiska filer i `public/kund/reboard/`. Sidan förrenderas till HTML, så den syns direkt och fungerar för sökmotorer, och React tar sedan över. Rörelsen kommer från Nordvys `rorelse.css` och `rorelse.js`. Produkterna är märkta med schema.org-mikrodata i HTML, eftersom CSP:n inte tillåter inbäddade `<script>`.
+
+## Efter Max svar (25/11)
+
+- **Loggan:** Max loggor (urklippta ur en skärmbild) ligger i `static/`. Den mörka står i sidhuvudet och den ljusa i sidfoten på oliv. Bladet tar ungefär två tredjedelar av höjden, så texten "ReBoard UF" blir liten i sidhuvudet.
+- **Storlekarna:** två storlekar, liten och stor, med riktiga mått. Mellan är borttagen.
+- **Egna mått:** ett tredje val i väljaren. Besökaren skriver längd och bredd (10–120 cm, en rimlighetskontroll tills ReBoard har sagt vilka mått som går), och brädan ritas i rutnätet om den får plats. Priset står som "Pris efter förfrågan". Knappen skickar en förfrågan i samma flöde som beställningen, utan Swish-steget.
+
+## Komplett med Max svar (25/11, andra mejlet)
+
+- **Trät:** det är spillvirke från lokala finsnickerier och träindustrier, inte "återvunnen ek". Rubriken är Max egna ord, "trä som förtjänar en andra chans", och inget träslag nämns.
+- **Hantverket:** Max text om virket står ordagrant. Stegen följer hans mening om hur de gör (spillvirket, för hand, skärbrädan), utan påhittade detaljer om slipning eller olja.
+- **Frågorna:** skötsel, tid (1–2 veckor), att varje bräda är unik, jul och egna mått (offert) står med Max ord. Frakt och plats för hämtning bekräftas efter beställningen.
+- **Vilka vi är:** alla sex med Max beskrivning. Ingen skola nämns.
+- **Omdömen:** dolda tills `REVIEWS` i `data.js` har riktiga omdömen.
+- **Utan foton:** inga tomma rutor. Toppen visar loggan på oliv, och stegen står som text. Ett foto i `PHOTOS` i `data.js` hamnar på rätt plats av sig självt.
+- **Skarp sida:** sätt `DRAFT = false` i `src/data.js` och bygg. Då försvinner utkastraden och `noindex`, mejlet öppnas och Swish-knappen visas.
+
+## Skarp (Måns 25/11: "gör den live så snart som möjligt")
+
+- `DRAFT = false`: ingen utkastrad, ingen `noindex`.
+- Efter formuläret kommer två tydliga steg i stället för ett mejl som öppnas av sig självt:
+  1. Knappen "Skicka beställningen" öppnar ett färdigskrivet mejl till ReBoard.
+  2. På mobilen öppnar knappen "Betala … med Swish" Swish-appen med nummer, belopp och ordernummer ifyllda och låsta (`app.swish.nu/1/p/sw/`). På dator står nummer, belopp och meddelande att skriva in i mobilen.
+- Egna mått har bara steg 1 (förfrågan). Betalning sker efter offert.
