@@ -133,7 +133,16 @@ Först när Måns säger till:
 2. Kontrollera allt en gång till på förhandsvisningen.
 3. Slå ihop pull requesten och kontrollera den riktiga adressen efter publiceringen.
 
-UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Den adressen fungerar inte än. Tills den gör det ligger sidan på `nordvyuf.se/kund/<namn>/`. Säg det till kunden.
+### Kundens egen adress (`ert-namn.nordvyuf.se`)
+
+UF-paketet lovar adressen `ert-namn.nordvyuf.se`. Workern visar kundens mapp på underadressen, och adressfältet behåller underadressen. Sidans filer (`/kund/<namn>/…` och `/assets/…`) fungerar där utan ombyggnad.
+
+1. **Lägg till kunden i `SUBDOMAINS`** i `src/worker.js`, till exempel `matochmatt: { dir: 'matochmatt', live: false }`. Nyckeln är underadressen och `dir` är mappen i `public/kund/`. Gör det på en gren med pull request, som vanligt.
+2. **Be Måns koppla domänen i Cloudflare:** Workers & Pages → nordvy → Settings → Domains & Routes → Add → Custom domain → `<namn>.nordvyuf.se`. Det gör Måns själv, eftersom vi aldrig loggar in åt någon.
+3. **Kontrollera underadressen** när Cloudflare visar den som aktiv. `https://<namn>.nordvyuf.se/` ska visa sidan med typsnitt, bilder och fungerande beställning.
+4. **Sätt `live: true`** i en ny pull request. Då pekar canonical, `og:url` och delningsbilden på underadressen, och `nordvyuf.se/kund/<namn>/` och den korta adressen (`SHORT_PATHS`) skickas vidare dit med 301. Sätt aldrig `live: true` innan underadressen fungerar, för då blir sidan omöjlig att nå.
+
+Underadressen får en egen `robots.txt` och `sitemap.xml`. Okända underadresser skickas till nordvyuf.se. Tills underadressen fungerar ligger sidan på `nordvyuf.se/kund/<namn>/`, så säg det till kunden.
 
 ## Provsidor
 
