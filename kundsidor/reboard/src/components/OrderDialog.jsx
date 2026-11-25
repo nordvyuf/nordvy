@@ -1,9 +1,11 @@
-// Beställningen: storlek, antal, namn, kontakt och hämtning eller frakt.
+// Beställningen: storlek (eller egna mått), antal, namn, kontakt och hämtning eller frakt.
+// Egna mått blir en förfrågan utan pris: ReBoard svarar med ett pris, och först då betalar man.
 // På den skarpa sidan öppnas ett färdigskrivet mejl till ReBoard, och besökaren ser hur den betalar med Swish.
 // Beställningen är inte skickad förrän besökaren skickar mejlet, så vi skriver aldrig "Tack för din beställning".
 import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
-import { DRAFT, ORDER_EMAIL, SIZES, SWISH_NUMBER, kr } from '../data.js';
+import { CUSTOM, DRAFT, ORDER_EMAIL, SIZES, SWISH_NUMBER, customDims, dimText, findSize, isCustom, kr } from '../data.js';
+import { CustomDims } from './CustomDims.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog.jsx';
 import { Button } from './ui/button.jsx';
 import { Input } from './ui/input.jsx';
@@ -15,7 +17,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+?[\d\s-]{7,}$/;
 const newOrderNo = () => `RB-${Date.now().toString(36).slice(-5).toUpperCase()}`;
 
-export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
+export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, setCustom, opener }) {
   const [qty, setQty] = useState(1);
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
@@ -25,6 +27,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
   const [done, setDone] = useState(null);
   const refs = { name: useRef(null), contact: useRef(null) };
   const doneRef = useRef(null);
+  const dimsRef = useRef(null);
 
   // Ny ruta börjar alltid på formuläret.
   useEffect(() => {
@@ -40,8 +43,9 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
     }
   }, [done]);
 
-  const size = SIZES.find((s) => s.id === sizeId);
-  const total = size.price * qty;
+  const size = findSize(sizeId);
+  const egna = isCustom(sizeId);
+  const total = egna ? null : size.price * qty;
 
   const check = (field, value) => {
     if (field === 'name') return value.trim() ? '' : 'Skriv ditt namn.';
@@ -60,6 +64,8 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
 
   const submit = (e) => {
     e.preventDefault();
+    // Måtten står först i rutan, så de kontrolleras först.
+    if (egna && !dimsRef.current?.validate()) return;
     const next = { name: check('name', name), contact: check('contact', contact) };
     setErrors(next);
     const first = ['name', 'contact'].find((f) => next[f]);
@@ -72,12 +78,13 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
       return;
     }
     const orderNo = newOrderNo();
+    const kind = egna ? 'Förfrågan om egna mått' : 'Beställning';
     const lines = [
-      `Beställning ${orderNo}`,
+      `${kind} ${orderNo}`,
       '',
-      `Storlek: ${size.name} (${kr(size.price)})`,
+      egna ? `Egna mått: ${dimText(customDims(custom))} (längd × bredd × tjocklek)` : `Storlek: ${size.name}, ${dimText(size)} (${kr(size.price)})`,
       `Antal: ${qty}`,
-      `Summa: ${kr(total)}`,
+      egna ? 'Pris: efter förfrågan' : `Summa: ${kr(total)}`,
       `Leverans: ${delivery === 'hamtning' ? 'Hämtning i Malmö' : 'Frakt'}`,
       '',
       `Namn: ${name.trim()}`,
@@ -85,13 +92,13 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
       note.trim() ? `\nMeddelande: ${note.trim()}` : '',
     ];
     if (!DRAFT && ORDER_EMAIL) {
-      location.href = `mailto:${ORDER_EMAIL}?subject=${encodeURIComponent(`Beställning ${orderNo}`)}&body=${encodeURIComponent(lines.join('\n'))}`;
+      location.href = `mailto:${ORDER_EMAIL}?subject=${encodeURIComponent(`${kind} ${orderNo}`)}&body=${encodeURIComponent(lines.join('\n'))}`;
     }
-    setDone({ orderNo, total });
+    setDone({ orderNo, total, egna });
   };
 
   const swishHref =
-    SWISH_NUMBER && done
+    SWISH_NUMBER && done && done.total
       ? `https://app.swish.nu/1/p/sw/?sw=${encodeURIComponent(SWISH_NUMBER)}&amt=${done.total}&cur=SEK&msg=${encodeURIComponent(done.orderNo)}&src=qr`
       : null;
 
@@ -117,25 +124,33 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
       >
         {!done ? (
           <form onSubmit={submit} noValidate className="px-5 pb-6 sm:px-8 sm:pb-8">
-            <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">Beställ en skärbräda</DialogTitle>
+            <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">{egna ? 'Fråga om egna mått' : 'Beställ en skärbräda'}</DialogTitle>
             <DialogDescription id="bestall-besk" className="mt-2 text-[15px] text-black/75">
-              I nästa steg skickar du beställningen och ser hur du betalar med Swish.
+              {egna
+                ? 'I nästa steg skickar du förfrågan. Du får ett pris innan du betalar något.'
+                : 'I nästa steg skickar du beställningen och ser hur du betalar med Swish.'}
             </DialogDescription>
 
             <fieldset className="mt-6">
               <legend className="mb-2 text-[15px] font-medium">Storlek</legend>
               <div className="segment">
-                {SIZES.map((s) => (
+                {[...SIZES, CUSTOM].map((s) => (
                   <label key={s.id}>
                     <input type="radio" name="bestall-storlek" value={s.id} checked={s.id === sizeId} onChange={() => setSizeId(s.id)} />
                     <span className="seg">
                       <span className="text-[16px] font-medium">{s.name}</span>
-                      <small>{kr(s.price)}</small>
+                      <small>{s.price ? kr(s.price) : 'på förfrågan'}</small>
                     </span>
                   </label>
                 ))}
               </div>
             </fieldset>
+
+            {egna && (
+              <div className="mt-5">
+                <CustomDims ref={dimsRef} idPrefix="bestall" custom={custom} setCustom={setCustom} />
+              </div>
+            )}
 
             <div className="mt-5">
               <span className="mb-1.5 block text-[15px] font-medium" id="antal-etikett">
@@ -155,9 +170,13 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
                     <span className="sr-only">En till</span>
                   </button>
                 </div>
-                <p className="text-[16px]">
-                  Summa <span className="font-rubrik text-[30px] leading-none tabular-nums">{kr(total)}</span>
-                </p>
+                {egna ? (
+                  <p className="text-[16px]">Pris efter förfrågan</p>
+                ) : (
+                  <p className="text-[16px]">
+                    Summa <span className="font-rubrik text-[30px] leading-none tabular-nums">{kr(total)}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -193,7 +212,10 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
 
             <div className="mt-5">
               <Label htmlFor="b-medd">
-                Meddelande <span className="font-normal text-black/65">(frivilligt, till exempel att den är en julklapp)</span>
+                Meddelande{' '}
+                <span className="font-normal text-black/80">
+                  {egna ? '(frivilligt, till exempel en annan tjocklek än 3 cm)' : '(frivilligt, till exempel att den är en julklapp)'}
+                </span>
               </Label>
               <textarea id="b-medd" rows={2} value={note} onChange={(e) => setNote(e.target.value)} className="w-full rounded-[2px] border-[1.5px] border-andtra/50 bg-span px-3 py-2.5 text-base hover:border-andtra focus-visible:border-oliv" />
             </div>
@@ -209,16 +231,23 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
             <DialogDescription id="bestall-besk" className="mt-3 text-[16px]">
               {DRAFT ? (
                 <>
-                  <Todo>Utkast:</Todo> på den riktiga sidan öppnas nu ett färdigskrivet mejl till ReBoard med din beställning. Skicka det, så är beställningen klar. Öppnades inget mejl? Skriv till{' '}
+                  <Todo>Utkast:</Todo> på den riktiga sidan öppnas nu ett färdigskrivet mejl till ReBoard med din {done.egna ? 'förfrågan' : 'beställning'}. Skicka det, så är {done.egna ? 'förfrågan' : 'beställningen'} klar. Öppnades inget mejl? Skriv till{' '}
                   <Todo>ReBoards e-post</Todo> och ange ordernumret.
                 </>
               ) : (
                 <>
-                  Nu öppnas ett mejl med din beställning. Skicka det, så är beställningen klar. Öppnades inget mejl? Skriv till <a className="underline" href={`mailto:${ORDER_EMAIL}`}>{ORDER_EMAIL}</a> och ange ordernumret.
+                  Nu öppnas ett mejl med din {done.egna ? 'förfrågan' : 'beställning'}. Skicka det, så är {done.egna ? 'förfrågan' : 'beställningen'} klar. Öppnades inget mejl? Skriv till <a className="underline" href={`mailto:${ORDER_EMAIL}`}>{ORDER_EMAIL}</a> och ange ordernumret.
                 </>
               )}
             </DialogDescription>
 
+            {done.egna ? (
+              <p className="mt-6 text-[16px]">
+                ReBoard svarar med ett pris för dina mått. Du betalar med Swish först när du har fått priset och vill ha brädan.{' '}
+                <Todo>Hur snart svarar ni på en förfrågan?</Todo>
+              </p>
+            ) : (
+            <>
             <div className="mt-6 bg-oliv px-5 py-5 text-span pa-oliv">
               <p className="font-rubrik text-[28px] leading-none">Betala med Swish</p>
               <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[16px]">
@@ -238,6 +267,8 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, opener }) {
               )}
             </div>
             <p className="mt-4 text-[15px] text-black/80">När vi har sett betalningen hör vi av oss och bekräftar din beställning.</p>
+            </>
+            )}
           </div>
         )}
       </DialogContent>

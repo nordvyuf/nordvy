@@ -43,17 +43,26 @@ const FAQ = [
   },
 ];
 
-function Wordmark({ light = false }) {
+// ReBoards logga, urklippt ur en skärmbild som Max skickade (805 × 353 px, genomskinlig bakgrund).
+// Den mörka versionen på ljus botten, den ljusa på oliv.
+function Logga({ light = false, className = '', lazy = false }) {
   return (
-    <span className={`inline-flex items-baseline gap-1.5 ${light ? 'text-span' : 'text-oliv'}`}>
-      <span className="font-rubrik text-[30px] leading-none tracking-[-0.01em]">ReBoard</span>
-      <span className="text-[13px] font-semibold tracking-[0.12em]">UF</span>
-    </span>
+    <img
+      src={`/kund/reboard/logga-reboard-${light ? 'ljus' : 'mork'}.png`}
+      width="805"
+      height="353"
+      alt="ReBoard UF"
+      loading={lazy ? 'lazy' : undefined}
+      decoding="async"
+      className={`block h-auto ${className}`}
+    />
   );
 }
 
 export default function App() {
-  const [sizeId, setSizeId] = useState('mellan');
+  const [sizeId, setSizeId] = useState('liten');
+  // Egna mått som besökaren skriver, delade mellan väljaren och beställningsrutan.
+  const [custom, setCustom] = useState({ l: '', b: '' });
   const [open, setOpen] = useState(false);
   // Knappen som öppnade rutan får fokus tillbaka när den stängs.
   const opener = useRef(null);
@@ -72,14 +81,9 @@ export default function App() {
 
       <header data-r="huvud" className="huvud top-0 z-30 bg-sand md:sticky">
         <div className="ram flex flex-wrap items-center justify-between gap-x-6 pb-2 pt-3 md:h-[72px] md:flex-nowrap md:py-0">
-          <div className="flex items-center gap-2">
-            <a href="#" className="rounded-[2px]">
-              <Wordmark />
-            </a>
-            <Todo>
-              <span className="text-[12px]">logga</span>
-            </Todo>
-          </div>
+          <a href="#" className="block rounded-[2px]">
+            <Logga className="w-[110px] md:w-[124px]" />
+          </a>
           <nav aria-label="Sidan" className="order-3 flex w-full gap-6 py-2 text-[15px] md:order-none md:ml-auto md:w-auto md:gap-7 md:py-0 md:text-[16px]">
             <a className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']" href="#storlekar">Storlekar</a>
             <a className="r-lank relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']" href="#hantverket">Hantverket</a>
@@ -100,7 +104,7 @@ export default function App() {
                 Skärbrädor av återvunnen ek
               </h1>
               <p data-r="intro" style={{ '--i': 2 }} className="mt-5 max-w-[34ch] text-[18px] md:mt-7 md:text-[20px]">
-                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör skärbrädor av den, i tre storlekar.
+                Eget hantverk från Malmö. Vi tar tillvara gammal ek och gör skärbrädor av den, i två storlekar eller efter dina egna mått.
               </p>
               <div data-r="intro" style={{ '--i': 3 }} className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-4 md:mt-10">
                 <p className="font-rubrik text-[40px] leading-none text-black md:text-[48px]">
@@ -127,7 +131,7 @@ export default function App() {
         </section>
 
         <div className="bg-sand">
-          <SizePicker sizeId={sizeId} setSizeId={setSizeId} onOrder={order} />
+          <SizePicker sizeId={sizeId} setSizeId={setSizeId} custom={custom} setCustom={setCustom} onOrder={order} />
         </div>
 
         {/* Hantverket: en riktig ordning, visad som en fotorad. */}
@@ -229,7 +233,7 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-col justify-end gap-2 text-[15px] text-span/75 md:col-span-5 md:col-start-8">
-            <Wordmark light />
+            <Logga light lazy className="w-[150px]" />
             <p>Ett UF-företag i Malmö.</p>
             <p>Sidan är gjord av Nordvy UF.</p>
           </div>
@@ -237,7 +241,7 @@ export default function App() {
       </footer>
 
       <StickyBar onOrder={order} sizeId={sizeId} />
-      <OrderDialog open={open} onOpenChange={setOpen} sizeId={sizeId} setSizeId={setSizeId} opener={opener} />
+      <OrderDialog open={open} onOpenChange={setOpen} sizeId={sizeId} setSizeId={setSizeId} custom={custom} setCustom={setCustom} opener={opener} />
     </>
   );
 }

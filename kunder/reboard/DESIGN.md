@@ -4,7 +4,7 @@ Måns har sagt att utkastet ska byggas direkt, utan att vänta på svar. Allt vi
 
 ## Vem sidan är för och vad besökaren ska göra
 
-Sidan riktar sig till köksintresserade, matentusiaster och miljöintresserade, och den ska få dem att **beställa en skärbräda**. Tre storlekar: liten 500 kr, mellan 750 kr och stor 1 000 kr. Besökaren ska förstå tre saker innan den köper: vilken storlek den vill ha, vad den kostar och att brädan är gjord för hand av återvunnen ek.
+Sidan riktar sig till köksintresserade, matentusiaster och miljöintresserade, och den ska få dem att **beställa en skärbräda**. Två storlekar: liten 33 × 22 × 3 cm för 500 kr och stor 42 × 28 × 3 cm för 1 000 kr (måtten från Max 25/11, priserna ska bekräftas), och egna mått efter förfrågan. Besökaren ska förstå tre saker innan den köper: vilken storlek den vill ha, vad den kostar och att brädan är gjord för hand av återvunnen ek.
 
 ## Det enda djärva draget: storleksväljaren
 
@@ -128,3 +128,9 @@ Instagram-kontot har inga inlägg ännu (0 inlägg den 23/11), bara profilbilden
 ## Tekniken (Måns beslut)
 
 Källkoden ligger i `kundsidor/reboard/` (Vite, React 18, Tailwind 4 och komponenter i shadcn-stil med Radix Dialog och Lucide). Den byggs till statiska filer i `public/kund/reboard/`. Sidan förrenderas till HTML, så den syns direkt och fungerar för sökmotorer, och React tar sedan över. Rörelsen kommer från Nordvys `rorelse.css` och `rorelse.js`. Produkterna är märkta med schema.org-mikrodata i HTML, eftersom CSP:n inte tillåter inbäddade `<script>`.
+
+## Efter Max svar (25/11)
+
+- **Loggan:** Max loggor (urklippta ur en skärmbild) ligger i `static/`. Den mörka står i sidhuvudet och den ljusa i sidfoten på oliv. Bladet tar ungefär två tredjedelar av höjden, så texten "ReBoard UF" blir liten i sidhuvudet.
+- **Storlekarna:** två storlekar, liten och stor, med riktiga mått. Mellan är borttagen.
+- **Egna mått:** ett tredje val i väljaren. Besökaren skriver längd och bredd (10–120 cm, en rimlighetskontroll tills ReBoard har sagt vilka mått som går), och brädan ritas i rutnätet om den får plats. Priset står som "Pris efter förfrågan". Knappen skickar en förfrågan i samma flöde som beställningen, utan Swish-steget.
