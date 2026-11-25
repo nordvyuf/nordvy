@@ -144,3 +144,11 @@ Källkoden ligger i `kundsidor/reboard/` (Vite, React 18, Tailwind 4 och kompone
 - **Omdömen:** dolda tills `REVIEWS` i `data.js` har riktiga omdömen.
 - **Utan foton:** inga tomma rutor. Toppen visar loggan på oliv, och stegen står som text. Ett foto i `PHOTOS` i `data.js` hamnar på rätt plats av sig självt.
 - **Skarp sida:** sätt `DRAFT = false` i `src/data.js` och bygg. Då försvinner utkastraden och `noindex`, mejlet öppnas och Swish-knappen visas.
+
+## Skarp (Måns 25/11: "gör den live så snart som möjligt")
+
+- `DRAFT = false`: ingen utkastrad, ingen `noindex`.
+- Efter formuläret kommer två tydliga steg i stället för ett mejl som öppnas av sig självt:
+  1. Knappen "Skicka beställningen" öppnar ett färdigskrivet mejl till ReBoard.
+  2. På mobilen öppnar knappen "Betala … med Swish" Swish-appen med nummer, belopp och ordernummer ifyllda och låsta (`app.swish.nu/1/p/sw/`). På dator står nummer, belopp och meddelande att skriva in i mobilen.
+- Egna mått har bara steg 1 (förfrågan). Betalning sker efter offert.

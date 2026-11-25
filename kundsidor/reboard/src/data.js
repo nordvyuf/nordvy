@@ -3,7 +3,7 @@
 // Utkast. Det här är det enda stället som ändras när sidan blir skarp:
 // DRAFT = true ger utkastraden överst, noindex (förrenderingen tar bort den när DRAFT är false),
 // och att inget mejl öppnas och ingen Swish-knapp visas.
-export const DRAFT = true;
+export const DRAFT = false;
 
 // Dit beställningarna går, och adressen som står på sidan (Max bekräftade den 25/11).
 export const ORDER_EMAIL = 'mykluge08@gmail.com';
