@@ -2,7 +2,7 @@
 // Den valda brädan växer eller krymper mjukt, och priset och knappen byts ut.
 // "Egna mått": besökaren skriver längd och bredd, brädan ritas i rutnätet om den får plats.
 import { useRef } from 'react';
-import { CUSTOM, GRID, SIZES, customDims, dimText, findSize, isCustom, kr } from '../data.js';
+import { CUSTOM, DIM_MAX, DIM_MIN, GRID, SIZES, customDims, dimText, findSize, isCustom, kr } from '../data.js';
 import { Button } from './ui/button.jsx';
 import { CustomDims } from './CustomDims.jsx';
 
@@ -19,7 +19,9 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
   let hint = '';
   if (egna) {
     const d = customDims(custom);
-    if (!d) hint = 'Skriv längd och bredd, så visas brädan här.';
+    const filled = String(custom.l).trim() && String(custom.b).trim();
+    if (!d && filled) hint = `Skriv längd och bredd med siffror, mellan ${DIM_MIN} och ${DIM_MAX} cm.`;
+    else if (!d) hint = 'Skriv längd och bredd, så visas brädan här.';
     else {
       const w = Math.max(d.w, d.h);
       const h = Math.min(d.w, d.h);

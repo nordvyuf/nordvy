@@ -43,7 +43,7 @@ export const CustomDims = forwardRef(function CustomDims({ idPrefix, custom, set
   return (
     <fieldset>
       <legend className="mb-2 text-[15px] font-medium">Dina mått</legend>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {FIELDS.map(([k, label, what]) => {
           const id = `${idPrefix}-${k}`;
           return (

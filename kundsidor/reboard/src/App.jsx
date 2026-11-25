@@ -108,7 +108,7 @@ export default function App() {
       <main>
         {/* Toppen: text till vänster, fotot (eller loggan på oliv) går ut i högerkanten. */}
         <section aria-labelledby="topp-rubrik" className="relative">
-          <div className="ram grid grid-cols-[minmax(0,1fr)] items-center gap-10 pb-16 pt-8 md:grid-cols-12 md:gap-0 md:pb-24 md:pt-6">
+          <div className="ram grid grid-cols-[minmax(0,1fr)] items-center gap-10 pb-16 pt-8 md:grid-cols-12 md:gap-0 md:pb-12 md:pt-6">
             <div className="md:col-span-6 md:pr-10">
               <h1 id="topp-rubrik" data-r="intro" style={{ '--i': 1 }} className="text-[46px] text-oliv sm:text-[64px] lg:text-[80px]">
                 Skärbrädor av trä som förtjänar en andra chans
@@ -190,7 +190,7 @@ export default function App() {
           <div className="ram py-20 md:py-28">
             <Foto id="team" reveal dark ratio="16 / 9" className="mb-12" sizes="(min-width: 1200px) 1120px, 100vw" />
             <div className="grid gap-10 md:grid-cols-12 md:gap-x-0">
-              <div className="md:col-span-5 md:pr-10">
+              <div className="md:col-span-6 md:pr-10">
                 <h2 id="vi-rubrik" className="text-[40px] md:text-[52px]">
                   Ett UF-företag från Malmö
                 </h2>
@@ -202,7 +202,7 @@ export default function App() {
                   Följ oss på Instagram
                 </a>
               </div>
-              <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-2 md:col-span-6 md:col-start-7" aria-label="Vi som driver ReBoard UF">
+              <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-2 md:col-span-5 md:col-start-8" aria-label="Vi som driver ReBoard UF">
                 {TEAM.map((p) => (
                   <li key={p.name} className="border-t-[1.5px] border-salvia/40 pt-4">
                     <p className="font-rubrik text-[26px] leading-tight">{p.name}</p>
@@ -217,7 +217,7 @@ export default function App() {
         {/* Frågor innan köpet. Omdömena syns först när REVIEWS i data.js har riktiga omdömen. */}
         <section id="fragor" aria-labelledby="fragor-rubrik" className="ram py-20 md:py-28">
           <div className="grid gap-8 md:grid-cols-12 md:gap-x-0">
-            <div className="md:col-span-5 md:pr-14">
+            <div className="md:col-span-6 md:pr-14">
               <h2 id="fragor-rubrik" className="text-[40px] md:text-[48px]">
                 Innan du beställer
               </h2>
@@ -240,7 +240,7 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="md:col-span-6 md:col-start-7">
+            <div className="md:col-span-5 md:col-start-8">
               {FAQ.map(({ q, a }) => (
                 <details key={q} className="fraga">
                   <summary>
