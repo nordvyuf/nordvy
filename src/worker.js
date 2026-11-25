@@ -293,6 +293,18 @@ function robots(origin) {
   });
 }
 
+// robots.txt och sitemap.xml för en kunds egen underadress, till exempel reboard.nordvyuf.se.
+function subdomainRobots(origin) {
+  return new Response(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${origin}/sitemap.xml\n`, {
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' },
+  });
+}
+function subdomainSitemap(origin) {
+  return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${origin}/</loc></url>\n</urlset>\n`, {
+    headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' },
+  });
+}
+
 function sitemap(origin) {
   const urls = ['/', '/intervju', '/integritet'].map((p) => `  <url><loc>${origin}${p}</loc></url>`).join('\n');
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`, {
@@ -314,7 +326,12 @@ async function handleAsset(request, env, url) {
   }
   if (isDemo || !response.body || response.status === 304) return secure(response, { csp: !isDemo });
   // HTML-filerna innehåller __ORIGIN__ där en fullständig adress behövs (delningsbild, canonical).
-  const html = (await response.text()).replaceAll('__ORIGIN__', siteOrigin(request, env));
+  // En kundsida med egen underadress som är live får sin underadress i canonical, og:url och delningsbilden.
+  let html = await response.text();
+  for (const [name, site] of Object.entries(SUBDOMAINS)) {
+    if (site.live) html = html.replaceAll(`__ORIGIN__/kund/${site.dir}/`, subdomainUrl(name));
+  }
+  html = html.replaceAll('__ORIGIN__', siteOrigin(request, env));
   const headers = new Headers(response.headers);
   headers.delete('content-length');
   headers.delete('etag');
@@ -328,14 +345,67 @@ export const SHORT_PATHS = {
   reboarduf: '/kund/reboard/',
 };
 
+// Egna adresser för UF-kunder: <namn>.nordvyuf.se visar public/kund/<dir>/ (UF-paketet lovar ert-namn.nordvyuf.se).
+// Ny kund: lägg till en rad här och lägg till <namn>.nordvyuf.se som Custom domain på workern i Cloudflare
+// (Workers → nordvy → Settings → Domains & Routes).
+// live: false = underadressen fungerar, men canonical och de gamla adresserna är som förut.
+// live: true  = sätts först när underadressen fungerar. Då pekar canonical, og:url och delningsbilden på underadressen,
+//               och nordvyuf.se/kund/<dir>/ och den korta adressen skickas vidare dit med 301.
+export const SUBDOMAINS = {
+  reboard: { dir: 'reboard', live: false },
+};
+export const ROOT_DOMAIN = 'nordvyuf.se';
+const subdomainUrl = (name) => `https://${name}.${ROOT_DOMAIN}/`;
+
+// "reboard" för reboard.nordvyuf.se, null för nordvyuf.se, www.nordvyuf.se och alla andra värdar (som förhandsvisningar).
+function subdomainOf(hostname) {
+  const host = hostname.toLowerCase();
+  if (!host.endsWith(`.${ROOT_DOMAIN}`)) return null;
+  const name = host.slice(0, -(ROOT_DOMAIN.length + 1));
+  return name === 'www' ? null : name;
+}
+
+// Kundsidans egna sidadresser på nordvyuf.se (inte dess filer), som skickas vidare när underadressen är live.
+function livePageRedirect(url) {
+  if (url.hostname !== ROOT_DOMAIN) return null;
+  for (const [name, site] of Object.entries(SUBDOMAINS)) {
+    if (!site.live) continue;
+    const page = `/kund/${site.dir}`;
+    if ([page, `${page}/`, `${page}/index.html`].includes(url.pathname)) return Response.redirect(subdomainUrl(name) + url.search, 301);
+  }
+  return null;
+}
+
 export default {
   async fetch(request, env) {
     let url = new URL(request.url);
+
+    // Kundens egen underadress, till exempel reboard.nordvyuf.se.
+    const sub = subdomainOf(url.hostname);
+    if (sub !== null) {
+      const site = SUBDOMAINS[sub];
+      // Okänd underadress: till Nordvys startsida i stället för en tom sida.
+      if (!site) return Response.redirect(`https://${ROOT_DOMAIN}/`, 302);
+      const origin = `https://${url.hostname}`;
+      if (url.pathname === '/robots.txt') return secure(subdomainRobots(origin));
+      if (url.pathname === '/sitemap.xml') return secure(subdomainSitemap(origin));
+      // En annan kunds sida hör inte hemma på den här adressen.
+      if (url.pathname.startsWith('/kund/') && !url.pathname.startsWith(`/kund/${site.dir}/`)) return Response.redirect(`${origin}/`, 302);
+      // Sidans filer ligger på /kund/<dir>/… och /assets/… och hämtas som vanligt. Allt annat, till exempel /
+      // och /dela.png, hämtas från kundens mapp, så att adressfältet visar underadressen.
+      if (!/^\/(assets|api|kund)\//.test(url.pathname)) {
+        url = new URL(`/kund/${site.dir}${url.pathname}${url.search}`, url);
+        request = new Request(url, request);
+      }
+    }
+
     const short = SHORT_PATHS[url.pathname.replace(/^\/|\/$/g, '').toLowerCase()];
-    if (short && url.hostname !== 'www.nordvyuf.se') {
+    if (short && url.hostname !== 'www.nordvyuf.se' && sub === null) {
       url = new URL(short + url.search, url);
       request = new Request(url, request);
     }
+    const moved = livePageRedirect(url);
+    if (moved) return moved;
     // www.nordvyuf.se skickas vidare till nordvyuf.se, med samma sökväg.
     if (url.hostname === 'www.nordvyuf.se') {
       url.hostname = 'nordvyuf.se';
