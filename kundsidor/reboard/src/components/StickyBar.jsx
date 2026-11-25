@@ -36,7 +36,7 @@ export function StickyBar({ onOrder, sizeId }) {
         <p className="text-[15px] leading-tight">
           {size.price ? `${size.name} skärbräda` : 'Skärbräda i egna mått'}
           <br />
-          <span className="font-rubrik text-[22px]">{size.price ? kr(size.price) : 'pris efter förfrågan'}</span>
+          <span className="font-rubrik text-[22px]">{size.price ? kr(size.price) : 'pris efter offert'}</span>
         </p>
         <Button onClick={onOrder}>{size.price ? 'Beställ' : 'Fråga'}</Button>
       </div>

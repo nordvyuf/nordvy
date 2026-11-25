@@ -1,16 +1,15 @@
 // Beställningen: storlek (eller egna mått), antal, namn, kontakt och hämtning eller frakt.
-// Egna mått blir en förfrågan utan pris: ReBoard svarar med ett pris, och först då betalar man.
+// Egna mått blir en förfrågan utan pris: ReBoard granskar den och återkommer med en offert, och först då betalar man.
 // På den skarpa sidan öppnas ett färdigskrivet mejl till ReBoard, och besökaren ser hur den betalar med Swish.
 // Beställningen är inte skickad förrän besökaren skickar mejlet, så vi skriver aldrig "Tack för din beställning".
 import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
-import { CUSTOM, DRAFT, ORDER_EMAIL, SIZES, SWISH_NUMBER, customDims, dimText, findSize, isCustom, kr } from '../data.js';
+import { CUSTOM, DRAFT, ORDER_EMAIL, SIZES, SWISH_DISPLAY, SWISH_NUMBER, customDims, dimText, findSize, isCustom, kr } from '../data.js';
 import { CustomDims } from './CustomDims.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog.jsx';
 import { Button } from './ui/button.jsx';
 import { Input } from './ui/input.jsx';
 import { Label } from './ui/label.jsx';
-import { Todo } from './Todo.jsx';
 import { nudge } from '../lib.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,7 +83,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
       '',
       egna ? `Egna mått: ${dimText(customDims(custom))} (längd × bredd × tjocklek)` : `Storlek: ${size.name}, ${dimText(size)} (${kr(size.price)})`,
       `Antal: ${qty}`,
-      egna ? 'Pris: efter förfrågan' : `Summa: ${kr(total)}`,
+      egna ? 'Pris: offert' : `Summa: ${kr(total)}`,
       `Leverans: ${delivery === 'hamtning' ? 'Hämtning i Malmö' : 'Frakt'}`,
       '',
       `Namn: ${name.trim()}`,
@@ -98,7 +97,8 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
   };
 
   const swishHref =
-    SWISH_NUMBER && done && done.total
+    // I utkastet finns ingen Swish-knapp, så att ingen betalar på riktigt för en beställning som aldrig skickades.
+    !DRAFT && SWISH_NUMBER && done && done.total
       ? `https://app.swish.nu/1/p/sw/?sw=${encodeURIComponent(SWISH_NUMBER)}&amt=${done.total}&cur=SEK&msg=${encodeURIComponent(done.orderNo)}&src=qr`
       : null;
 
@@ -127,7 +127,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
             <DialogTitle className="pr-12 font-rubrik text-[38px] leading-none">{egna ? 'Fråga om egna mått' : 'Beställ en skärbräda'}</DialogTitle>
             <DialogDescription id="bestall-besk" className="mt-2 text-[15px] text-black/75">
               {egna
-                ? 'I nästa steg skickar du förfrågan. Du får ett pris innan du betalar något.'
+                ? 'I nästa steg skickar du förfrågan. Du får en offert innan du betalar något.'
                 : 'I nästa steg skickar du beställningen och ser hur du betalar med Swish.'}
             </DialogDescription>
 
@@ -139,7 +139,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
                     <input type="radio" name="bestall-storlek" value={s.id} checked={s.id === sizeId} onChange={() => setSizeId(s.id)} />
                     <span className="seg">
                       <span className="text-[16px] font-medium">{s.name}</span>
-                      <small>{s.price ? kr(s.price) : 'på förfrågan'}</small>
+                      <small>{s.price ? kr(s.price) : 'offert'}</small>
                     </span>
                   </label>
                 ))}
@@ -171,7 +171,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
                   </button>
                 </div>
                 {egna ? (
-                  <p className="text-[16px]">Pris efter förfrågan</p>
+                  <p className="text-[16px]">Pris efter offert</p>
                 ) : (
                   <p className="text-[16px]">
                     Summa <span className="font-rubrik text-[30px] leading-none tabular-nums">{kr(total)}</span>
@@ -197,17 +197,16 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
               <legend className="mb-2 text-[15px] font-medium">Hur vill du få den?</legend>
               <div className="grid gap-2">
                 {[
-                  ['hamtning', 'Hämta i Malmö', <Todo key="t">Var hämtar man?</Todo>],
-                  ['frakt', 'Skicka med post', <Todo key="t">Vad kostar frakten?</Todo>],
-                ].map(([value, label, extra]) => (
+                  ['hamtning', 'Hämta i Malmö'],
+                  ['frakt', 'Få den skickad'],
+                ].map(([value, label]) => (
                   <label key={value} className="flex min-h-12 cursor-pointer items-center gap-3 border-[1.5px] border-andtra/35 px-3 py-2 has-[:checked]:border-oliv has-[:checked]:bg-oliv/5">
                     <input type="radio" name="leverans" value={value} checked={delivery === value} onChange={() => setDelivery(value)} className="h-5 w-5 accent-[#434831]" />
-                    <span className="text-[16px]">
-                      {label} <span className="text-[14px]">{extra}</span>
-                    </span>
+                    <span className="text-[16px]">{label}</span>
                   </label>
                 ))}
               </div>
+              <p className="mt-2 text-[14px] text-black/80">Vi bekräftar plats och frakt när vi har fått din beställning.</p>
             </fieldset>
 
             <div className="mt-5">
@@ -231,8 +230,8 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
             <DialogDescription id="bestall-besk" className="mt-3 text-[16px]">
               {DRAFT ? (
                 <>
-                  <Todo>Utkast:</Todo> på den riktiga sidan öppnas nu ett färdigskrivet mejl till ReBoard med din {done.egna ? 'förfrågan' : 'beställning'}. Skicka det, så är {done.egna ? 'förfrågan' : 'beställningen'} klar. Öppnades inget mejl? Skriv till{' '}
-                  <Todo>ReBoards e-post</Todo> och ange ordernumret.
+                  <b>Utkast:</b> på den riktiga sidan öppnas nu ett färdigskrivet mejl till ReBoard med din {done.egna ? 'förfrågan' : 'beställning'}. Skicka
+                  det, så är {done.egna ? 'förfrågan' : 'beställningen'} klar. Öppnades inget mejl? Skriv till {ORDER_EMAIL} och ange ordernumret.
                 </>
               ) : (
                 <>
@@ -243,8 +242,8 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
 
             {done.egna ? (
               <p className="mt-6 text-[16px]">
-                ReBoard svarar med ett pris för dina mått. Du betalar med Swish först när du har fått priset och vill ha brädan.{' '}
-                <Todo>Hur snart svarar ni på en förfrågan?</Todo>
+                Vi granskar förfrågan och återkommer med en offert. Du betalar med Swish först när du har fått offerten och vill ha brädan. Egna mått hinns
+                inte före jul.
               </p>
             ) : (
             <>
@@ -252,7 +251,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
               <p className="font-rubrik text-[28px] leading-none">Betala med Swish</p>
               <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[16px]">
                 <dt className="text-span/75">Nummer</dt>
-                <dd className="tabular-nums">{SWISH_NUMBER || <Todo>Swish Företag-nummer</Todo>}</dd>
+                <dd className="tabular-nums">{SWISH_DISPLAY}</dd>
                 <dt className="text-span/75">Belopp</dt>
                 <dd className="tabular-nums">{kr(done.total)}</dd>
                 <dt className="text-span/75">Meddelande</dt>
@@ -263,7 +262,7 @@ export function OrderDialog({ open, onOpenChange, sizeId, setSizeId, custom, set
                   Öppna Swish med allt ifyllt
                 </a>
               ) : (
-                <p className="mt-4 text-[14px] text-span/80 md:hidden">På mobilen kommer här en knapp som öppnar Swish med allt ifyllt.</p>
+                <p className="mt-4 text-[14px] text-span/80 md:hidden">Utkast: på den riktiga sidan öppnar en knapp här Swish med allt ifyllt.</p>
               )}
             </div>
             <p className="mt-4 text-[15px] text-black/80">När vi har sett betalningen hör vi av oss och bekräftar din beställning.</p>

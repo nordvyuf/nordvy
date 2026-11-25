@@ -4,7 +4,6 @@
 import { useRef } from 'react';
 import { CUSTOM, GRID, SIZES, customDims, dimText, findSize, isCustom, kr } from '../data.js';
 import { Button } from './ui/button.jsx';
-import { Todo } from './Todo.jsx';
 import { CustomDims } from './CustomDims.jsx';
 
 const pct = (cm, total) => `${(cm / total) * 100}%`;
@@ -25,7 +24,7 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
       const w = Math.max(d.w, d.h);
       const h = Math.min(d.w, d.h);
       if (w <= GRID.w && h <= GRID.h) board = { w, h, t: d.t };
-      else hint = `Brädan är större än rutnätet (${GRID.w} × ${GRID.h} cm). Du kan ändå skicka förfrågan.`;
+      else hint = `Brädan är större än rutnätet (${GRID.w} × ${GRID.h} cm). Du kan ändå skicka en förfrågan.`;
     }
   }
   const matLabel = board
@@ -41,9 +40,9 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
     <section id="storlekar" aria-labelledby="storlekar-rubrik" className="ram pb-20 pt-12 md:pb-28 md:pt-16">
       {/* Produkten och priserna för sökmotorer (schema.org-mikrodata, eftersom CSP:n stoppar inbäddade skript). */}
       <div itemScope itemType="https://schema.org/Product" hidden>
-        <meta itemProp="name" content="Skärbräda av återvunnen ek" />
-        <meta itemProp="description" content="Handgjord skärbräda av återvunnen ek från ReBoard UF i Malmö. Två storlekar, eller egna mått." />
-        <meta itemProp="material" content="Återvunnen ek" />
+        <meta itemProp="name" content="Skärbräda av spillvirke" />
+        <meta itemProp="description" content="Handgjord skärbräda av spillvirke från lokala finsnickerier, från ReBoard UF i Malmö. Två storlekar, eller egna mått." />
+        <meta itemProp="material" content="Spillvirke från lokala finsnickerier" />
         <div itemProp="brand" itemScope itemType="https://schema.org/Brand">
           <meta itemProp="name" content="ReBoard UF" />
         </div>
@@ -107,9 +106,6 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
               </p>
             )}
           </div>
-          <p className="mt-3 text-[15px] text-black/75">
-            <Todo>Skicka gärna ett foto ovanifrån på varje storlek.</Todo>
-          </p>
         </div>
 
         <fieldset style={{ gridArea: 'val' }} className="md:self-end">
@@ -120,7 +116,7 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
                   <input type="radio" name="storlek" value={s.id} checked={s.id === sizeId} onChange={() => setSizeId(s.id)} />
                   <span className="seg">
                     <span className="text-[17px] font-medium">{s.name}</span>
-                    <small>{s.price ? kr(s.price) : 'på förfrågan'}</small>
+                    <small>{s.price ? kr(s.price) : 'offert'}</small>
                   </span>
                 </label>
               ))}
@@ -132,32 +128,23 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
             <>
               <CustomDims ref={dimsRef} idPrefix="valj" custom={custom} setCustom={setCustom} />
               <div aria-live="polite" className="mt-6">
-                <p className="font-rubrik text-[44px] leading-none md:text-[52px]">Pris efter förfrågan</p>
-                <p className="mt-3 text-[15px]">
-                  <Todo>Vad kostar en bräda i egna mått, och vilka mått går att göra (minst och störst)?</Todo>
+                <p className="font-rubrik text-[44px] leading-none md:text-[52px]">Pris efter offert</p>
+                <p className="mt-3 max-w-[44ch] text-[16px]">
+                  Skicka en förfrågan med dina mått, så granskar vi den och återkommer med en offert. Egna mått hinns inte före jul.
                 </p>
               </div>
             </>
           ) : (
             <div aria-live="polite">
               <p className="font-rubrik text-[72px] leading-none tabular-nums md:text-[88px]">{kr(size.price)}</p>
-              {!size.priceConfirmed && (
-                <p className="mt-3 text-[15px]">
-                  <Todo>Stämmer priserna för liten och stor?</Todo>
-                </p>
-              )}
               <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[16px]">
                 <dt className="text-black/70">Mått</dt>
                 <dd className="tabular-nums">
                   {dimText(size)}
                   <span className="block text-[13px] text-black/80">längd × bredd × tjocklek</span>
                 </dd>
-                <dt className="text-black/70">Passar till</dt>
-                <dd>
-                  <Todo>Vad passar {size.name.toLowerCase()} till?</Todo>
-                </dd>
                 <dt className="text-black/70">Trä</dt>
-                <dd>Återvunnen ek</dd>
+                <dd>Spillvirke från lokala finsnickerier</dd>
               </dl>
             </div>
           )}
@@ -168,15 +155,11 @@ export function SizePicker({ sizeId, setSizeId, custom, setCustom, onOrder }) {
           {/* Det man undrar precis innan man trycker: betalning, leverans och tid. */}
           <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t-[1.5px] border-oliv/25 pt-4 text-[15px]">
             <dt className="text-black/70">Betalning</dt>
-            <dd>{egna ? 'Swish, när du har fått ett pris' : 'Swish, efter beställningen'}</dd>
+            <dd>{egna ? 'Swish, när du har fått offerten' : 'Swish, efter beställningen'}</dd>
             <dt className="text-black/70">Leverans</dt>
-            <dd>
-              Hämta i Malmö eller få den med post. <Todo>Vad kostar frakten?</Todo>
-            </dd>
+            <dd>Hämta i Malmö eller få den skickad. Vi bekräftar plats och frakt när vi har fått din beställning.</dd>
             <dt className="text-black/70">Klar</dt>
-            <dd>
-              <Todo>Hur snart efter beställningen?</Todo>
-            </dd>
+            <dd>1–2 veckor efter beställningen</dd>
           </dl>
         </div>
       </div>
