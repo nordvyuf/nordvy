@@ -1693,3 +1693,58 @@ select option {
     transform: none;
   }
 }
+
+/* Omdömen om Nordvy (eget system, /assets/omdomen.js). Rutans egen stil har noll specificitet,
+   så här anpassas den till sidans mörka färger och sidans globala fält- och etikettstilar. */
+.omdomen-ruta {
+  --nv-accent: var(--ice);
+  --nv-star: #f2c14e;
+}
+.omdomen-ruta .nv-om {
+  max-width: none;
+}
+.omdomen-ruta .nv-om-empty {
+  color: var(--mut);
+  opacity: 1;
+  font-size: 1.05rem;
+}
+.omdomen-ruta .nv-om-open,
+.omdomen-ruta .nv-om-send {
+  min-height: 48px;
+  padding: 0.8rem 1.5rem;
+}
+.omdomen-ruta .nv-om-open:hover,
+.omdomen-ruta .nv-om-send {
+  color: var(--ice-ink);
+}
+.omdomen-ruta .nv-om-form {
+  border-color: var(--line-2);
+  background: var(--glass);
+  border-radius: 18px;
+}
+.omdomen-ruta .nv-om-rate label {
+  display: block;
+  font-size: 1.9rem;
+  color: var(--dim);
+}
+.omdomen-ruta .nv-om-rate label.on {
+  color: var(--nv-star);
+}
+.omdomen-ruta .nv-om-rate input,
+.omdomen-ruta .nv-om-consent input {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+}
+.omdomen-ruta .nv-om-consent {
+  display: flex;
+  color: var(--mut);
+}
+.omdomen-ruta .nv-om-consent input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--ice);
+}
+.omdomen-ruta .nv-om-err {
+  color: var(--danger);
+}
