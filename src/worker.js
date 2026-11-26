@@ -352,7 +352,7 @@ export const SHORT_PATHS = {
 // live: true  = sätts först när underadressen fungerar. Då pekar canonical, og:url och delningsbilden på underadressen,
 //               och nordvyuf.se/kund/<dir>/ och den korta adressen skickas vidare dit med 301.
 export const SUBDOMAINS = {
-  reboard: { dir: 'reboard', live: false },
+  reboard: { dir: 'reboard', live: true },
 };
 export const ROOT_DOMAIN = 'nordvyuf.se';
 const subdomainUrl = (name) => `https://${name}.${ROOT_DOMAIN}/`;
